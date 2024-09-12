@@ -1,0 +1,74 @@
+name: 989snd debug
+sha1: 74663d1f02c1ff7118744a66b064bcd307b2262b
+options:
+    # paths
+    basename: 989SND_D.IRX
+    target_path: in/989SND_D.IRX
+    base_path: ..
+    
+    asm_path: asm
+    src_path: src
+    build_path: build
+
+    extensions_path: tools/splat_ext 
+    symbol_addrs_path: config/symbol_addrs.txt
+    undefined_funcs_auto_path: config/undefined_funcs_auto.txt
+    undefined_syms_auto_path:  config/undefined_syms_auto.txt
+    
+    # compiler 
+    compiler: GCC
+    platform: ps2
+
+    string_encoding: ASCII
+    
+    section_order: [".iopmod", ".text", ".rodata", ".data", ".sbss", ".bss"]
+
+segments:
+    - [0, databin, elf_header]
+    - [0x74, databin, iopmod]
+    - name: main
+      type: code
+      start: 0xa0
+      vram: 0x0
+      bss_size: 0x9df0
+      subsegments:
+        # .text
+        - [0xa0, c, 989snd]
+        - [0x3efc, c, LFO]
+        - [0x4e68, c, ame]
+        - [0x6990, c, autopan]
+        - [0x7218, c, autopb]
+        - [0x7768, c, autoptch]
+        - [0x7cc0, c, autoverb]
+        - [0x87d8, c, autovol]
+        - [0x8ec4, c, blocksnd]
+        - [0xf150, c, extern]
+        - [0xf868, c, init]
+        - [0x10014, c, intr_code]
+        - [0x102cc, c, loader]
+        - [0x1560c, c, midi]
+        - [0x17fe0, c, moviesnd]
+        - [0x19d20, c, my_rand]
+        - [0x1a148, c, pantable]
+        - [0x1a210, c, playsnd]
+        - [0x1c988, c, reverb]
+        - [0x1d818, c, sndhand]
+        - [0x20148, c, sram]
+        - [0x21b3c, c, stick]
+        - [0x22304, c, stream]
+        - [0x335b4, c, valloc]
+        - [0x37800, c, vol]
+        - [0x3a240, asm, export_stub]
+        - [0x3a460, asm, import_stub]
+         # .rodata
+        - [0x3a80c, rodata]
+        # .data
+        - [0x3b018, data]
+        # .sbss / .bss
+        - { start: 0x3cf94, type: sbss, vram: 0x3cef4 }
+        - { start: 0x3cf94, type: bss, vram: 0x3cf34 }
+        
+    - [0x3cf94, databin] # .mdebug
+    - [0x134c30, databin] # .shstrtab
+    - [0x146424, databin] # .symtab
+    - [0x149d64, databin] # .strtab

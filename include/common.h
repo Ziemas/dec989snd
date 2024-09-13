@@ -26,11 +26,6 @@
 
 #include "include_asm.h"
 
-typedef struct { // 0x8
-	/* 0x0 */ int real;
-	/* 0x4 */ int imag;
-} complex int;
-
 typedef unsigned int size_t;
 typedef int ssize_t;
 typedef char *caddr_t;
@@ -122,31 +117,31 @@ enum KernelErrorCode {
 };
 
 struct _libhead { // 0x14
-	/* 0x00 */ _libhead *next;
-	/* 0x04 */ _libcaller *client;
+	/* 0x00 */ struct _libhead *next;
+	/* 0x04 */ struct _libcaller *client;
 	/* 0x08 */ short unsigned int version;
 	/* 0x0a */ short unsigned int flags;
 	/* 0x0c */ char name[8];
 };
 
-typedef _libhead libhead;
+typedef struct _libhead libhead;
 
 struct _libcaller { // 0x14
 	/* 0x00 */ long unsigned int magic;
-	/* 0x04 */ _libcaller *client;
+	/* 0x04 */ struct _libcaller *client;
 	/* 0x08 */ short unsigned int version;
 	/* 0x0a */ short unsigned int flags;
 	/* 0x0c */ char name[8];
 };
 
-typedef _libcaller libcaller;
+typedef struct _libcaller libcaller;
 
 struct _moduleinfo { // 0x8
 	/* 0x0 */ char *name;
 	/* 0x4 */ short unsigned int version;
 };
 
-typedef _moduleinfo ModuleInfo;
+typedef struct _moduleinfo ModuleInfo;
 
 struct _libinfo { // 0x14
 	/* 0x00 */ long unsigned int dummy[2];
@@ -155,7 +150,7 @@ struct _libinfo { // 0x14
 	/* 0x0c */ char name[8];
 };
 
-typedef _libinfo LibInfo;
+typedef struct _libinfo LibInfo;
 
 struct _modulestatus { // 0x60
 	/* 0x00 */ char name[56];
@@ -171,7 +166,7 @@ struct _modulestatus { // 0x60
 	/* 0x58 */ u_long lreserve[2];
 };
 
-typedef _modulestatus ModuleStatus;
+typedef struct _modulestatus ModuleStatus;
 
 struct _ldfilefunc { // 0x20
 	/* 0x00 */ int (*beforeOpen)(/* parameters unknown */);
@@ -184,7 +179,7 @@ struct _ldfilefunc { // 0x20
 	/* 0x1c */ int (*getfsize)(/* parameters unknown */);
 };
 
-typedef _ldfilefunc LDfilefunc;
+typedef struct _ldfilefunc LDfilefunc;
 
 struct _lmwooption { // 0x20
 	/* 0x00 */ char position;
@@ -197,7 +192,7 @@ struct _lmwooption { // 0x20
 	/* 0x14 */ int ireserved[3];
 };
 
-typedef _lmwooption LMWOoption;
+typedef struct _lmwooption LMWOoption;
 
 enum EXCEP {
 	EXCEP_Int = 0,
@@ -305,7 +300,7 @@ typedef struct { // 0x2c
 	/* 0x0c */ int waitId;
 	/* 0x10 */ int wakeupCount;
 	/* 0x14 */ u_long *regContext;
-	/* 0x18 */ SysClock runClocks;
+	/* 0x18 */ struct SysClock runClocks;
 	/* 0x20 */ u_int intrPreemptCount;
 	/* 0x24 */ u_int threadPreemptCount;
 	/* 0x28 */ u_int releaseCount;
@@ -355,13 +350,13 @@ struct MbxInfo { // 0x1c
 	/* 0x04 */ u_int option;
 	/* 0x08 */ int numWaitThreads;
 	/* 0x0c */ int numMessage;
-	/* 0x10 */ MsgPacket *topPacket;
+	/* 0x10 */ struct MsgPacket *topPacket;
 	/* 0x14 */ int reserved1;
 	/* 0x18 */ int reserved2;
 };
 
 struct MsgPacket { // 0x8
-	/* 0x0 */ MsgPacket *next;
+	/* 0x0 */ struct MsgPacket *next;
 	/* 0x4 */ u_char msgPriority;
 	/* 0x5 */ u_char dummy[3];
 };
@@ -408,8 +403,8 @@ typedef u_int (*AlarmHandler)(/* parameters unknown */);
 typedef struct { // 0x40
 	/* 0x00 */ u_int status;
 	/* 0x04 */ int systemLowTimerWidth;
-	/* 0x08 */ SysClock idleClocks;
-	/* 0x10 */ SysClock kernelClocks;
+	/* 0x08 */ struct SysClock idleClocks;
+	/* 0x10 */ struct SysClock kernelClocks;
 	/* 0x18 */ u_int comesOutOfIdleCount;
 	/* 0x1c */ u_int threadSwitchCount;
 	/* 0x20 */ u_int reserved[8];
@@ -441,29 +436,29 @@ struct _sif_rpc_data { // 0x10
 	/* 0xc */ unsigned int mode;
 };
 
-typedef _sif_rpc_data sceSifRpcData;
+typedef struct _sif_rpc_data sceSifRpcData;
 typedef void (*sceSifEndFunc)(/* parameters unknown */);
 
 struct _sif_client_data { // 0x28
-	/* 0x00 */ _sif_rpc_data rpcd;
+	/* 0x00 */ struct _sif_rpc_data rpcd;
 	/* 0x10 */ unsigned int command;
 	/* 0x14 */ void *buff;
 	/* 0x18 */ void *cbuff;
 	/* 0x1c */ sceSifEndFunc func;
 	/* 0x20 */ void *para;
-	/* 0x24 */ _sif_serve_data *serve;
+	/* 0x24 */ struct _sif_serve_data *serve;
 };
 
-typedef _sif_client_data sceSifClientData;
+typedef struct _sif_client_data sceSifClientData;
 
 struct _sif_receive_data { // 0x1c
-	/* 0x00 */ _sif_rpc_data rpcd;
+	/* 0x00 */ struct _sif_rpc_data rpcd;
 	/* 0x10 */ void *src;
 	/* 0x14 */ void *dest;
 	/* 0x18 */ int size;
 };
 
-typedef _sif_receive_data sceSifReceiveData;
+typedef struct _sif_receive_data sceSifReceiveData;
 typedef void* (*sceSifRpcFunc)(/* parameters unknown */);
 
 struct _sif_serve_data { // 0x44
@@ -481,23 +476,23 @@ struct _sif_serve_data { // 0x44
 	/* 0x2c */ int rsize;
 	/* 0x30 */ int rmode;
 	/* 0x34 */ unsigned int rid;
-	/* 0x38 */ _sif_serve_data *link;
-	/* 0x3c */ _sif_serve_data *next;
-	/* 0x40 */ _sif_queue_data *base;
+	/* 0x38 */ struct _sif_serve_data *link;
+	/* 0x3c */ struct _sif_serve_data *next;
+	/* 0x40 */ struct _sif_queue_data *base;
 };
 
-typedef _sif_serve_data sceSifServeData;
+typedef struct _sif_serve_data sceSifServeData;
 
 struct _sif_queue_data { // 0x18
 	/* 0x00 */ int key;
 	/* 0x04 */ int active;
-	/* 0x08 */ _sif_serve_data *link;
-	/* 0x0c */ _sif_serve_data *start;
-	/* 0x10 */ _sif_serve_data *end;
-	/* 0x14 */ _sif_queue_data *next;
+	/* 0x08 */ struct _sif_serve_data *link;
+	/* 0x0c */ struct _sif_serve_data *start;
+	/* 0x10 */ struct _sif_serve_data *end;
+	/* 0x14 */ struct _sif_queue_data *next;
 };
 
-typedef _sif_queue_data sceSifQueueData;
+typedef struct _sif_queue_data sceSifQueueData;
 typedef void (*CdlCB)(/* parameters unknown */);
 
 typedef struct { // 0x4
@@ -592,22 +587,7 @@ typedef struct { // 0x18
 	/* 0x14 */ UInt32 reserved1;
 } Tone;
 
-typedef struct *TonePtr { // 0x18
-	/* 0x00 */ SInt8 Priority;
-	/* 0x01 */ SInt8 Vol;
-	/* 0x02 */ SInt8 CenterNote;
-	/* 0x03 */ SInt8 CenterFine;
-	/* 0x04 */ SInt16 Pan;
-	/* 0x06 */ SInt8 MapLow;
-	/* 0x07 */ SInt8 MapHigh;
-	/* 0x08 */ SInt8 PBLow;
-	/* 0x09 */ SInt8 PBHigh;
-	/* 0x0a */ UInt16 ADSR1;
-	/* 0x0c */ UInt16 ADSR2;
-	/* 0x0e */ SInt16 Flags;
-	/* 0x10 */ void *VAGInSR;
-	/* 0x14 */ UInt32 reserved1;
-};
+typedef Tone *TonePtr;
 
 typedef struct { // 0x8
 	/* 0x0 */ SInt8 NumTones;
@@ -616,16 +596,11 @@ typedef struct { // 0x8
 	/* 0x4 */ TonePtr FirstTone;
 } Prog;
 
-typedef struct *ProgPtr { // 0x8
-	/* 0x0 */ SInt8 NumTones;
-	/* 0x1 */ SInt8 Vol;
-	/* 0x2 */ SInt16 Pan;
-	/* 0x4 */ TonePtr FirstTone;
-};
+typedef Prog *ProgPtr;
 
 typedef struct { // 0x1c
 	/* 0x00 */ SInt32 Type;
-	/* 0x04 */ SoundBank_tag *Bank;
+	/* 0x04 */ struct SoundBank_tag *Bank;
 	/* 0x08 */ void *OrigBank;
 	/* 0x0c */ SInt8 OrigType;
 	/* 0x0d */ SInt8 Prog;
@@ -641,39 +616,19 @@ typedef struct { // 0x1c
 	/* 0x1a */ UInt16 pad3;
 } Sound;
 
-typedef struct *SoundPtr { // 0x1c
-	/* 0x00 */ SInt32 Type;
-	/* 0x04 */ SoundBank_tag *Bank;
-	/* 0x08 */ void *OrigBank;
-	/* 0x0c */ SInt8 OrigType;
-	/* 0x0d */ SInt8 Prog;
-	/* 0x0e */ SInt8 Note;
-	/* 0x0f */ SInt8 Fine;
-	/* 0x10 */ SInt16 Vol;
-	/* 0x12 */ SInt8 pad1;
-	/* 0x13 */ SInt8 VolGroup;
-	/* 0x14 */ SInt16 Pan;
-	/* 0x16 */ SInt8 XREFSound;
-	/* 0x17 */ SInt8 pad2;
-	/* 0x18 */ UInt16 Flags;
-	/* 0x1a */ UInt16 pad3;
-};
+typedef Sound *SoundPtr;
 
 typedef struct { // 0x1c
 	/* 0x00 */ SInt32 Type;
-	/* 0x04 */ SoundBank_tag *Bank;
+	/* 0x04 */ struct SoundBank_tag *Bank;
 	/* 0x08 */ SInt8 IDs[20];
 } CompoundSound;
 
-typedef struct *CompoundSoundPtr { // 0x1c
-	/* 0x00 */ SInt32 Type;
-	/* 0x04 */ SoundBank_tag *Bank;
-	/* 0x08 */ SInt8 IDs[20];
-};
+typedef CompoundSound *CompoundSoundPtr;
 
 typedef struct { // 0x1c
 	/* 0x00 */ SInt32 Type;
-	/* 0x04 */ SoundBank_tag *Bank;
+	/* 0x04 */ struct SoundBank_tag *Bank;
 	/* 0x08 */ void *OrigBank;
 	/* 0x0c */ UInt32 MIDIID;
 	/* 0x10 */ SInt16 Vol;
@@ -685,19 +640,7 @@ typedef struct { // 0x1c
 	/* 0x18 */ void *MIDIBlock;
 } MIDISound;
 
-typedef struct *MIDISoundPtr { // 0x1c
-	/* 0x00 */ SInt32 Type;
-	/* 0x04 */ SoundBank_tag *Bank;
-	/* 0x08 */ void *OrigBank;
-	/* 0x0c */ UInt32 MIDIID;
-	/* 0x10 */ SInt16 Vol;
-	/* 0x12 */ SInt8 Repeats;
-	/* 0x13 */ SInt8 VolGroup;
-	/* 0x14 */ SInt16 Pan;
-	/* 0x16 */ SInt8 Index;
-	/* 0x17 */ UInt8 Flags;
-	/* 0x18 */ void *MIDIBlock;
-};
+typedef MIDISound *MIDISoundPtr; 
 
 struct SoundBank_tag { // 0x34
 	/* 0x00 */ UInt32 DataID;
@@ -716,11 +659,11 @@ struct SoundBank_tag { // 0x34
 	/* 0x24 */ TonePtr FirstTone;
 	/* 0x28 */ void *VagsInSR;
 	/* 0x2c */ UInt32 VagDataSize;
-	/* 0x30 */ SoundBank_tag *NextBank;
+	/* 0x30 */ struct SoundBank_tag *NextBank;
 };
 
-typedef SoundBank_tag SoundBank;
-typedef SoundBank_tag *SoundBankPtr;
+typedef struct SoundBank_tag SoundBank;
+typedef struct SoundBank_tag *SoundBankPtr;
 
 typedef struct { // 0x30
 	/* 0x00 */ UInt16 type;
@@ -737,8 +680,8 @@ typedef struct { // 0x30
 	/* 0x1c */ SInt32 state_hold2;
 	/* 0x20 */ SInt32 range;
 	/* 0x24 */ SInt32 last_lfo;
-	/* 0x28 */ BlockSoundHandler *handler;
-	/* 0x2c */ LFOTracker *next;
+	/* 0x28 */ struct BlockSoundHandler *handler;
+	/* 0x2c */ struct LFOTracker *next;
 } LFOTracker;
 
 typedef struct { // 0x20
@@ -803,11 +746,7 @@ typedef struct { // 0x28
 	/* 0x08 */ GrainParams Params;
 } SFXGrain;
 
-typedef struct *SFXGrainPtr { // 0x28
-	/* 0x00 */ UInt32 Type;
-	/* 0x04 */ SInt32 Delay;
-	/* 0x08 */ GrainParams Params;
-};
+typedef SFXGrain *SFXGrainPtr;
 
 struct _opd1 { // 0x4
 	/* 0x0 */ SInt8 Arg[3];
@@ -815,19 +754,16 @@ struct _opd1 { // 0x4
 };
 
 union _op_data { // 0x4
-	/* 0x0 */ _opd1 MicroOp;
+	/* 0x0 */ struct _opd1 MicroOp;
 	/* 0x0 */ UInt32 Opcode;
 };
 
 typedef struct { // 0x8
-	/* 0x0 */ _op_data OpcodeData;
+	/* 0x0 */ union _op_data OpcodeData;
 	/* 0x4 */ SInt32 Delay;
 } SFXGrain2;
 
-typedef struct *SFXGrain2Ptr { // 0x8
-	/* 0x0 */ _op_data OpcodeData;
-	/* 0x4 */ SInt32 Delay;
-};
+typedef SFXGrain2 *SFXGrain2Ptr;
 
 typedef struct { // 0xc
 	/* 0x0 */ SInt8 Vol;
@@ -839,15 +775,7 @@ typedef struct { // 0xc
 	/* 0x8 */ SFXGrainPtr FirstGrain;
 } SFX;
 
-typedef struct *SFXPtr { // 0xc
-	/* 0x0 */ SInt8 Vol;
-	/* 0x1 */ SInt8 VolGroup;
-	/* 0x2 */ SInt16 Pan;
-	/* 0x4 */ SInt8 NumGrains;
-	/* 0x5 */ SInt8 InstanceLimit;
-	/* 0x6 */ UInt16 Flags;
-	/* 0x8 */ SFXGrainPtr FirstGrain;
-};
+typedef SFX *SFXPtr;
 
 typedef struct { // 0xc
 	/* 0x0 */ SInt8 Vol;
@@ -859,15 +787,7 @@ typedef struct { // 0xc
 	/* 0x8 */ SFXGrain2Ptr FirstGrain;
 } SFX2;
 
-typedef struct *SFX2Ptr { // 0xc
-	/* 0x0 */ SInt8 Vol;
-	/* 0x1 */ SInt8 VolGroup;
-	/* 0x2 */ SInt16 Pan;
-	/* 0x4 */ SInt8 NumGrains;
-	/* 0x5 */ SInt8 InstanceLimit;
-	/* 0x6 */ UInt16 Flags;
-	/* 0x8 */ SFXGrain2Ptr FirstGrain;
-};
+typedef SFX2 *SFX2Ptr;
 
 typedef struct { // 0x10
 	/* 0x0 */ UInt32 data[4];
@@ -928,10 +848,10 @@ struct SNDModelNodeHeader_t { // 0x14
 	/* 0x04 */ UInt32 OutputRef;
 	/* 0x08 */ UInt32 InputRef;
 	/* 0x0c */ SInt32 WorkVal;
-	/* 0x10 */ SNDModelNodeHeader_t *Next;
+	/* 0x10 */ struct SNDModelNodeHeader_t *Next;
 };
 
-typedef SNDModelNodeHeader_t SNDModelNodeHeader;
+typedef struct SNDModelNodeHeader_t SNDModelNodeHeader;
 
 typedef struct { // 0x24
 	/* 0x00 */ SNDModelNodeHeader Header;
@@ -1006,7 +926,7 @@ typedef struct { // 0x3c
 	/* 0x24 */ void *VagsInSR;
 	/* 0x28 */ UInt32 VagDataSize;
 	/* 0x2c */ UInt32 SRAMAllocSize;
-	/* 0x30 */ SFXBlock *NextBlock;
+	/* 0x30 */ struct SFXBlock *NextBlock;
 	/* 0x34 */ SFXBlockNames *BlockNames;
 	/* 0x38 */ SFXUserData *SFXUD;
 } SFXBlock;
@@ -1030,7 +950,7 @@ typedef struct { // 0x40
 	/* 0x24 */ void *VagsInSR;
 	/* 0x28 */ UInt32 VagDataSize;
 	/* 0x2c */ UInt32 SRAMAllocSize;
-	/* 0x30 */ SFXBlock2 *NextBlock;
+	/* 0x30 */ struct SFXBlock2 *NextBlock;
 	/* 0x34 */ void *GrainData;
 	/* 0x38 */ SFXBlockNames *BlockNames;
 	/* 0x3c */ SFXUserData *SFXUD;
@@ -1053,20 +973,7 @@ typedef struct { // 0x28
 	/* 0x24 */ SInt32 PPQ;
 } MIDIBlockHeader;
 
-typedef struct *MIDIBlockHeaderPtr { // 0x28
-	/* 0x00 */ UInt32 DataID;
-	/* 0x04 */ SInt16 Version;
-	/* 0x06 */ SInt8 Flags;
-	/* 0x07 */ SInt8 pad1;
-	/* 0x08 */ UInt32 ID;
-	/* 0x0c */ void *NextMIDIBlock;
-	/* 0x10 */ UInt32 BankID;
-	/* 0x14 */ SoundBankPtr BankPtr;
-	/* 0x18 */ SInt8 *DataStart;
-	/* 0x1c */ SInt8 *MultiMIDIParent;
-	/* 0x20 */ UInt32 Tempo;
-	/* 0x24 */ SInt32 PPQ;
-};
+typedef MIDIBlockHeader *MIDIBlockHeaderPtr;
 
 typedef struct { // 0x14
 	/* 0x00 */ UInt32 DataID;
@@ -1078,15 +985,7 @@ typedef struct { // 0x14
 	/* 0x10 */ SInt8 *BlockPtr[1];
 } MultiMIDIBlockHeader;
 
-typedef struct *MultiMIDIBlockHeaderPtr { // 0x14
-	/* 0x00 */ UInt32 DataID;
-	/* 0x04 */ SInt16 Version;
-	/* 0x06 */ SInt8 Flags;
-	/* 0x07 */ SInt8 NumMIDIBlocks;
-	/* 0x08 */ UInt32 ID;
-	/* 0x0c */ void *NextMIDIBlock;
-	/* 0x10 */ SInt8 *BlockPtr[1];
-};
+typedef MultiMIDIBlockHeader *MultiMIDIBlockHeaderPtr;
 
 typedef struct { // 0x14
 	/* 0x00 */ UInt32 flags;
@@ -1095,7 +994,7 @@ typedef struct { // 0x14
 	/* 0x0c */ SInt8 vol;
 	/* 0x0d */ SInt8 sub_group;
 	/* 0x0e */ SInt16 pan;
-	/* 0x10 */ VAGStreamQueEntry *next;
+	/* 0x10 */ struct VAGStreamQueEntry *next;
 } VAGStreamQueEntry;
 
 typedef struct { // 0x4
@@ -1120,8 +1019,8 @@ typedef struct { // 0x2c
 	/* 0x00 */ UInt32 flags;
 	/* 0x04 */ SInt8 *IOPbuff;
 	/* 0x08 */ SInt8 *SPUbuff;
-	/* 0x0c */ VAGBuffer *list;
-	/* 0x10 */ VAGStreamHeader *owner;
+	/* 0x0c */ struct VAGBuffer *list;
+	/* 0x10 */ struct VAGStreamHeader *owner;
 	/* 0x14 */ SInt32 is_end;
 	/* 0x18 */ UInt32 bytes;
 	/* 0x1c */ char *shift_from;
@@ -1166,9 +1065,9 @@ typedef struct { // 0xd4
 	/* 0xc4 */ SInt8 master_volume;
 	/* 0xc5 */ SInt8 sub_group;
 	/* 0xc6 */ SInt16 master_pan;
-	/* 0xc8 */ VAGStreamHeader *sync_list;
-	/* 0xcc */ VAGStreamHeader *next;
-	/* 0xd0 */ VAGStreamHandler *handler;
+	/* 0xc8 */ struct VAGStreamHeader *sync_list;
+	/* 0xcc */ struct VAGStreamHeader *next;
+	/* 0xd0 */ struct VAGStreamHandler *handler;
 } VAGStreamHeader;
 
 typedef VAGStreamHeader *VAGStreamHeaderPtr;
@@ -1178,7 +1077,7 @@ typedef struct { // 0x10
 	/* 0x0 */ UInt32 Flags;
 	/* 0x4 */ SInt16 delta_counter;
 	/* 0x6 */ SInt16 delta_type;
-	/* 0x8 */ EffectChain *next;
+	/* 0x8 */ struct EffectChain *next;
 	/* 0xc */ EffectProcPtr proc;
 } EffectChain;
 
@@ -1228,15 +1127,15 @@ struct GenericSoundHandler { // 0x34
 	/* 0x16 */ UInt8 flags;
 	/* 0x17 */ SInt8 VolGroup;
 	/* 0x18 */ VoiceFlags Voices;
-	/* 0x20 */ GenericSoundHandler *prev;
-	/* 0x24 */ GenericSoundHandler *next;
-	/* 0x28 */ GenericSoundHandler *parent;
-	/* 0x2c */ GenericSoundHandler *first_child;
-	/* 0x30 */ GenericSoundHandler *siblings;
+	/* 0x20 */ struct GenericSoundHandler *prev;
+	/* 0x24 */ struct GenericSoundHandler *next;
+	/* 0x28 */ struct GenericSoundHandler *parent;
+	/* 0x2c */ struct GenericSoundHandler *first_child;
+	/* 0x30 */ struct GenericSoundHandler *siblings;
 };
 
-typedef GenericSoundHandler GSoundHandler;
-typedef GenericSoundHandler *GSoundHandlerPtr;
+typedef struct GenericSoundHandler GSoundHandler;
+typedef struct GenericSoundHandler *GSoundHandlerPtr;
 
 typedef struct { // 0x124
 	/* 0x000 */ GSoundHandler SH;
@@ -1288,8 +1187,8 @@ struct SoundHandler { // 0x40
 	/* 0x3c */ UInt32 Duration;
 };
 
-typedef SoundHandler VAGSoundHandler;
-typedef SoundHandler *VAGSoundHandlerPtr;
+typedef struct SoundHandler VAGSoundHandler;
+typedef struct SoundHandler *VAGSoundHandlerPtr;
 
 typedef struct { // 0xc0
 	/* 0x00 */ GSoundHandler SH;
@@ -1361,13 +1260,13 @@ struct block_data { // 0x4
 };
 
 union ownerdata_tag { // 0xc
-	/* 0x0 */ basic_data BasicData;
-	/* 0x0 */ midi_data MIDIData;
-	/* 0x0 */ block_data BlockData;
+	/* 0x0 */ struct basic_data BasicData;
+	/* 0x0 */ struct midi_data MIDIData;
+	/* 0x0 */ struct block_data BlockData;
 };
 
 typedef struct { // 0x38
-	/* 0x00 */ VoiceAttributes *playlist;
+	/* 0x00 */ struct VoiceAttributes *playlist;
 	/* 0x04 */ SInt32 voice;
 	/* 0x08 */ UInt32 Status;
 	/* 0x0c */ GSoundHandlerPtr Owner;
@@ -1382,7 +1281,7 @@ typedef struct { // 0x38
 	/* 0x24 */ SInt16 Current_PB;
 	/* 0x26 */ SInt16 Current_PM;
 	/* 0x28 */ UInt32 Flags;
-	/* 0x2c */ ownerdata_tag OwnerData;
+	/* 0x2c */ union ownerdata_tag OwnerData;
 } VoiceAttributes;
 
 typedef VoiceAttributes *VoiceAttributesPtr;
@@ -1422,10 +1321,10 @@ union snd_tag { // 0x10
 };
 
 typedef struct { // 0x30
-	/* 0x00 */ bank_tag bank_spec;
+	/* 0x00 */ union bank_tag bank_spec;
 	/* 0x08 */ SInt32 vol;
 	/* 0x0c */ SInt32 pan;
-	/* 0x10 */ snd_tag snd_spec;
+	/* 0x10 */ union snd_tag snd_spec;
 	/* 0x20 */ SInt16 pitch_mod;
 	/* 0x22 */ SInt16 pitch_bend;
 	/* 0x24 */ SInt8 reg[4];
@@ -1752,13 +1651,13 @@ struct sSRAMNode_tag { // 0x18
 	/* 0x00 */ UInt32 loc;
 	/* 0x04 */ UInt32 size;
 	/* 0x08 */ UInt32 in_use;
-	/* 0x0c */ sSRAMNode_tag *root;
-	/* 0x10 */ sSRAMNode_tag *smaller;
-	/* 0x14 */ sSRAMNode_tag *bigger;
+	/* 0x0c */ struct sSRAMNode_tag *root;
+	/* 0x10 */ struct sSRAMNode_tag *smaller;
+	/* 0x14 */ struct sSRAMNode_tag *bigger;
 };
 
-typedef sSRAMNode_tag sSRAMNode;
-typedef sSRAMNode_tag *sSRAMNodePtr;
+typedef struct sSRAMNode_tag sSRAMNode;
+typedef struct sSRAMNode_tag *sSRAMNodePtr;
 
 typedef struct { // 0x4
 	/* 0x0 */ SInt16 min;

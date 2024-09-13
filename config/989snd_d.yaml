@@ -14,6 +14,8 @@ options:
     symbol_addrs_path: config/symbol_addrs.txt
     undefined_funcs_auto_path: config/undefined_funcs_auto.txt
     undefined_syms_auto_path:  config/undefined_syms_auto.txt
+
+    named_regs_for_c_funcs: False
     
     # compiler 
     compiler: GCC

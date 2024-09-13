@@ -19,7 +19,7 @@ options:
     
     # compiler 
     compiler: GCC
-    platform: ps2
+    platform: psx
 
     string_encoding: ASCII
     

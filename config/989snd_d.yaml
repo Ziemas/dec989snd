@@ -23,19 +23,19 @@ options:
 
     string_encoding: ASCII
     
-    section_order: [".iopmod", ".text", ".rodata", ".data", ".sbss", ".bss"]
+    section_order: [".iopmod", ".text", ".rel.text", ".rodata", ".rel.rodata", ".data", ".rel.data", ".sbss", ".bss"]
 
 segments:
     - [0, databin, elf_header]
     - [0x74, databin, iopmod]
-    - name: main
+    - name: text
       type: code
       start: 0xa0
       vram: 0x0
       bss_size: 0x9df0
       subsegments:
         # .text
-        - [0xa0, asm,989snd]
+        - [0xa0, c, 989snd]
         - [0x3efc, asm, LFO]
         - [0x4e68, asm, ame]
         - [0x6990, asm, autopan]
@@ -72,5 +72,8 @@ segments:
         
     - [0x3cf94, databin] # .mdebug
     - [0x134c30, databin] # .shstrtab
+    - [0x134ecc, databin] # .rel.text
+    - [0x145da4, databin] # .rel.rodata
+    - [0x145f1c, databin] # .rel.data
     - [0x146424, databin] # .symtab
     - [0x149d64, databin] # .strtab

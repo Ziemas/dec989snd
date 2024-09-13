@@ -24,6 +24,8 @@
 //   unsigned int             32-bit unsigned integer
 //   void                     void
 
+#include "include_asm.h"
+
 typedef struct { // 0x8
 	/* 0x0 */ int real;
 	/* 0x4 */ int imag;

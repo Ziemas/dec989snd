@@ -3,6 +3,7 @@ BUILDDIR := build
 CFLAGS := -G 0 -O0 -gstabs -Iinclude -Wa,-g
 LDFLAGS := -Tconfig/undefined_syms_auto.txt -Tconfig/undefined_funcs_auto.txt -T$(TARGET).ld -Map $(BUILDDIR)/$(TARGET).map
 ASFLAGS := -Iinclude -G0 -g2 -O1 -no-pad-sections
+MASPSXFLAGS := --aspsx-version=2.78
 
 CC := iop-gcc
 MASPSX := python tools/maspsx/maspsx.py
@@ -19,11 +20,7 @@ SRCS += $(call wildcard,asm/*.s)
 OBJECTS := $(patsubst %.c,$(BUILDDIR)/%.c.o,$(filter %.c,$(SRCS)))
 OBJECTS += $(patsubst %.s,$(BUILDDIR)/%.s.o,$(filter %.s,$(SRCS)))
 
-all: fixup $(BUILDDIR)/$(TARGET)
-
-# This causes make to always rebuild, but whatever
-fixup:
-	find . -name '*.s' | xargs sed -i 's/break[[:space:]]*0,[[:space:]]*7/break 7/'
+all: $(BUILDDIR)/$(TARGET)
 
 #$(BUILDDIR)/$(TARGET): $(BUILDDIR)/$(TARGET).o
 #	iopfixup -o $@ $(BUILDDIR)/$(TARGET).o
@@ -42,7 +39,7 @@ $(BUILDDIR)/%.c.s: %.c
 
 $(BUILDDIR)/%.s.o: %.s
 	@mkdir -p $(dir $@)
-	$(MASPSX) $< | $(AS) -o $@ $(ASFLAGS) 
+	$(MASPSX) $(MASPSXFLAGS) $< | $(AS) -o $@ $(ASFLAGS) 
 
 .PHONY: clean
 

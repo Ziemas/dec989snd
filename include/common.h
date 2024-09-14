@@ -1,3 +1,6 @@
+#ifndef _COMMON_H_
+#define _COMMON_H_
+
 // File written by stdump development version on 2024-09-13
 // 
 // Input file:
@@ -25,6 +28,8 @@
 //   void                     void
 
 #include "include_asm.h"
+#define NULL (void *)0
+typedef enum { false, true };
 
 typedef unsigned int size_t;
 typedef int ssize_t;
@@ -1668,3 +1673,5 @@ typedef struct { // 0x4
 	/* 0x0 */ SInt16 min;
 	/* 0x2 */ SInt16 max;
 } VoiceRange;
+
+#endif

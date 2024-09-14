@@ -2,6 +2,8 @@
 #include "functions.h"
 #include "globals.h"
 
+//INCLUDE_RODATA("asm/data/", 989snd);
+
 /* data 0 */ UInt16 g989Version = 0x301;
 /* data 4 */ ModuleInfo Module  = {"989snd_Library", 0x301};
 /* data c */ Extern989MonitorInfo *g989Monitor = NULL;

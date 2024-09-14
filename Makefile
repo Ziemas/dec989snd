@@ -1,11 +1,13 @@
 TARGET := 989SND_D.IRX
 BUILDDIR := build
-CFLAGS := -G 0 -O0 -gstabs -Iinclude -Wa,-g
+CFLAGS := -G 0 -O0 -gstabs -Iinclude
 LDFLAGS := -Tconfig/undefined_syms_auto.txt -Tconfig/undefined_funcs_auto.txt -T$(TARGET).ld -Map $(BUILDDIR)/$(TARGET).map
 ASFLAGS := -Iinclude -G0 -g2 -O1 -no-pad-sections
 MASPSXFLAGS := --aspsx-version=2.78
+CPPFLAGS := -ffreestanding -Iinclude
 
-CC := iop-gcc
+CC := tools/gcc-2.95.2/cc1
+CPP := cpp
 MASPSX := python tools/maspsx/maspsx.py
 AS := mipsel-none-elf-as
 LD := mipsel-none-elf-ld
@@ -33,9 +35,9 @@ $(BUILDDIR)/$(TARGET): $(OBJECTS)
 	@mkdir -p $(dir $@)
 	$(LD) -o $@ $(OBJECTS) $(LDFLAGS)
 
-$(BUILDDIR)/%.c.s: %.c
+$(BUILDDIR)/%.c.o: %.c
 	@mkdir -p $(dir $@)
-	$(CC) -S -o $@ $< $(CFLAGS)
+	$(CPP) $(CPPFLAGS) $< | $(CC) $(CFLAGS) | $(MASPSX) $(MASPSXFLAGS) | $(AS) $(ASFLAGS) -o $@
 
 $(BUILDDIR)/%.s.o: %.s
 	@mkdir -p $(dir $@)

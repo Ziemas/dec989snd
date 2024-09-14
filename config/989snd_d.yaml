@@ -15,6 +15,7 @@ options:
     undefined_funcs_auto_path: config/undefined_funcs_auto.txt
     undefined_syms_auto_path:  config/undefined_syms_auto.txt
 
+    migrate_rodata_to_functions: False
     named_regs_for_c_funcs: False
     
     # compiler 
@@ -63,7 +64,15 @@ segments:
         - [0x3a240, asm, export_stub]
         - [0x3a460, asm, import_stub]
          # .rodata
+        #- [0x3a80c, .rodata, 989snd]
         - [0x3a80c, rodata]
+        - [0x3aaf4, rodata, LFO]
+        - [0x3ab98, rodata, loader]
+        - [0x3ac48, rodata, playsnd]
+        - [0x3ac4f, rodata, sndhand]
+        - [0x3ad68, rodata, sram]
+        - [0x3ad98, rodata, stick]
+        - [0x3ae94, rodata, stream]
         # .data
         - [0x3b018, .data, 989snd]
         - [0x3b200, data, LFO]

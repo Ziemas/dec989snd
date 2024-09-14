@@ -130,7 +130,6 @@
 /* bss 0 */ SInt8 snd_LOADER_MESSAGE_RECIEVE_BUFFER[256];
 /* bss 100 */ UInt32 snd_LOADER_MESSAGE_RETURN_BUFFER[4];
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_RegisterExternProcHandler);
 BOOL snd_RegisterExternProcHandler(Extern989HandlerPtr hand) {
     Extern989HandlerPtr work;
 
@@ -155,7 +154,6 @@ BOOL snd_RegisterExternProcHandler(Extern989HandlerPtr hand) {
     return true;
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_UnregisterExternProcHandler);
 BOOL snd_UnregisterExternProcHandler(Extern989HandlerPtr hand) {
     Extern989HandlerPtr work;
 
@@ -177,7 +175,6 @@ BOOL snd_UnregisterExternProcHandler(Extern989HandlerPtr hand) {
     return true;
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_FindExternProcHandler);
 Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id) {
     Extern989HandlerPtr work;
     
@@ -190,9 +187,6 @@ Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id) {
     return work;
 }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_DoExternCall);
-#else
 SInt32 snd_DoExternCall(UInt32 proc_id, SInt32 func_index, SInt32 arg1, SInt32 arg2, SInt32 arg3, SInt32 arg4, SInt32 arg5) {
     Extern989HandlerPtr work;
 
@@ -209,11 +203,7 @@ SInt32 snd_DoExternCall(UInt32 proc_id, SInt32 func_index, SInt32 arg1, SInt32 a
 
     return work->procs[func_index](arg1, arg2, arg3, arg4, arg5);
 }
-#endif
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_DoExternCallWithData);
-#else
 SInt32 snd_DoExternCallWithData(UInt32 proc_id, SInt32 func_index, SInt32 data_size, void *data_ptr) {
     Extern989HandlerPtr work;
 
@@ -230,9 +220,7 @@ SInt32 snd_DoExternCallWithData(UInt32 proc_id, SInt32 func_index, SInt32 data_s
 
     return work->procs[func_index](data_size, (SInt32)data_ptr, 0, 0, 0);
 }
-#endif
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_INIT);
 void snd_CMD_SL_INIT(SInt8 *msg_data) {
     UInt32 *data;
 
@@ -241,17 +229,14 @@ void snd_CMD_SL_INIT(SInt8 *msg_data) {
     snd_StartSoundSystemEx(data[1]);
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CLOSE);
 void snd_CMD_SL_CLOSE(SInt8 *msg_data) {
     snd_StopSoundSystem();
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADBANK);
 void snd_CMD_SL_LOADBANK(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)snd_BankLoadEx(&msg_data[4], *(SInt32 *)msg_data, 0, 0);
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADBANKBYLOC);
 void snd_CMD_SL_LOADBANKBYLOC(SInt8 *msg_data) {
     SInt32 *data;
 
@@ -259,7 +244,6 @@ void snd_CMD_SL_LOADBANKBYLOC(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)snd_BankLoadByLocEx(data[0], data[1], 0, 0);
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_BANKLOADFROMEE);
 void snd_CMD_SL_BANKLOADFROMEE(SInt8 *msg_data) {
     UInt32 *data;
 
@@ -267,7 +251,6 @@ void snd_CMD_SL_BANKLOADFROMEE(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)snd_BankLoadFromEEEx(data[0], 0, 0);
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_BANKLOADFROMIOP);
 void snd_CMD_SL_BANKLOADFROMIOP(SInt8 *msg_data) {
     UInt32 *data;
 
@@ -275,7 +258,6 @@ void snd_CMD_SL_BANKLOADFROMIOP(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)snd_BankLoadFromIOPEx((void *)data[0], 0, 0);
 }
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADMMD);
 void snd_CMD_SL_LOADMMD(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)snd_MMDLoad((char *)&msg_data[4], *(SInt32 *)msg_data);
 }
@@ -478,29 +460,216 @@ INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CDSTATUS);
 
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_COMMAND_BATCH);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_EEMessageParser);
+static void* snd_EEMessageParser(UInt32 command, void *data, SInt32 size) {
+    gWriteBackdataOffset = snd_MESSAGE_RETURN_BUFFER + 1;
+    gCommandFunc[command](data);
+    gWriteBackdataOffset[1] = -1;
+    return snd_MESSAGE_RETURN_BUFFER;
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_StartEEMessaging);
+SInt32 snd_StartEEMessaging() {
+    sceSifQueueData qd;
+    sceSifServeData sd;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_EELoaderMessageParser);
+    *(SInt32 *)snd_MESSAGE_RETURN_BUFFER = -1;
+    sceSifInitRpc(0);
+    sceSifSetRpcQueue(&qd, GetThreadId());
+    sceSifRegisterRpc(&sd, 0x123456, snd_EEMessageParser, snd_MESSAGE_RECIEVE_BUFFER, NULL, NULL, &qd);
+    sceSifRpcLoop(&qd);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_StartEELoaderMessaging);
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", start);
+static void* snd_EELoaderMessageParser(UInt32 command, void *data, SInt32 size) {
+    SInt32 ret_val = 0;
+    
+    switch (command) {
+    case SL_LOADBANK:
+        ret_val = (SInt32)snd_BankLoadEx((char *)&data[4], *(SInt32 *)&data[0], 0, 0);
+        break;
+    case SL_LOADBANKBYLOC:
+        ret_val = (SInt32)snd_BankLoadByLocEx(*(SInt32 *)&data[0], *(SInt32 *)&data[4], 0, 0);
+        break;
+    case SL_LOADMMD:
+        ret_val = (SInt32)snd_MMDLoad((char *)&data[4], *(SInt32 *)data);
+        break;
+    case SL_LOADMMDBYLOC:
+        ret_val = (SInt32)snd_MMDLoadByLoc(*(SInt32 *)&data[0], *(SInt32 *)&data[4]);
+        break;
+    case SL_BANKLOADFROMEE:
+        ret_val = (SInt32)snd_BankLoadFromEEEx(*(SInt32 *)&data[0], 0, 0);
+        break;
+    case SL_BANKLOADFROMIOP:
+        ret_val = (SInt32)snd_BankLoadFromIOPEx(*(void **)&data[0], 0, 0);
+        break;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_ParseCommandLineArg);
+    snd_LOADER_MESSAGE_RETURN_BUFFER[0] = ret_val;
+    return snd_LOADER_MESSAGE_RETURN_BUFFER;
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_GetVal);
+SInt32 snd_StartEELoaderMessaging() {
+    sceSifQueueData qd;
+    sceSifServeData sd;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_DumpVersionAndInfo);
+    sceSifInitRpc(0);
+    sceSifSetRpcQueue(&qd, GetThreadId());
+    sceSifRegisterRpc(&sd, 0x123457, snd_EELoaderMessageParser, snd_LOADER_MESSAGE_RECIEVE_BUFFER, NULL, NULL, &qd);
+    sceSifRpcLoop(&qd);
 
-//INCLUDE_ASM("asm/nonmatchings/989snd", snd_RegisterErrorDisplayFunc);
+    return 0;
+}
+
+SInt32 start(SInt32 argc, SInt8 **argv) {
+    struct SemaParam sema;
+    struct ThreadParam param;
+    SInt32 th, x, dis, oldstat;
+    int i;
+    char *walk;
+
+    for (x = 1; x < argc; x++) {
+        snd_ParseCommandLineArg(argv[x]);
+    }
+
+    InitResidentModule();
+    snd_DumpVersionAndInfo();
+    if (!sceSifCheckInit()) {
+        sceSifInit();
+    }
+    sceSifInitRpc(0);
+
+    if (gDoRPC) {
+        dis = CpuSuspendIntr(&oldstat);
+        snd_MESSAGE_RECIEVE_BUFFER = AllocSysMemory(0, 0x1000, 0);
+        if (!snd_MESSAGE_RECIEVE_BUFFER) {
+            snd_ShowError(5, 0, 0, 0, 0);
+            return 1;
+        }
+
+        walk = snd_MESSAGE_RECIEVE_BUFFER;
+        for (i = 0; i < 0x1000U; i++) {
+            walk[i] = -85;
+        }
+
+        snd_MESSAGE_RETURN_BUFFER = AllocSysMemory(0, 0x420, 0);
+        if (!snd_MESSAGE_RETURN_BUFFER) {
+            snd_ShowError(6, 0, 0, 0, 0);
+            return 1;
+        }
+
+        if (!dis) {
+            CpuResumeIntr(oldstat);
+        }
+
+        gWriteBackdataOffset = snd_MESSAGE_RETURN_BUFFER + 1;
+
+        sema.attr = SA_THFIFO;
+        sema.initCount = 0;
+        sema.maxCount = 1;
+
+        gEEDMADoneSema = CreateSema(&sema);
+        gFileReadMutex = CreateSema(&sema);
+        SignalSema(gFileReadMutex);
+
+        param.attr = TH_C;
+        param.entry = snd_StartEEMessaging;
+        param.initPriority = gThreadPriority_RPC;
+        param.stackSize = 0x1000;
+        param.option = 0;
+
+        gMainRPCThreadId = CreateThread(&param);
+        if (gMainRPCThreadId <= 0) {
+            return 1;
+        }
+
+        StartThread(gMainRPCThreadId, 0);
+
+        param.attr = TH_C;
+        param.entry = snd_StartEELoaderMessaging;
+        param.initPriority = gThreadPriority_RPC + 1;
+        param.stackSize = 0x800;
+        param.option = 0;
+
+        th = CreateThread(&param);
+        if (th <= 0) {
+            return 1;
+        }
+
+        StartThread(th, 0);
+    }
+
+    return 0;
+}
+
+void snd_ParseCommandLineArg(char *arg) {
+    if (!strncmp(arg, "tick_priority", 13)) {
+        gThreadPriority_TICK = snd_GetVal(arg + 13);
+    } else if (!strncmp(arg, "rpc_priority", 12)) {
+        gThreadPriority_RPC = snd_GetVal(arg + 12);
+    } else if (!strncmp(arg, "stream_priority", 15)) {
+        gThreadPriority_STREAM = snd_GetVal(arg + 15);
+    } else if (!strncmp(arg, "do_rpc", 6)) {
+        gDoRPC = snd_GetVal(arg + 6) == 1;
+    } else if (!strncmp(arg, "limit_2meg", 10)) {
+        gLimit2Meg = true;
+    } else {
+        snd_ShowError(7, (SInt32)arg, 0, 0, 0);
+    }
+}
+
+SInt32 snd_GetVal(char *st) {
+    while (*st != '-' && (*st < '0' || *st >= ':') && *st) {
+        st++;
+    }
+
+    if (*st == '\0') {
+        return 0;
+    }
+
+    return strtol(st, NULL, 10);
+}
+
+void snd_DumpVersionAndInfo() {
+    printf("\n");
+    printf("==========================================================\n");
+    printf(" 989snd (c)2000-2003 Sony Computer Entertainment America\n");
+    printf(" by Buzz Burrowes                               v%d.%d.%d\n", 3, 1, 2);
+    printf("                        (built %s at %s)\n", "Nov 19 2003", "14:31:04");
+    printf(" (build with sce library rev %d.%d.%d)\n", 2, 7, 0);
+    printf("==========================================================\n");
+    printf("    Thread Priorities:\n");
+    printf("                         Sound Tick = %d\n", gThreadPriority_TICK);
+    printf("                           Main RPC = %d\n", gThreadPriority_RPC);
+    printf("                        Loading RPC = %d\n", gThreadPriority_RPC + 1);
+    printf("                          Streaming = %d, %d, %d, %d\n", 
+        gThreadPriority_STREAM, gThreadPriority_STREAM + 1, gThreadPriority_STREAM + 2, gThreadPriority_STREAM + 3);
+    printf("   Memory Locations...\n");
+    printf("       Voice Allocator Owner  : 0x%8.8x\n", &gVAllocOwnerID);
+    printf("       Master Tick Owner List : 0x%8.8x\n", gMasterTickOwner);
+    printf("==========================================================\n");
+    printf("\n");
+}
+
 void snd_RegisterErrorDisplayFunc(SndErrorDisplayFunc func) {
     gErrorDisplayFunc = func;
 }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_ShowError);
+void snd_ShowError(SInt32 num, UInt32 a1, UInt32 a2, UInt32 a3, UInt32 a4) {
+    if (!gErrorDisplayFunc) {
+        if (!gPrefs_Silent) {
+            printf("989snd Error: cause %d -> %u, %u, %u, %u\n", num, a1, a2, a3, a4);
+        }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_EEDMADone);
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_Install989Monitor);
+    gErrorDisplayFunc(num, a1, a2, a3, a4);
+}
+
+void snd_EEDMADone(SInt32 *sema_id_ptr) {
+    iSignalSema(*sema_id_ptr);
+}
+
+void snd_Install989Monitor(Extern989MonitorInfo *mon) {
+    g989Monitor = mon;
+}

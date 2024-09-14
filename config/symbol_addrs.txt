@@ -1,3 +1,63 @@
+sysmem_stub = 0x3a3c0; // size:0x14
+AllocSysMemory = 0x3a3d4; // type:func size:0x8
+FreeSysMemory = 0x3a3dc; // type:func size:0x8
+QueryMaxFreeMemSize = 0x3a3e4; // type:func size:0x8
+
+intrman_stub = 0x3a3f4; // size:0x14
+CpuSuspendIntr = 0x3a408; // type:func size:0x8
+CpuResumeIntr = 0x3a410; // type:func size:0x8
+
+ioman_stub = 0x3a420; // size:0x14
+open = 0x3a434; // type:func size:0x8
+close = 0x3a43c; // type:func size:0x8
+read = 0x3a444; // type:func size:0x8
+lseek = 0x3a44c; // type:func size:0x8
+
+loadcore_stub = 0x3a45c; // size:0x14
+RegisterLibraryEntries = 0x3a470; // type:func size:0x8
+
+sifcmd_stub = 0x3a480; // size:0x14
+sceSifInitRpc = 0x3a494; // type:func size:0x8
+sceSifRegisterRpc = 0x3a49c; // type:func size:0x8
+sceSifSetRpcQueue = 0x3a4a4; // type:func size:0x8
+sceSifRpcLoop = 0x3a4ac; // type:func size:0x8
+sceSifGetOtherData = 0x3a4b4; // type:func size:0x8
+
+sifman_stub = 0x3a4c4; // size:0x14
+sceSifInit = 0x3a4d8; // type:func size:0x8
+sceSifDmaStat = 0x3a4e0; // type:func size:0x8
+sceSifCheckInit = 0x3a4e8; // type:func size:0x8
+sceSifSetDmaIntr = 0x3a4f0; // type:func size:0x8
+
+stdio_stub = 0x3a500; // size:0x14
+printf = 0x3a514; // type:func size:0x8
+
+sysclib_stub = 0x3a524; // size:0x14
+memcpy = 0x3a538; // type:func size:0x8
+memmove = 0x3a540; // type:func size:0x8
+memset = 0x3a548; // type:func size:0x8
+strncmp = 0x3a550; // type:func size:0x8
+strtol = 0x3a558; // type:func size:0x8
+
+thbase_stub = 0x3a568; // size:0x14
+CreateThread = 0x3a57c; // type:func size:0x8
+DeleteThread = 0x3a584; // type:func size:0x8
+StartThread = 0x3a58c; // type:func size:0x8
+TerminateThread = 0x3a594; // type:func size:0x8
+GetThreadId = 0x3a59c; // type:func size:0x8
+ReferThreadStatus = 0x3a5a4; // type:func size:0x8
+SleepThread = 0x3a5ac; // type:func size:0x8
+WakeupThread = 0x3a5b8; // type:func size:0x8
+iWakeupThread = 0x3a5bc; // type:func size:0x8
+DelayThread = 0x3a5c4; // type:func size:0x8
+USec2SysClock = 0x3a5cc; // type:func size:0x8
+
+thsemap_stub = 0x3a5dc; // size:0x14
+CreateSema = 0x3a5f0; // type:func size:0x8
+DeleteSema = 0x3a5f8; // type:func size:0x8
+SignalSema = 0x3a600; // type:func size:0x8
+iSignalSema = 0x3a608; // type:func size:0x8
+
 snd_RegisterExternProcHandler = 0x0; // type:func size:0x120
 snd_UnregisterExternProcHandler = 0x120; // type:func size:0x140
 snd_FindExternProcHandler = 0x260; // type:func size:0xac

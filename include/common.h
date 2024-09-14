@@ -270,6 +270,23 @@ struct SysClock { // 0x8
 	/* 0x4 */ u_int hi;
 };
 
+#define AT_THFIFO	0
+#define AT_THPRI	1
+#define AT_SINGLE	0
+#define AT_MULTI	2
+#define AT_MSFIFO	0
+#define AT_MSPRI	4
+
+#define SA_THFIFO	AT_THFIFO
+#define SA_THPRI	AT_THPRI
+#define SA_IHTHPRI	0x100
+
+#define TH_ASM		0x01000000
+#define TH_C		0x02000000
+#define TH_UMODE	0x00000008
+#define TH_NO_FILLSTACK	0x00100000
+#define TH_CLEAR_STACK	0x00200000
+
 struct ThreadParam { // 0x14
 	/* 0x00 */ u_int attr;
 	/* 0x04 */ u_int option;
@@ -1583,7 +1600,7 @@ enum {
 };
 
 typedef void (*SpuTransferCallbackProc)(/* parameters unknown */);
-typedef void (*CommandHandler)(/* parameters unknown */);
+typedef void (*CommandHandler)(SInt8 *data);
 typedef SInt32 (*LFOFunction)(/* parameters unknown */);
 typedef SInt32 (*GrainHandler)(/* parameters unknown */);
 

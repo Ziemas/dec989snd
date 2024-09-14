@@ -6,7 +6,7 @@ ASFLAGS := -Iinclude -G0 -g2 -O1 -no-pad-sections
 MASPSXFLAGS := --aspsx-version=2.78
 CPPFLAGS := -ffreestanding -Iinclude
 
-CC := tools/gcc-2.95.2/cc1
+CC := wine tools/gcc-2.95.2/cc1.exe
 CPP := cpp
 MASPSX := python tools/maspsx/maspsx.py
 AS := mipsel-none-elf-as

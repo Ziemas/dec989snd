@@ -6,4 +6,16 @@
 // loader.c
 extern char *gEEStatusAddr;
 
+// init.c
+extern BOOL gPrefs_Silent;
+
+// loader.c
+extern BOOL gLimit2Meg;
+
+// stick.c
+extern UInt32 gMasterTickOwner[32];
+
+// valloc.c
+extern UInt32 gVAllocOwnerID;
+
 #endif

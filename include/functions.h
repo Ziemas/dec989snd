@@ -3,9 +3,34 @@
 
 #include "common.h"
 
+// imports
+int printf(const char* fmt, ...);
+int strtol(const char *, char **, int);
+int strncmp(const char *, const char *, int);
+int sceSifCheckInit();
+int sceSifInit();
+int sceSifInitRpc(int);
+int CpuSuspendIntr(int *oldstat);
+int CpuResumeIntr(int oldstat);
+void *AllocSysMemory(int type, unsigned long size, void *addr);
+int FreeSysMemory(void *area);
+int CreateSema(struct SemaParam *param);
+int DeleteSema(int semid);
+int SignalSema(int semid);
+int iSignalSema(int semid);
+int CreateThread(struct ThreadParam *param);
+int StartThread(int thid, u_long arg);
+int GetThreadId(void);
+void sceSifRpcLoop(sceSifQueueData *);
+void sceSifRegisterRpc(sceSifServeData *, unsigned int,sceSifRpcFunc,void *,sceSifRpcFunc,void *,sceSifQueueData *);
+void sceSifSetRpcQueue(sceSifQueueData *, int);
+
 // 989snd.c
 Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id);
 void snd_ShowError(SInt32 num, UInt32 a1, UInt32 a2, UInt32 a3, UInt32 a4);
+SInt32 snd_GetVal(char *st);
+void snd_ParseCommandLineArg(char *arg);
+void snd_DumpVersionAndInfo();
 
 // temporarily here?
 void snd_CMD_SL_INIT(SInt8 *msg_data);
@@ -125,5 +150,9 @@ SoundBankPtr snd_BankLoadByLocEx( SInt32 sect_loc, SInt32 file_offset, UInt32 sp
 SoundBankPtr snd_BankLoadFromEEEx(UInt32 ee_loc, UInt32 spu_mem_loc, UInt32 spu_mem_size);
 SoundBankPtr snd_BankLoadFromIOPEx(void *iop_loc, UInt32 spu_mem_loc, UInt32 spu_mem_size);
 MultiMIDIBlockHeaderPtr snd_MMDLoad(SInt8 *name, SInt32 offset);
+MultiMIDIBlockHeaderPtr snd_MMDLoadByLoc(SInt32 sect_loc, SInt32 file_offset);
+
+// extern.c
+SInt32 InitResidentModule();
 
 #endif

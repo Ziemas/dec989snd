@@ -2,22 +2,129 @@
 #include "functions.h"
 #include "globals.h"
 
-/* data 0 */ UInt16 g989Version;
-/* data 4 */ ModuleInfo Module;
-/* data c */ Extern989MonitorInfo *g989Monitor;
-/* data 10 */ SInt32 gThreadPriority_TICK;
-/* data 14 */ SInt32 gThreadPriority_RPC;
-/* data 18 */ SInt32 gThreadPriority_STREAM;
-/* data 1c */ SInt32 gMainRPCThreadId;
-/* data 20 */ SInt32 gEEDMADoneSema;
-/* data 24 */ SInt32 gFileReadMutex;
-/* data 28 */ BOOL gDoRPC;
-/* data 2c */ SInt8 *snd_MESSAGE_RECIEVE_BUFFER;
-/* data 30 */ UInt32 *snd_MESSAGE_RETURN_BUFFER;
-/* data 34 */ UInt32 *gWriteBackdataOffset;
-/* data 38 */ Extern989HandlerPtr gExternHandlersList;
-/* data 3c */ CommandHandler gCommandFunc[0];
-/* data 1e4 */ SndErrorDisplayFunc gErrorDisplayFunc;
+/* data 0 */ UInt16 g989Version = 0x301;
+/* data 4 */ ModuleInfo Module  = {"989snd_Library", 0x301};
+/* data c */ Extern989MonitorInfo *g989Monitor = NULL;
+/* data 10 */ SInt32 gThreadPriority_TICK = 0x9;
+/* data 14 */ SInt32 gThreadPriority_RPC = 0x3a;
+/* data 18 */ SInt32 gThreadPriority_STREAM = 0x3c;
+/* data 1c */ SInt32 gMainRPCThreadId = 0;
+/* data 20 */ SInt32 gEEDMADoneSema = 0;
+/* data 24 */ SInt32 gFileReadMutex = 0;
+/* data 28 */ BOOL gDoRPC = true;
+/* data 2c */ SInt8 *snd_MESSAGE_RECIEVE_BUFFER = NULL;
+/* data 30 */ UInt32 *snd_MESSAGE_RETURN_BUFFER = NULL;
+/* data 34 */ UInt32 *gWriteBackdataOffset = NULL;
+/* data 38 */ Extern989HandlerPtr gExternHandlersList = NULL;
+/* data 3c */ CommandHandler gCommandFunc[] = {
+    snd_CMD_SL_INIT,
+    snd_CMD_SL_CLOSE,
+    snd_CMD_SL_LOADBANK,
+    snd_CMD_SL_LOADBANKBYLOC,
+    snd_CMD_SL_LOADMMD,
+    snd_CMD_SL_LOADMMDBYLOC,
+    snd_CMD_SL_UNLOADBANK_A,
+    snd_CMD_SL_UNLOADMIDI_A,
+    snd_CMD_SL_RESOLVEBANKS,
+    snd_CMD_SL_SETMASTERVOL_A,
+    snd_CMD_SL_GETMASTERVOL,
+    snd_CMD_SL_SETPLAYBACKMODE_A,
+    snd_CMD_SL_GETPLAYBACKMODE,
+    snd_CMD_SL_SETMIXERMODE_A,
+    snd_CMD_SL_SETREVERBTYPE,
+    snd_CMD_SL_SETREVERBDEPTH,
+    snd_CMD_SL_AUTOVERB,
+    snd_CMD_SL_PLAYSOUND,
+    snd_CMD_SL_PLAYSOUND_A,
+    snd_CMD_SL_PAUSESOUND,
+    snd_CMD_SL_CONTINUESOUND,
+    snd_CMD_SL_STOPSOUND,
+    snd_CMD_SL_PAUSEALLSOUNDS,
+    snd_CMD_SL_CONTINUEALLSOUNDS,
+    snd_CMD_SL_STOPALLSOUNDS,
+    snd_CMD_SL_SOUNDISSTILLPLAYING,
+    snd_CMD_SL_ISSOUNDALOOPER,
+    snd_CMD_SL_SETSOUNDVOLPAN_A,
+    snd_CMD_SL_GETSOUNDORIGPITCH,
+    snd_CMD_SL_GETSOUNDCURRPITCH,
+    snd_CMD_SL_SETSOUNDPITCH_A,
+    snd_CMD_SL_SETSOUNDPITCHBEND_A,
+    snd_CMD_SL_SETSOUNDPITCHMOD_A,
+    snd_CMD_SL_SETSOUNDPARAMS,
+    snd_CMD_SL_AUTOVOL_A,
+    snd_CMD_SL_AUTOPAN_A,
+    snd_CMD_SL_AUTOPITCH_A,
+    snd_CMD_SL_AUTOPITCHBEND_A,
+    snd_CMD_SL_GETGLOBALEXCITE,
+    snd_CMD_SL_SETGLOBALEXCITE_A,
+    snd_CMD_SL_GETMIDIREGISTER,
+    snd_CMD_SL_SETMIDIREGISTER_A,
+    snd_CMD_SL_INITVAGSTREAMINGEX,
+    snd_CMD_SL_PLAYVAGSTREAMBYNAME,
+    snd_CMD_SL_PLAYVAGSTREAMBYLOC,
+    snd_CMD_SL_PAUSEVAGSTREAM,
+    snd_CMD_SL_CONTINUEVAGSTREAM,
+    snd_CMD_SL_STOPVAGSTREAM,
+    snd_CMD_SL_GETVAGSTREAMQUEUECOUNT,
+    snd_CMD_SL_GETVAGSTREAMLOC,
+    snd_CMD_SL_GETVAGSTREAMTIMEREMAINING,
+    snd_CMD_SL_GETVAGSTREAMTOTALTIME,
+    snd_CMD_SL_STOPALLVAGSTREAMS,
+    snd_CMD_SL_CLOSEVAGSTREAMING,
+    snd_CMD_SL_STREAMSAFECHECKCDIDLE,
+    snd_CMD_SL_STREAMSAFECDBREAK,
+    snd_CMD_SL_STREAMSAFECDREAD,
+    snd_CMD_SL_ALLOCIOPRAM,
+    snd_CMD_SL_FREEIOPRAM,
+    snd_CMD_SL_INITMOVIESOUND,
+    snd_CMD_SL_CLOSEMOVIESOUND,
+    snd_CMD_SL_RESETMOVIESOUND,
+    snd_CMD_SL_STARTMOVIESOUND,
+    snd_CMD_SL_PAUSEMOVIESOUND,
+    snd_CMD_SL_GETTRANSSTATUS,
+    snd_CMD_SL_GETSTICK,
+    snd_CMD_SL_GETVOICEALLOC,
+    snd_CMD_SL_LOCKVALLOC,
+    snd_CMD_SL_EXTERNVALLOC,
+    snd_CMD_SL_EXTERNVFREE,
+    snd_CMD_SL_UNLOCKVALLOC,
+    snd_CMD_SL_SRAMMALLOC,
+    snd_CMD_SL_SRAMMARKUSED,
+    snd_CMD_SL_SRAMFREE,
+    snd_CMD_SL_SRAMGETFREE,
+    snd_CMD_SL_SRAMMAXFREE,
+    snd_CMD_SL_EXTERNCALL,
+    snd_CMD_SL_COMMAND_BATCH,
+    snd_CMD_SL_SETGROUPVOICERANGE,
+    snd_CMD_SL_ISVAGSTREAMBUFFERED,
+    snd_CMD_SL_SETREVERBEX,
+    snd_CMD_SL_PREALLOCREVERBWORKAREA,
+    snd_CMD_SL_GETLASTLOADERROR,
+    snd_CMD_SL_SETPANMODE,
+    snd_CMD_SL_PLAYSOUNDBYNAME,
+    snd_CMD_SL_PLAYSOUNDBYNAME_A,
+    snd_CMD_SL_GETSOUNDUD,
+    snd_CMD_SL_BANKLOADFROMEE,
+    snd_CMD_SL_SETMOVIESOUNDVOLPAN,
+    snd_CMD_SL_BANKLOADFROMIOP,
+    snd_CMD_SL_UPDATEMOVIEADPCM,
+    snd_CMD_SL_GETMOVIENAX,
+    snd_CMD_SL_PLAYSOUNDEX,
+    snd_CMD_SL_GETSOUNDREG,
+    snd_CMD_SL_SETSOUNDREG,
+    snd_CMD_SL_SETALLSOUNDREG,
+    snd_CMD_SL_SETMASTERVOLUMEDUCKER,
+    snd_CMD_SL_STOPALLSOUNDSINGROUP,
+    snd_CMD_SL_SETVAGSTREAMCHANNELRANGE,
+    snd_CMD_SL_SETVAGSTREAMSUBGROUPVOLPAN,
+    snd_CMD_SL_SETREVERBMODE,
+    snd_CMD_SL_CDSTATUS,
+    snd_CMD_SL_GETSFXGLOBALREG,
+    snd_CMD_SL_SETSFXGLOBALREG,
+    snd_CMD_SL_EXTERNCALLWITHDATA,
+    snd_CMD_SL_STREAMSAFECDSEARCHFILE,
+};
+/* data 1e4 */ SndErrorDisplayFunc gErrorDisplayFunc = NULL;
 /* bss 0 */ SInt8 snd_LOADER_MESSAGE_RECIEVE_BUFFER[256];
 /* bss 100 */ UInt32 snd_LOADER_MESSAGE_RETURN_BUFFER[4];
 

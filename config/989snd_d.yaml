@@ -65,7 +65,7 @@ segments:
          # .rodata
         - [0x3a80c, rodata]
         # .data
-        - [0x3b018, data, 989snd]
+        - [0x3b018, .data, 989snd]
         - [0x3b200, data, LFO]
         - [0x3c220, data, blocksnd]
         - [0x3c2f4, data, extern]

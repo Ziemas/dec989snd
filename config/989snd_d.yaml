@@ -65,7 +65,24 @@ segments:
          # .rodata
         - [0x3a80c, rodata]
         # .data
-        - [0x3b018, data]
+        - [0x3b018, data, 989snd]
+        - [0x3b200, data, LFO]
+        - [0x3c220, data, blocksnd]
+        - [0x3c2f4, data, extern]
+        - [0x3c2fc, data, init]
+        - [0x3c320, data, intr_code]
+        - [0x3c35c, data, loader]
+        - [0x3c3b4, data, moviesnd]
+        - [0x3c3f0, data, my_rand]
+        - [0x3c5ec, data, pantable]
+        - [0x3cb90, data, playsnd]
+        - [0x3cbd8, data, reverb]
+        - [0x3cc34, data, sndhand]
+        - [0x3cc3c, data, sram]
+        - [0x3cc44, data, stick]
+        - [0x3ccd4, data, stream]
+        - [0x3ce14, data, valloc]
+        - [0x3ce84, data, vol]
         # .sbss / .bss
         - { start: 0x3cf94, type: sbss, vram: 0x3cef4 }
         - { start: 0x3cf94, type: bss, vram: 0x3cf34 }

@@ -29,7 +29,7 @@
 
 #include "include_asm.h"
 #define NULL (void *)0
-typedef enum { false, true };
+typedef enum { false, true } bool;
 
 typedef unsigned int size_t;
 typedef int ssize_t;
@@ -1355,7 +1355,7 @@ typedef struct { // 0x40
 	/* 0x10 */ char pad[48];
 } IOPVagStreamMonitor;
 
-typedef SInt32 (*Extern989Proc)(/* parameters unknown */);
+typedef SInt32 (*Extern989Proc)(SInt32 arg1, SInt32 arg2, SInt32 arg3, SInt32 arg4, SInt32 arg5);
 
 typedef struct { // 0x14
 	/* 0x00 */ UInt32 proc_id;

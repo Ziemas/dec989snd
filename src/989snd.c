@@ -1,5 +1,6 @@
 #include "common.h"
 #include "functions.h"
+#include "globals.h"
 
 /* data 0 */ UInt16 g989Version;
 /* data 4 */ ModuleInfo Module;
@@ -67,23 +68,103 @@ BOOL snd_UnregisterExternProcHandler(Extern989HandlerPtr hand) {
     return true;
 }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_FindExternProcHandler);
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_FindExternProcHandler);
+Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id) {
+    Extern989HandlerPtr work;
+    
+    for (work = gExternHandlersList; work; work = (Extern989HandlerPtr)work->reserved1) {
+        if (work->proc_id == id) {
+            return work;
+        }
+    }
 
+    return work;
+}
+
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_DoExternCall);
+#else
+SInt32 snd_DoExternCall(UInt32 proc_id, SInt32 func_index, SInt32 arg1, SInt32 arg2, SInt32 arg3, SInt32 arg4, SInt32 arg5) {
+    Extern989HandlerPtr work;
 
+    work = snd_FindExternProcHandler(proc_id);
+    if (work == NULL) {
+        snd_ShowError(3, proc_id, proc_id, 0, 0);
+        return 0;
+    }
+
+    if (func_index >= work->num_funcs) {
+        snd_ShowError(4, proc_id, 0, 0, 0);
+        return 0;
+    }
+
+    return work->procs[func_index](arg1, arg2, arg3, arg4, arg5);
+}
+#endif
+
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_DoExternCallWithData);
+#else
+SInt32 snd_DoExternCallWithData(UInt32 proc_id, SInt32 func_index, SInt32 data_size, void *data_ptr) {
+    Extern989HandlerPtr work;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_INIT);
+    work = snd_FindExternProcHandler(proc_id);
+    if (work == NULL) {
+        snd_ShowError(3, proc_id, proc_id, 0, 0);
+        return 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CLOSE);
+    if (func_index >= work->num_funcs) {
+        snd_ShowError(4, proc_id, 0, 0, 0);
+        return 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADBANK);
+    return work->procs[func_index](data_size, (SInt32)data_ptr, 0, 0, 0);
+}
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADBANKBYLOC);
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_INIT);
+void snd_CMD_SL_INIT(SInt8 *msg_data) {
+    UInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_BANKLOADFROMEE);
+    data = (UInt32*)msg_data;
+    gEEStatusAddr = (char *)(*(UInt32 *)msg_data);
+    snd_StartSoundSystemEx(data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_BANKLOADFROMIOP);
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CLOSE);
+void snd_CMD_SL_CLOSE(SInt8 *msg_data) {
+    snd_StopSoundSystem();
+}
+
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADBANK);
+void snd_CMD_SL_LOADBANK(SInt8 *msg_data) {
+    *gWriteBackdataOffset = (UInt32)snd_BankLoadEx(&msg_data[4], *(SInt32 *)msg_data, 0, 0);
+}
+
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADBANKBYLOC);
+void snd_CMD_SL_LOADBANKBYLOC(SInt8 *msg_data) {
+    SInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = (UInt32)snd_BankLoadByLocEx(data[0], data[1], 0, 0);
+}
+
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_BANKLOADFROMEE);
+void snd_CMD_SL_BANKLOADFROMEE(SInt8 *msg_data) {
+    UInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = (UInt32)snd_BankLoadFromEEEx(data[0], 0, 0);
+}
+
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_BANKLOADFROMIOP);
+void snd_CMD_SL_BANKLOADFROMIOP(SInt8 *msg_data) {
+    UInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = (UInt32)snd_BankLoadFromIOPEx((void *)data[0], 0, 0);
+}
 
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADMMD);
 

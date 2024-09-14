@@ -273,7 +273,10 @@ void snd_CMD_SL_BANKLOADFROMIOP(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)snd_BankLoadFromIOPEx((void *)data[0], 0, 0);
 }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADMMD);
+//INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADMMD);
+void snd_CMD_SL_LOADMMD(SInt8 *msg_data) {
+    *gWriteBackdataOffset = (UInt32)snd_MMDLoad((char *)&msg_data[4], *(SInt32 *)msg_data);
+}
 
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADMMDBYLOC);
 

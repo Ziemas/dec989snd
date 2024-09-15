@@ -64,8 +64,7 @@ segments:
         - [0x3a240, asm, export_stub]
         - [0x3a460, asm, import_stub]
          # .rodata
-        #- [0x3a80c, .rodata, 989snd]
-        - [0x3a80c, rodata]
+        - [0x3a80c, .rodata, 989snd]
         - [0x3aaf4, rodata, LFO]
         - [0x3ab98, rodata, loader]
         - [0x3ac48, rodata, playsnd]

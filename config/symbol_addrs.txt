@@ -57,6 +57,44 @@ CreateSema = 0x3a5f0; // type:func size:0x8
 DeleteSema = 0x3a5f8; // type:func size:0x8
 SignalSema = 0x3a600; // type:func size:0x8
 iSignalSema = 0x3a608; // type:func size:0x8
+WaitSema = 0x3a610; // type:func size:0x8
+PollSema = 0x3a618; // type:func size:0x8
+
+timrman_stub = 0x3a628; // size:0x14
+AllocHardTimer = 0x3a63c; // type:func size:0x8
+FreeHardTimer = 0x3a644; // type:func size:0x8
+SetTimerHandler = 0x3a64c; // type:func size:0x8
+SetupHardTimer = 0x3a654; // type:func size:0x8
+StartHardTimer = 0x3a65c; // type:func size:0x8
+StopHardTimer = 0x3a664; // type:func size:0x8
+
+libsd_stub = 0x0003A674;    // size:0x14
+sceSdInit = 0x0003A688;    // type:func size:0x8
+sceSdSetParam   = 0x0003A690;    // type:func size:0x8
+sceSdGetParam   = 0x0003A698;    // type:func size:0x8
+sceSdSetSwitch  = 0x0003A6A0;    // type:func size:0x8
+sceSdGetSwitch   = 0x0003A6A8;    // type:func size:0x8
+sceSdSetAddr   = 0x0003A6B0;    // type:func size:0x8
+sceSdGetAddr   = 0x0003A6B8;    // type:func size:0x8
+sceSdSetCoreAttr   = 0x0003A6C0;    // type:func size:0x8
+sceSdNote2Pitch   = 0x0003A6C8;    // type:func size:0x8
+sceSdVoiceTrans   = 0x0003A6D0;    // type:func size:0x8
+sceSdBlockTrans   = 0x0003A6D8;    // type:func size:0x8
+sceSdVoiceTransStatus   = 0x0003A6E0;    // type:func size:0x8
+sceSdBlockTransStatus   = 0x0003A6E8;    // type:func size:0x8
+sceSdSetEffectAttr   = 0x0003A6F0;    // type:func size:0x8
+sceSdClearEffectWorkArea   = 0x0003A6F8;  // type:func size:0x8  
+sceSdSetTransIntrHandler = 0x0003A700;    // type:func size:0x8
+
+cdvdman_stub  = 0x0003A710; // size:0x14
+sceCdRead  = 0x0003A724; // type:func size:0x8      
+sceCdGetError  = 0x0003A72C; // type:func size:0x8      
+sceCdSearchFile  = 0x0003A734; // type:func size:0x8      
+sceCdSync  = 0x0003A73C; // type:func size:0x8      
+sceCdStop  = 0x0003A744; // type:func size:0x8      
+sceCdStatus  = 0x0003A74C; // type:func size:0x8      
+sceCdCallback  = 0x0003A754; // type:func size:0x8      
+sceCdBreak  = 0x0003A75C; // type:func size:0x8      
 
 snd_RegisterExternProcHandler = 0x0; // type:func size:0x120
 snd_UnregisterExternProcHandler = 0x120; // type:func size:0x140

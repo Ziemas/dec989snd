@@ -11,6 +11,7 @@ CPP := cpp
 MASPSX := python tools/maspsx/maspsx.py
 AS := mipsel-none-elf-as
 LD := mipsel-none-elf-ld
+OBJCOPY := mipsel-none-elf-objcopy
 
 rwildcard=$(wildcard $1$2) $(foreach d,$(wildcard $1*),$(call rwildcard,$d/,$2))
 
@@ -31,7 +32,12 @@ all: $(BUILDDIR)/$(TARGET)
 #	@mkdir -p $(dir $@)
 #	$(LD) -dc -r -o $@ $(OBJECTS) $(LDFLAGS)
 
-$(BUILDDIR)/$(TARGET): $(OBJECTS)
+
+$(BUILDDIR)/$(TARGET): $(BUILDDIR)/$(TARGET).elf
+	@mkdir -p $(dir $@)
+	$(OBJCOPY) $< $@ -O binary
+
+$(BUILDDIR)/$(TARGET).elf: $(OBJECTS)
 	@mkdir -p $(dir $@)
 	$(LD) -o $@ $(OBJECTS) $(LDFLAGS)
 

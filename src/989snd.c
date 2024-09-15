@@ -452,13 +452,55 @@ INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETSFXGLOBALREG);
 
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSFXGLOBALREG);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETALLSOUNDREG);
+void snd_CMD_SL_SETALLSOUNDREG(SInt8 *msg_data) {
+    UInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETMASTERVOLUMEDUCKER);
+    data = (UInt32 *)msg_data;
+    snd_SetAllSoundReg(data[0], &data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CDSTATUS);
+void snd_CMD_SL_SETMASTERVOLUMEDUCKER(SInt8 *msg_data) {
+    SInt32 *data;
+    DuckerDefPtr state;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_COMMAND_BATCH);
+    data = (SInt32 *)msg_data;
+    state = (DuckerDefPtr)&data[1];
+    if (state->source_group == -1) {
+        state = NULL;
+    }
+
+    snd_SetMasterVolumeDucker(*data, state);
+}
+
+void snd_CMD_SL_CDSTATUS(SInt8 *msg_data) {
+    *gWriteBackdataOffset = sceCdStatus();
+}
+
+void snd_CMD_SL_COMMAND_BATCH(SInt8 *msg_data) {
+    SndCommandBufferPtr batch = (SndCommandBufferPtr)msg_data;
+    char *command_buffer_walk;
+    SInt32 x;
+    SInt16 command;
+    SInt16 size;
+
+    command_buffer_walk = batch->buffer;
+    for (x = 0; x < batch->num_commands; x++) {
+        command = *(SInt16 *)command_buffer_walk;
+        command_buffer_walk += 2;
+        size = *(SInt16 *)command_buffer_walk;
+        command_buffer_walk += 2;
+
+        if ((UInt16)size & 3) {
+            size = ((UInt16)size + 4) - (size % 4);
+        }
+
+        gCommandFunc[command](command_buffer_walk);
+        command_buffer_walk += size;
+        gWriteBackdataOffset++;
+    }
+
+    gWriteBackdataOffset--;
+}
 
 static void* snd_EEMessageParser(UInt32 command, void *data, SInt32 size) {
     gWriteBackdataOffset = snd_MESSAGE_RETURN_BUFFER + 1;

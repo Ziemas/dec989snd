@@ -24,6 +24,7 @@ int GetThreadId(void);
 void sceSifRpcLoop(sceSifQueueData *);
 void sceSifRegisterRpc(sceSifServeData *, unsigned int,sceSifRpcFunc,void *,sceSifRpcFunc,void *,sceSifQueueData *);
 void sceSifSetRpcQueue(sceSifQueueData *, int);
+int sceCdStatus(void);
 
 // 989snd.c
 Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id);
@@ -154,5 +155,11 @@ MultiMIDIBlockHeaderPtr snd_MMDLoadByLoc(SInt32 sect_loc, SInt32 file_offset);
 
 // extern.c
 SInt32 InitResidentModule();
+
+// playsnd.c
+void snd_SetAllSoundReg(UInt32 handle, SInt8 *vals);
+
+// vol.c
+void snd_SetMasterVolumeDucker(SInt32 which,DuckerDefPtr state);
 
 #endif

@@ -141,6 +141,20 @@ void snd_CMD_SL_SETSFXGLOBALREG(SInt8 *msg_data);
 void snd_CMD_SL_EXTERNCALLWITHDATA(SInt8 *msg_data);
 void snd_CMD_SL_STREAMSAFECDSEARCHFILE(SInt8 *msg_data);
 
+// blocksnsd.c
+void snd_UpdateSFXPitch(BlockSoundHandlerPtr hand);
+void snd_SetSFXVolPan(UInt32 handle, SInt32 vol, SInt32 pan, SInt32 cause);
+
+// lfo.c
+SInt32 snd_GetLFO(LFOTracker *tracker, SInt32 step_mult);
+BOOL snd_InsertLFO(LFOTracker *lfo);
+UInt32 snd_DoOneLFO(LFOTracker *tracker);
+void snd_RemoveLFO(LFOTracker *lfo) ;
+void snd_CalcLFODepth(LFOTracker *lfo);
+
+// reverb.c
+void snd_SetReverbMode(SInt32 reverb_mode);
+
 // init.c
 SInt32 snd_StartSoundSystemEx(UInt32 flags);
 SInt32 snd_StopSoundSystem();
@@ -152,14 +166,34 @@ SoundBankPtr snd_BankLoadFromEEEx(UInt32 ee_loc, UInt32 spu_mem_loc, UInt32 spu_
 SoundBankPtr snd_BankLoadFromIOPEx(void *iop_loc, UInt32 spu_mem_loc, UInt32 spu_mem_size);
 MultiMIDIBlockHeaderPtr snd_MMDLoad(SInt8 *name, SInt32 offset);
 MultiMIDIBlockHeaderPtr snd_MMDLoadByLoc(SInt32 sect_loc, SInt32 file_offset);
+void snd_UnloadBank(SoundBankPtr bank);
+void snd_UnloadMMD(MultiMIDIBlockHeaderPtr mmd);
+void snd_ResolveBankXREFS();
 
 // extern.c
 SInt32 InitResidentModule();
 
+// my_rand.c
+void snd_RandInit(SInt16 seed); 
+UInt16 snd_RandomUInt16();
+
 // playsnd.c
 void snd_SetAllSoundReg(UInt32 handle, SInt8 *vals);
 
+// stick.c
+void snd_LockMasterTick(UInt32 ownerID);
+void snd_UnlockMasterTick();
+UInt32 snd_GetTick();
+
+// valloc.c
+void snd_SetMixerMode(SInt32 channel_mode, SInt32 reverb_mode);
+void snd_SetGroupVoiceRange(SInt32 group, SInt32 min, SInt32 max);
+
 // vol.c
+void snd_SetMasterVolume(SInt32 which, SInt32 vol);
+SInt32 snd_GetMasterVolume(SInt32 which);
+void snd_SetPlaybackMode(SInt32 mode);
 void snd_SetMasterVolumeDucker(SInt32 which,DuckerDefPtr state);
+SInt32 snd_GetPlaybackMode();
 
 #endif

@@ -1,4 +1,5 @@
 #include "common.h"
+#include "functions.h"
 
 /* data 1e8 */ SInt16 gLFO_sine[2048] = {
     32767,  32766,  32766,  32765,  32764,  32763,  32761,  32759,  32757,
@@ -244,30 +245,276 @@ SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step);
     snd_LFO_TYPE_TRIANGLE, snd_LFO_TYPE_SAW,  snd_LFO_TYPE_RAND,
 };
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_OFF);
+SInt32 snd_LFO_TYPE_OFF(LFOTracker *tracker, int step) {
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_SINE);
+SInt32 snd_LFO_TYPE_SINE(LFOTracker *tracker, int step) {
+    return gLFO_sine[step];
+}
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_SQUARE);
+SInt32 snd_LFO_TYPE_SQUARE(LFOTracker *tracker, int step) {
+    return (step < tracker->state_hold1) ? 32767 : -32767;
+}
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_TRIANGLE);
+SInt32 snd_LFO_TYPE_TRIANGLE(LFOTracker *tracker, int step) {
+	SInt32 ret_val;
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_SAW);
+    ret_val = 0;
 
+    if (step < 512) {
+        ret_val = ((step * 0x7fff) / 512);
+    } else if (step < 1536) {
+        // feels fake
+        ret_val = 0x7fff - ((step - 512) * 65534) / 1024;
+    } else {
+        ret_val = (((step - 1536) * 0x7fff) / 512) - 0x7fff;
+    }
+
+    return ret_val;
+}
+
+SInt32 snd_LFO_TYPE_SAW(LFOTracker *tracker, int step) {
+	SInt32 ret_val;
+
+    ret_val = 0;
+
+    if (step < 1024) {
+        ret_val = 0x7fff * step / 1023;
+    } else {
+        ret_val = ((0x7fff * (step - 1024)) / 1024) - 0x7fff;
+    }
+
+    return ret_val;
+}
+
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_RAND);
+#else
+SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step) {
+  if (step >= 0x400 && tracker->state_hold2 == 1) {
+    tracker->state_hold2 = 0;
+    tracker->state_hold1 = 2 * ((snd_RandomUInt16() & 0x7FFF) - 0x3FFF);
+  }
+  else if (step < 0x400 && tracker->state_hold2 == 0) {
+    tracker->state_hold2 = 1;
+    tracker->state_hold1 = -(snd_RandomUInt16() & 0x7FFF) * (snd_RandomUInt16() & 1);
+  }
 
+  return tracker->state_hold1;
+}
+#endif
+
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/LFO", snd_GetLFO);
+#else
+SInt32 snd_GetLFO(LFOTracker *tracker, SInt32 step_mult) {
+	SInt32 ret_val, step;
 
+    ret_val = 0;
+    step = tracker->next_step >> 16;
+
+    tracker->next_step += tracker->step_size * step_mult;
+
+    if (tracker->next_step > 0x07FFFFFF) {
+        tracker->next_step -= 0x08000000;
+    }
+
+    ret_val = gLFOFuncs[tracker->type](tracker, step);
+    if (tracker->setup_flags & 1) {
+        ret_val = -ret_val;
+    }
+
+    return ret_val;
+}
+#endif
+
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/LFO", snd_InitLFO);
+#else
+void snd_InitLFO(LFOTracker *tracker) {
+    if (tracker->type != 5) {
+        // huh
+    } else {
+        tracker->state_hold1 = -(snd_RandomUInt16() & 0x7fff) * (snd_RandomUInt16() & 1);
+        tracker->state_hold2 = 1;
+        if (0) {} 
+    } 
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_RemoveLFOsForHandler);
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_RemoveLFO);
+    snd_CalcLFODepth(tracker);
+    snd_LockMasterTick(256);
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_InsertLFO);
+    if (snd_InsertLFO(tracker)) {
+        snd_DoOneLFO(tracker);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_DoOneLFO);
+    snd_UnlockMasterTick();
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_HandleLFOs);
+}
+#endif
 
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_CalcLFODepth);
+void snd_RemoveLFOsForHandler(BlockSoundHandlerPtr handler) {
+    SInt32 i;
+
+    for (i = 0; i < 4; i++) {
+        snd_RemoveLFO(&handler->lfo[i]);
+    }
+}
+
+void snd_RemoveLFO(LFOTracker *lfo) {
+	LFOTracker *walk;
+
+    lfo->running_flags &= ~1;
+
+    if (gActiveLFOs == lfo) {
+        gActiveLFOs = lfo->next;
+        gNumLFOsInUse--;
+
+        return;
+    } else {
+        walk = gActiveLFOs;
+        while (walk && walk->next != lfo) {
+            walk = walk->next;
+        }
+
+        if (walk) {
+            walk->next = walk->next->next;
+            gNumLFOsInUse--;
+        }
+    }
+}
+
+
+//INCLUDE_ASM("asm/nonmatchings/LFO", snd_InsertLFO);
+BOOL snd_InsertLFO(LFOTracker *lfo) {
+	LFOTracker *walk;
+
+    if ((lfo->running_flags & 1) != 0 ) {
+        return 1;
+    }
+
+    if (gNumLFOsInUse == 10) {
+        return 0;
+    }
+
+    gNumLFOsInUse++;
+
+    lfo->next = NULL;
+    lfo->running_flags |= 1;
+
+    if (!gActiveLFOs) {
+        gActiveLFOs = lfo;
+
+        return 1;
+    } else {
+        walk = gActiveLFOs;
+        while (walk->next) {
+            walk = walk->next;
+        }
+
+        walk->next = lfo;
+    }
+
+    return 1;
+}
+
+UInt32 snd_DoOneLFO(LFOTracker *tracker) {
+	BlockSoundHandlerPtr handler;
+	LFOTracker *target_tracker;
+	SInt32 range, lfo, new_val;
+	UInt32 ret;
+
+    ret = 0;
+    handler = tracker->handler;
+
+    switch (tracker->target) {
+    case 1: // volume
+        lfo = snd_GetLFO(tracker, 2) - 0x7fff;
+        new_val = (tracker->range * lfo) >> 16;
+        if (handler->LFO_Vol != new_val) {
+            handler->LFO_Vol = new_val;
+            ret = 1;
+        }
+        break;
+    case 2: // pan
+        lfo = snd_GetLFO(tracker, 2);
+        new_val = (tracker->range * lfo) >> 15;
+        if (handler->LFO_Pan != new_val) {
+            handler->LFO_Pan = new_val;
+            ret = 1;
+        }
+        break;
+    case 3: // pitch mod
+        lfo = snd_GetLFO(tracker, 2);
+        new_val = (lfo * tracker->range) >> 15;
+        if (new_val != handler->LFO_PM) {
+            handler->LFO_PM = new_val;
+            ret = 2;
+        }
+        break;
+    case 4: // pitch bend
+        lfo = snd_GetLFO(tracker, 2);
+        new_val = (lfo * tracker->range) >> 15;
+        if (new_val != handler->LFO_PB) {
+            handler->LFO_PB = new_val;
+            ret = 2;
+        }
+        break;
+    case 5: // modulate other lfo frequency
+        target_tracker = &handler->lfo[tracker->target_extra];
+        lfo = snd_GetLFO(tracker, 2);
+        range = ((target_tracker->orig_step_size >> 8) * tracker->depth) >> 10;
+        target_tracker->step_size = target_tracker->orig_step_size + (((range * lfo) >> 15) << 8);
+        break;
+    case 6: // modulate lfo depth
+        target_tracker = &handler->lfo[tracker->target_extra];
+        lfo = snd_GetLFO(tracker, 2);
+        range = (target_tracker->orig_depth * tracker->depth) >> 10;
+        target_tracker->depth = target_tracker->orig_depth + ((range * lfo) >> 15);
+        snd_CalcLFODepth(target_tracker);
+        break;
+    }
+
+    return ret;
+}
+
+void snd_HandleLFOs() {
+	LFOTracker *tracker;
+	UInt32 flags;
+
+    if (snd_GetTick() & 1) {
+        return;
+    }
+
+    for (tracker = gActiveLFOs; tracker; tracker = tracker->next) {
+        flags = snd_DoOneLFO(tracker);
+        if (flags & 1)
+            snd_SetSFXVolPan(tracker->handler->SH.OwnerID, 0x7FFFFFFF, -2, 1);
+        if (flags & 2)
+            snd_UpdateSFXPitch(tracker->handler);
+    }
+}
+
+
+void snd_CalcLFODepth(LFOTracker *lfo) {
+	SFX2 *sfx;
+
+    switch (lfo->target) {
+    case 1:
+        sfx = (SFX2 *)lfo->handler->SH.Sound;
+        lfo->range = (sfx->Vol * lfo->depth) >> 10;
+        break;
+    case 2:
+        lfo->range = (180 * lfo->depth) >> 10;
+        break;
+    case 3:
+        lfo->range = (6096 * lfo->depth) >> 10;
+        break;
+    case 4:
+        lfo->range = (0x7fff * lfo->depth) >> 10;
+        break;
+    }
+
+    lfo->last_lfo = 0;
+}

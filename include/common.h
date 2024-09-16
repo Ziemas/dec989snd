@@ -687,7 +687,7 @@ struct SoundBank_tag { // 0x34
 typedef struct SoundBank_tag SoundBank;
 typedef struct SoundBank_tag *SoundBankPtr;
 
-typedef struct { // 0x30
+typedef struct LFOTracker { // 0x30
 	/* 0x00 */ UInt16 type;
 	/* 0x02 */ UInt8 target;
 	/* 0x03 */ UInt8 target_extra;
@@ -1159,7 +1159,7 @@ struct GenericSoundHandler { // 0x34
 typedef struct GenericSoundHandler GSoundHandler;
 typedef struct GenericSoundHandler *GSoundHandlerPtr;
 
-typedef struct { // 0x124
+typedef struct BlockSoundHandler { // 0x124
 	/* 0x000 */ GSoundHandler SH;
 	/* 0x034 */ SInt8 Current_Note;
 	/* 0x035 */ SInt8 Current_Fine;
@@ -1601,7 +1601,7 @@ enum {
 
 typedef void (*SpuTransferCallbackProc)(/* parameters unknown */);
 typedef void (*CommandHandler)(SInt8 *data);
-typedef SInt32 (*LFOFunction)(/* parameters unknown */);
+typedef SInt32 (*LFOFunction)(LFOTracker *tracker, int step);
 typedef SInt32 (*GrainHandler)(/* parameters unknown */);
 
 typedef struct { // 0x8

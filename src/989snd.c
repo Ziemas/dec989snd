@@ -2,8 +2,6 @@
 #include "functions.h"
 #include "globals.h"
 
-//INCLUDE_RODATA("asm/data/", 989snd);
-
 /* data 0 */ UInt16 g989Version = 0x301;
 /* data 4 */ ModuleInfo Module  = {"989snd_Library", 0x301};
 /* data c */ Extern989MonitorInfo *g989Monitor = NULL;
@@ -262,27 +260,62 @@ void snd_CMD_SL_LOADMMD(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)snd_MMDLoad((char *)&msg_data[4], *(SInt32 *)msg_data);
 }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOADMMDBYLOC);
+void snd_CMD_SL_LOADMMDBYLOC(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_UNLOADBANK_A);
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = (UInt32)snd_MMDLoadByLoc(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_UNLOADMIDI_A);
+void snd_CMD_SL_UNLOADBANK_A(SInt8 *msg_data) {
+    snd_UnloadBank(*(SoundBankPtr *)msg_data);
+    *gWriteBackdataOffset = 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_RESOLVEBANKS);
+void snd_CMD_SL_UNLOADMIDI_A(SInt8 *msg_data) {
+    snd_UnloadMMD(*(MultiMIDIBlockHeaderPtr *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETMASTERVOL_A);
+void snd_CMD_SL_RESOLVEBANKS(SInt8 *msg_data) {
+    snd_ResolveBankXREFS();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETMASTERVOL);
+void snd_CMD_SL_SETMASTERVOL_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETPLAYBACKMODE_A);
+    data = (SInt32 *)msg_data;
+    snd_SetMasterVolume(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETPLAYBACKMODE);
+void snd_CMD_SL_GETMASTERVOL(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetMasterVolume(*(SInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETMIXERMODE_A);
+void snd_CMD_SL_SETPLAYBACKMODE_A(SInt8 *msg_data) {
+    snd_SetPlaybackMode(*(SInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETREVERBMODE);
+void snd_CMD_SL_GETPLAYBACKMODE(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetPlaybackMode();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETGROUPVOICERANGE);
+void snd_CMD_SL_SETMIXERMODE_A(SInt8 *msg_data) {
+	SInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    snd_SetMixerMode(data[0], data[1]);
+}
+
+void snd_CMD_SL_SETREVERBMODE(SInt8 *msg_data) {
+    snd_SetReverbMode(*(SInt32 *)msg_data);
+}
+
+void snd_CMD_SL_SETGROUPVOICERANGE(SInt8 *msg_data) {
+	SInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    snd_SetGroupVoiceRange(data[0], data[1], data[2]);
+}
 
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETREVERBTYPE);
 

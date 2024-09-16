@@ -17,7 +17,7 @@ options:
     undefined_syms_auto_path:  config/undefined_syms_auto.txt
 
     migrate_rodata_to_functions: False
-    named_regs_for_c_funcs: False
+    named_regs_for_c_funcs: True
     
     # compiler 
     compiler: GCC
@@ -66,7 +66,8 @@ segments:
         - [0x3a460, asm, import_stub]
          # .rodata
         - [0x3a80c, .rodata, 989snd]
-        - [0x3aaf4, rodata, LFO]
+        - [0x3aaf4, .rodata, LFO]
+        - [0x3ab0c, rodata, ame]
         - [0x3ab98, rodata, loader]
         - [0x3ac48, rodata, playsnd]
         - [0x3acf4, rodata, sndhand]

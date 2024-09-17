@@ -39,7 +39,7 @@ segments:
         # .text
         - [0xa0, c, 989snd]
         - [0x3efc, c, LFO]
-        - [0x4e68, asm, ame]
+        - [0x4e68, c, ame]
         - [0x6990, asm, autopan]
         - [0x7218, asm, autopb]
         - [0x7768, asm, autoptch]

@@ -612,9 +612,6 @@ void snd_CMD_SL_STREAMSAFECDREAD(SInt8 *msg_data) {
     snd_StreamSafeCdReadEEm(data[0], data[1], (void *)data[2]);
 }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STREAMSAFECDSEARCHFILE);
-#else
 void snd_CMD_SL_STREAMSAFECDSEARCHFILE(SInt8 *msg_data) {
 	UInt32 ee_location;
 	char *fname;
@@ -644,7 +641,7 @@ void snd_CMD_SL_STREAMSAFECDSEARCHFILE(SInt8 *msg_data) {
         if (!did) {
             ret = 0;
         } else {
-            while ((sceSifDmaStat(did) < 0) != true) {
+            while (sceSifDmaStat(did) > -1) {
                 WaitSema(gEEDMADoneSema);
             }
         }
@@ -652,7 +649,6 @@ void snd_CMD_SL_STREAMSAFECDSEARCHFILE(SInt8 *msg_data) {
 
     *gWriteBackdataOffset = ret;
 }
-#endif
 
 void snd_CMD_SL_ALLOCIOPRAM(SInt8 *msg_data) {
     *gWriteBackdataOffset = (UInt32)gAllocProc(*(UInt32 *)msg_data, 7, 0);

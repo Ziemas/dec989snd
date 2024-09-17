@@ -245,14 +245,14 @@ void snd_CMD_SL_LOADBANKBYLOC(SInt8 *msg_data) {
 void snd_CMD_SL_BANKLOADFROMEE(SInt8 *msg_data) {
     UInt32 *data;
 
-    data = (SInt32 *)msg_data;
+    data = (UInt32 *)msg_data;
     *gWriteBackdataOffset = (UInt32)snd_BankLoadFromEEEx(data[0], 0, 0);
 }
 
 void snd_CMD_SL_BANKLOADFROMIOP(SInt8 *msg_data) {
     UInt32 *data;
 
-    data = (SInt32 *)msg_data;
+    data = (UInt32 *)msg_data;
     *gWriteBackdataOffset = (UInt32)snd_BankLoadFromIOPEx((void *)data[0], 0, 0);
 }
 
@@ -607,7 +607,7 @@ void snd_CMD_SL_STREAMSAFECDBREAK(SInt8 *msg_data) {
 }
 
 void snd_CMD_SL_STREAMSAFECDREAD(SInt8 *msg_data) {
-	UInt32 *data = (SInt32 *)msg_data);
+	UInt32 *data = (UInt32 *)msg_data);
 
     snd_StreamSafeCdReadEEm(data[0], data[1], (void *)data[2]);
 }
@@ -654,75 +654,261 @@ void snd_CMD_SL_STREAMSAFECDSEARCHFILE(SInt8 *msg_data) {
 }
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_ALLOCIOPRAM);
+void snd_CMD_SL_ALLOCIOPRAM(SInt8 *msg_data) {
+    *gWriteBackdataOffset = (UInt32)gAllocProc(*(UInt32 *)msg_data, 7, 0);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_FREEIOPRAM);
+void snd_CMD_SL_FREEIOPRAM(SInt8 *msg_data) {
+    gFreeProc(*(void **)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_INITMOVIESOUND);
+void snd_CMD_SL_INITMOVIESOUND(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CLOSEMOVIESOUND);
+    *gWriteBackdataOffset = 
+         (UInt32)snd_InitMovieSoundEx(data[0], data[1], 
+                            data[2], data[3], data[4], data[5]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_RESETMOVIESOUND);
+void snd_CMD_SL_CLOSEMOVIESOUND(SInt8 *msg_data) {
+    snd_CloseMovieSound();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STARTMOVIESOUND);
+void snd_CMD_SL_RESETMOVIESOUND(SInt8 *msg_data) {
+    snd_ResetMovieSound();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PAUSEMOVIESOUND);
+void snd_CMD_SL_STARTMOVIESOUND(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETMOVIESOUNDVOLPAN);
+    snd_StartMovieSoundEx((void *)data[0], data[1], data[2], data[3], data[4]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_UPDATEMOVIEADPCM);
+void snd_CMD_SL_PAUSEMOVIESOUND(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_PauseMovieSound();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETMOVIENAX);
+void snd_CMD_SL_SETMOVIESOUNDVOLPAN(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETTRANSSTATUS);
+    snd_SetMovieSoundVolPan(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETSTICK);
+void snd_CMD_SL_UPDATEMOVIEADPCM(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETVOICEALLOC);
+    snd_UpdateMovieADPCM(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_LOCKVALLOC);
+void snd_CMD_SL_GETMOVIENAX(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetMovieNAX();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_EXTERNVALLOC);
+void snd_CMD_SL_GETTRANSSTATUS(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetMovieBufferPos();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_EXTERNVFREE);
+void snd_CMD_SL_GETSTICK(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetTick();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_UNLOCKVALLOC);
+void snd_CMD_SL_GETVOICEALLOC(SInt8 *msg_data) {
+	SInt32 core;
+	SInt32 x;
+	SInt32 *SInt32_data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SRAMMALLOC);
+    core = *(SInt32 *)msg_data;
+    // why...
+    SInt32_data = (SInt32 *)gWriteBackdataOffset;
+    *SInt32_data = 0;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SRAMMARKUSED);
+    for (x = 0; x < 24; x++) {
+        if (snd_GetVoiceStatus(x + core * 24)) {
+            *SInt32_data |= 1 << x;
+        }
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SRAMFREE);
+void snd_CMD_SL_LOCKVALLOC(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_LockVoiceAllocatorEx(0, 0x12345678);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SRAMGETFREE);
+void snd_CMD_SL_EXTERNVALLOC(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SRAMMAXFREE);
+    *gWriteBackdataOffset = snd_ExternVoiceAlloc(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_EXTERNCALL);
+void snd_CMD_SL_EXTERNVFREE(SInt8 *msg_data) {
+    snd_ExternVoiceFree(*(SInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_EXTERNCALLWITHDATA);
+void snd_CMD_SL_UNLOCKVALLOC(SInt8 *msg_data) {
+    snd_UnlockVoiceAllocator();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETREVERBEX);
+void snd_CMD_SL_SRAMMALLOC(SInt8 *msg_data) {
+	SInt32 dis, oldstat;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PREALLOCREVERBWORKAREA);
+    dis = CpuSuspendIntr(&oldstat);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETLASTLOADERROR);
+    *gWriteBackdataOffset = snd_SRAMMalloc(*(UInt32 *)msg_data);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETPANMODE);
+    if (!dis) {
+        CpuResumeIntr(oldstat);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PLAYSOUNDBYNAME);
+void snd_CMD_SL_SRAMMARKUSED(SInt8 *msg_data) {
+	SInt32 dis, oldstat;
+	UInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PLAYSOUNDBYNAME_A);
+    data = (UInt32 *)msg_data;
+    dis = CpuSuspendIntr(&oldstat);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETSOUNDUD);
+    *gWriteBackdataOffset = snd_SRAMMarkUsed(data[0], data[1]);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETSOUNDREG);
+    if (!dis) {
+        CpuResumeIntr(oldstat);
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSOUNDREG);
+void snd_CMD_SL_SRAMFREE(SInt8 *msg_data) {
+	SInt32 dis, oldstat;
+	UInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETSFXGLOBALREG);
+    data = (UInt32 *)msg_data;
+    dis = CpuSuspendIntr(&oldstat);
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSFXGLOBALREG);
+    snd_SRAMFree(data[0], data[1]);
+
+    if (!dis) {
+        CpuResumeIntr(oldstat);
+    }
+}
+
+void snd_CMD_SL_SRAMGETFREE(SInt8 *msg_data) {
+    SInt32 dis, oldstat;
+
+    dis = CpuSuspendIntr(&oldstat);
+
+    *gWriteBackdataOffset = snd_SRAMGetFreeMem();
+
+    if (!dis) {
+        CpuResumeIntr(oldstat);
+    }
+}
+
+void snd_CMD_SL_SRAMMAXFREE(SInt8 *msg_data) {
+    SInt32 dis, oldstat;
+
+    dis = CpuSuspendIntr(&oldstat);
+
+    *gWriteBackdataOffset = snd_SRAMMaxFreeBlockSize();
+
+    if (!dis) {
+        CpuResumeIntr(oldstat);
+    }
+}
+
+void snd_CMD_SL_EXTERNCALL(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
+
+    *gWriteBackdataOffset = snd_DoExternCall(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
+}
+
+void snd_CMD_SL_EXTERNCALLWITHDATA(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
+
+    *gWriteBackdataOffset = snd_DoExternCallWithData(data[0], data[1], data[2], &data[3]);
+}
+
+void snd_CMD_SL_SETREVERBEX(SInt8 *msg_data) {
+  	SInt32 *data = (SInt32 *)msg_data;
+
+    snd_SetReverbEx(data[0], data[1], data[2], data[3], data[4]);
+}
+
+void snd_CMD_SL_PREALLOCREVERBWORKAREA(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
+
+    snd_PreAllocReverbWorkArea(data[0], data[1]);
+}
+
+void snd_CMD_SL_GETLASTLOADERROR(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetLastLoadError();
+}
+
+void snd_CMD_SL_SETPANMODE(SInt8 *msg_data) {
+    snd_SetPanMode(*(SInt32 *)msg_data);
+}
+
+void snd_CMD_SL_PLAYSOUNDBYNAME(SInt8 *msg_data) {
+    *gWriteBackdataOffset = 0;
+}
+
+void snd_CMD_SL_PLAYSOUNDBYNAME_A(SInt8 *msg_data) {}
+
+void snd_CMD_SL_GETSOUNDUD(SInt8 *msg_data) {
+	SInt32 return_hold[4];
+	SInt32 ret;
+	SInt32 intr_state;
+	SInt32 dis;
+	GetSoundUserDataCommandStruct *data;
+	SInt32 did;
+	sceSifDmaData transData;
+
+    data = (GetSoundUserDataCommandStruct *)msg_data;
+    ret = snd_GetSoundUserData((SoundBankPtr)data->bank, data->bank_name, data->snd_index, data->snd_name, return_hold);
+    if (ret) {
+        transData.data = (UInt32)return_hold;
+        transData.addr = (UInt32)data->destination;
+        transData.size = sizeof(return_hold);
+        transData.mode = 0;
+
+        dis = CpuSuspendIntr(&intr_state);
+        did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone, &gEEDMADoneSema);
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+
+        if (!did) {
+            snd_ShowError(99, 0, 0, 0, 0);
+            *gWriteBackdataOffset = 0;
+            return;
+        } else {
+            while (sceSifDmaStat(did) >= 0) {
+                WaitSema(gEEDMADoneSema);
+            }
+        }
+    }
+
+    *gWriteBackdataOffset = ret;
+}
+
+void snd_CMD_SL_GETSOUNDREG(SInt8 *msg_data) {
+	UInt32 *data = (UInt32 *)msg_data;
+    
+    *gWriteBackdataOffset = snd_GetSoundReg(data[0], data[1]);
+}
+
+void snd_CMD_SL_SETSOUNDREG(SInt8 *msg_data) {
+	UInt32 *data = (UInt32 *)msg_data;
+
+    snd_SetSoundReg(data[0], data[1], data[2]);
+}
+
+void snd_CMD_SL_GETSFXGLOBALREG(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
+
+    *(SInt8 *)gWriteBackdataOffset = snd_GetSFXGlobalReg(data[0]);
+}
+
+void snd_CMD_SL_SETSFXGLOBALREG(SInt8 *msg_data) {
+	SInt32 *data = (SInt32 *)msg_data;
+
+    snd_SetSFXGlobalReg(data[0], data[1]);
+}
 
 void snd_CMD_SL_SETALLSOUNDREG(SInt8 *msg_data) {
     UInt32 *data;

@@ -1389,8 +1389,8 @@ typedef struct { // 0x4
 	/* 0x2 */ SInt16 right;
 } VolPair;
 
-typedef void* (*ExternSndIOPAlloc)(/* parameters unknown */);
-typedef void (*ExternSndIOPFree)(/* parameters unknown */);
+typedef void* (*ExternSndIOPAlloc)(SInt32 size, SInt32 use, SInt32 *act_size);
+typedef void (*ExternSndIOPFree)(void *mem);
 
 typedef struct { // 0x24
 	/* 0x00 */ u_int bank;

@@ -317,103 +317,342 @@ void snd_CMD_SL_SETGROUPVOICERANGE(SInt8 *msg_data) {
     snd_SetGroupVoiceRange(data[0], data[1], data[2]);
 }
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETREVERBTYPE);
+void snd_CMD_SL_SETREVERBTYPE(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETREVERBDEPTH);
+    data = (SInt32 *)msg_data;
+    snd_SetReverbType(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_AUTOVERB);
+void snd_CMD_SL_SETREVERBDEPTH(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PLAYSOUND);
+    data = (SInt32 *)msg_data;
+    snd_SetReverbDepth(data[0], data[1], data[2]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PLAYSOUND_A);
+void snd_CMD_SL_AUTOVERB(SInt8 *msg_data) {
+	SInt32 *data;
+    
+    data = (SInt32 *)msg_data;
+    snd_AutoReverb(data[0], data[1], data[2], data[3]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PLAYSOUNDEX);
+void snd_CMD_SL_PLAYSOUND(SInt8 *msg_data) {
+  SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PAUSESOUND);
+  data = (SInt32 *)msg_data;
+  *gWriteBackdataOffset =
+      snd_PlaySoundVolPanPMPB((SoundBankPtr)data[0], data[1], data[2], data[3],
+                              *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CONTINUESOUND);
+void snd_CMD_SL_PLAYSOUND_A(SInt8 *msg_data) {
+  SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STOPSOUND);
+  data = (SInt32 *)msg_data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PAUSEALLSOUNDS);
+  snd_PlaySoundVolPanPMPB((SoundBankPtr)data[0], data[1], data[2], data[3],
+                          *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CONTINUEALLSOUNDS);
+void snd_CMD_SL_PLAYSOUNDEX(SInt8 *msg_data) {
+	SndPlayParamsPtr params;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STOPALLSOUNDS);
+    params = (SndPlayParams *)msg_data;
+    *gWriteBackdataOffset = snd_PlaySoundEx(params);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STOPALLSOUNDSINGROUP);
+void snd_CMD_SL_PAUSESOUND(SInt8 *msg_data) {
+    snd_PauseSound(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SOUNDISSTILLPLAYING);
+void snd_CMD_SL_CONTINUESOUND(SInt8 *msg_data) {
+    snd_ContinueSound(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_ISSOUNDALOOPER);
+void snd_CMD_SL_STOPSOUND(SInt8 *msg_data) {
+    snd_StopSound(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSOUNDVOLPAN_A);
+void snd_CMD_SL_PAUSEALLSOUNDS(SInt8 *msg_data) {
+    snd_PauseAllSoundsInGroup(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETSOUNDORIGPITCH);
+void snd_CMD_SL_CONTINUEALLSOUNDS(SInt8 *msg_data) {
+    snd_ContinueAllSoundsInGroup(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETSOUNDCURRPITCH);
+void snd_CMD_SL_STOPALLSOUNDS(SInt8 *msg_data) {
+    snd_StopAllSounds();
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSOUNDPITCH_A);
+void snd_CMD_SL_STOPALLSOUNDSINGROUP(SInt8 *msg_data) {
+    snd_StopAllSoundsInGroup(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSOUNDPITCHBEND_A);
+void snd_CMD_SL_SOUNDISSTILLPLAYING(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_SoundIsStillPlaying(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSOUNDPITCHMOD_A);
+void snd_CMD_SL_ISSOUNDALOOPER(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETSOUNDPARAMS);
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = snd_IsSoundALooper((SoundBankPtr)data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_AUTOVOL_A);
+void snd_CMD_SL_SETSOUNDVOLPAN_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_AUTOPAN_A);
+    data = (SInt32 *)msg_data;
+    snd_SetSoundVolPan(data[0], data[1], data[2]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_AUTOPITCH_A);
+void snd_CMD_SL_GETSOUNDORIGPITCH(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_AUTOPITCHBEND_A);
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = snd_GetSoundOriginalPitch((SoundBankPtr)data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETGLOBALEXCITE);
+void snd_CMD_SL_GETSOUNDCURRPITCH(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetSoundCurrentPitch(*(UInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETGLOBALEXCITE_A);
+void snd_CMD_SL_SETSOUNDPITCH_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETMIDIREGISTER);
+    data = (SInt32 *)msg_data;
+    snd_SetSoundPitch(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETMIDIREGISTER_A);
+void snd_CMD_SL_SETSOUNDPITCHBEND_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_INITVAGSTREAMINGEX);
+    data = (SInt32 *)msg_data;
+    snd_SetSoundPitchBend(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETVAGSTREAMCHANNELRANGE);
+void snd_CMD_SL_SETSOUNDPITCHMOD_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_SETVAGSTREAMSUBGROUPVOLPAN);
+    data = (SInt32 *)msg_data;
+    snd_SetSoundPitchModifier(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PLAYVAGSTREAMBYNAME);
+void snd_CMD_SL_SETSOUNDPARAMS(SInt8 *msg_data) {
+    SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PLAYVAGSTREAMBYLOC);
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset =
+        snd_SetSoundParams(data[0], data[1], data[2], data[3],
+                            *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_PAUSEVAGSTREAM);
+void snd_CMD_SL_AUTOVOL_A(SInt8 *msg_data) {
+    SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CONTINUEVAGSTREAM);
+    data = (SInt32 *)msg_data;
+    snd_AutoVol(data[0], *(SInt16 *)&data[1], *(SInt16 *)&data[2],
+                *(SInt16 *)&data[3]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STOPVAGSTREAM);
+void snd_CMD_SL_AUTOPAN_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETVAGSTREAMQUEUECOUNT);
+    data = (SInt32 *)msg_data;
+    snd_AutoPan(data[0], data[1], data[2], data[3], data[4]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETVAGSTREAMLOC);
+void snd_CMD_SL_AUTOPITCH_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETVAGSTREAMTIMEREMAINING);
+    data = (SInt32 *)msg_data;
+    snd_AutoPitch(data[0], data[1], data[2], data[3]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_GETVAGSTREAMTOTALTIME);
+void snd_CMD_SL_AUTOPITCHBEND_A(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_ISVAGSTREAMBUFFERED);
+    data = (SInt32 *)msg_data;
+    snd_AutoPitchBend(data[0], data[1], data[2], data[3]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STOPALLVAGSTREAMS);
+void snd_CMD_SL_GETGLOBALEXCITE(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetGlobalExcite(); 
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_CLOSEVAGSTREAMING);
+void snd_CMD_SL_SETGLOBALEXCITE_A(SInt8 *msg_data) {
+    snd_SetGlobalExcite(*(SInt32 *)msg_data);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STREAMSAFECHECKCDIDLE);
+void snd_CMD_SL_GETMIDIREGISTER(SInt8 *msg_data) {
+	SInt32 *data;
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STREAMSAFECDBREAK);
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = snd_GetMIDIRegister(data[0], data[1]);
+}
 
-INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STREAMSAFECDREAD);
+void snd_CMD_SL_SETMIDIREGISTER_A(SInt8 *msg_data) {
+	SInt32 *data;
 
+    data = (SInt32 *)msg_data;
+    snd_SetMIDIRegister(data[0], data[1], data[2]);
+}
+
+void snd_CMD_SL_INITVAGSTREAMINGEX(SInt8 *msg_data) {
+	SInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = snd_InitVAGStreamingEx(data[0], data[1], data[2], data[3]) != 0;
+}
+
+void snd_CMD_SL_SETVAGSTREAMCHANNELRANGE(SInt8 *msg_data) {
+	SInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    snd_SetVAGStreamChannelRange(data[0], data[1], data[2]);
+}
+
+void snd_CMD_SL_SETVAGSTREAMSUBGROUPVOLPAN(SInt8 *msg_data) {
+	SInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    snd_SetVAGStreamSubGroupVolPan(data[0], data[1], data[2], data[3]);
+}
+
+void snd_CMD_SL_PLAYVAGSTREAMBYNAME(SInt8 *msg_data) {
+	char *name1 = NULL, *name2 = NULL;
+	PVSBN_struct *data = (PVSBN_structPtr)msg_data;
+
+    if (data->name1[0]) {
+        name1 = data->name1;
+    }
+
+    if (data->name2[0]) {
+        name2 = data->name2;
+    }
+
+    *gWriteBackdataOffset = 
+        snd_PlayVAGStreamByNameEx(name1, name2, data->offset1, 
+            data->offset2, data->vol, data->pan, 
+            data->vol_group, data->queue, 
+            data->sub_group, data->flags);
+}
+
+void snd_CMD_SL_PLAYVAGSTREAMBYLOC(SInt8 *msg_data) {
+	SInt32 *data;
+
+    data = (SInt32 *)msg_data;
+    *gWriteBackdataOffset = 
+        snd_PlayVAGStreamByLocEx(data[0], 
+                                    data[1], 
+                                    data[2] & 0xffff, 
+                                    data[3] & 0xffff, 
+                                    ((UInt32)data[2] >> 16) & 0xffff, 
+                                    ((UInt32)data[3] >> 16) & 0xffff, 
+                                    data[4], 
+                                    data[5], 
+                                    data[6], 
+                                    data[7]);
+}
+
+void snd_CMD_SL_PAUSEVAGSTREAM(SInt8 *msg_data) {
+    snd_PauseVAGStream(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_CONTINUEVAGSTREAM(SInt8 *msg_data) {
+    snd_ContinueVAGStream(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_STOPVAGSTREAM(SInt8 *msg_data) {
+    snd_StopVAGStream(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_GETVAGSTREAMQUEUECOUNT(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetVAGStreamQueueCount(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_GETVAGSTREAMLOC(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetVAGStreamLoc(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_GETVAGSTREAMTIMEREMAINING(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetVAGStreamTimeRemaining(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_GETVAGSTREAMTOTALTIME(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_GetVAGStreamTotalTime(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_ISVAGSTREAMBUFFERED(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_IsVAGStreamBuffered(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_STOPALLVAGSTREAMS(SInt8 *msg_data) {
+    snd_StopAllStreams();
+}
+
+void snd_CMD_SL_CLOSEVAGSTREAMING(SInt8 *msg_data) {
+    snd_CloseVAGStreaming();
+}
+
+void snd_CMD_SL_STREAMSAFECHECKCDIDLE(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_StreamSafeCheckCDIdle(*(UInt32 *)msg_data);
+}
+
+void snd_CMD_SL_STREAMSAFECDBREAK(SInt8 *msg_data) {
+    *gWriteBackdataOffset = snd_StreamSafeCdBreak();
+}
+
+void snd_CMD_SL_STREAMSAFECDREAD(SInt8 *msg_data) {
+	UInt32 *data = (SInt32 *)msg_data);
+
+    snd_StreamSafeCdReadEEm(data[0], data[1], (void *)data[2]);
+}
+
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_STREAMSAFECDSEARCHFILE);
+#else
+void snd_CMD_SL_STREAMSAFECDSEARCHFILE(SInt8 *msg_data) {
+	UInt32 ee_location;
+	char *fname;
+	sceCdlFILE cdf;
+	SInt32 ret;
+	sceSifDmaData transData;
+	SInt32 did;
+	SInt32 dis;
+	SInt32 intr_state;
+
+    ee_location = *(UInt32 *)msg_data;
+    fname = (char *)&msg_data[4];
+
+    ret = snd_StreamSafeCdSearchFile(&cdf, fname);
+    if (ret) {
+        transData.data = (UInt32)&cdf;
+        transData.addr = ee_location;
+        transData.size = sizeof(cdf);
+        transData.mode = 0;
+
+        dis = CpuSuspendIntr(&intr_state);
+        did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone, &gEEDMADoneSema);
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+
+        if (!did) {
+            ret = 0;
+        } else {
+            while ((sceSifDmaStat(did) < 0) != true) {
+                WaitSema(gEEDMADoneSema);
+            }
+        }
+    }
+
+    *gWriteBackdataOffset = ret;
+}
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/989snd", snd_CMD_SL_ALLOCIOPRAM);
 

@@ -298,23 +298,20 @@ SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step) {
   }
   else if (step < 0x400 && tracker->state_hold2 == 0) {
     tracker->state_hold2 = 1;
-    tracker->state_hold1 = -(snd_RandomUInt16() & 0x7FFF) * (snd_RandomUInt16() & 1);
+    tracker->state_hold1 = -1 * ((snd_RandomUInt16() & 0x7FFF) * (snd_RandomUInt16() & 1));
   }
 
   return tracker->state_hold1;
 }
 #endif
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_GetLFO);
-#else
-SInt32 snd_GetLFO(LFOTracker *tracker, SInt32 step_mult) {
+SInt32 snd_GetLFO(register LFOTracker *tracker, register SInt32 step_mult) {
 	SInt32 ret_val, step;
 
     ret_val = 0;
     step = tracker->next_step >> 16;
 
-    tracker->next_step += tracker->step_size * step_mult;
+    tracker->next_step += step_mult * tracker->step_size;
 
     if (tracker->next_step > 0x07FFFFFF) {
         tracker->next_step -= 0x08000000;
@@ -322,12 +319,11 @@ SInt32 snd_GetLFO(LFOTracker *tracker, SInt32 step_mult) {
 
     ret_val = gLFOFuncs[tracker->type](tracker, step);
     if (tracker->setup_flags & 1) {
-        ret_val = -ret_val;
+        ret_val *= -1;
     }
 
     return ret_val;
 }
-#endif
 
 #ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/LFO", snd_InitLFO);

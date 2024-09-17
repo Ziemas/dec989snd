@@ -182,7 +182,7 @@ void snd_CalcLFODepth(LFOTracker *lfo);
 // FILE -- ame.c
 // *****************************************************************************
 
-UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, int bend);
+UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend);
 SInt32 snd_StartAMESegment(AMEHandlerPtr parent, SInt32 segment);
 void snd_StopAMESegment(MIDIHandlerPtr handler);
 AMEStreamHeaderPtr snd_FindAMEStream(MIDIHandlerPtr stream1, SInt32 index);

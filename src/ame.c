@@ -2,12 +2,49 @@
 #include "functions.h"
 #include "globals.h"
 
-INCLUDE_ASM("asm/nonmatchings/ame", snd_PlayAMESound);
-//UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, int bend) {
-//	SInt16 bend;
-//	AMEHandlerPtr stream_handler;
-//	MultiMIDIBlockHeaderPtr ame_master;
-//}
+UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend) {
+    AMEHandlerPtr stream_handler;
+    MultiMIDIBlockHeaderPtr ame_master;
+
+    ame_master = sound->MIDIBlock;
+    if (!ame_master) {
+        snd_ShowError(89, 0, 0, 0, 0);
+        return 0;
+    }
+
+    if (ame_master->Flags & 2) {
+        return 0;
+    }
+
+    stream_handler = snd_GetFreeAMEHandler();
+    if (!stream_handler) {
+        return 0;
+    }
+
+    ame_master->Flags |= 2;
+    if (vol == 0x7fffffff) {
+        vol = 1024;
+    }
+    stream_handler->SH.Current_Vol = (sound->Vol * vol) >> 10;
+    if (stream_handler->SH.Current_Vol >= 128) {
+        stream_handler->SH.Current_Vol = 127;
+    }
+
+    if (pan == -1 || pan == -2) {
+        stream_handler->SH.Current_Pan = sound->Pan;
+    } else {
+        stream_handler->SH.Current_Pan = pan;
+    }
+    stream_handler->SH.Current_PM = pitch_mod;
+    stream_handler->SH.Sound = sound;
+    stream_handler->SH.Effects = NULL;
+    stream_handler->SH.VolGroup = sound->VolGroup;
+
+    snd_StartAMESegment(stream_handler, 0);
+    snd_ActivateHandler(stream_handler);
+
+    return stream_handler->SH.OwnerID;
+}
 
 INCLUDE_ASM("asm/nonmatchings/ame", snd_StartAMESegment);
 //SInt32 snd_StartAMESegment(AMEHandlerPtr parent, SInt32 segment) {

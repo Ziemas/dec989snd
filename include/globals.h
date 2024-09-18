@@ -17,6 +17,10 @@ extern ExternSndIOPFree gFreeProc;
 // playsnd.c
 extern SInt32 gGlobalExcite;
 
+// reverb.c
+extern SInt16 gReverbDepthL[2];
+extern SInt16 gReverbDepthR[2];
+
 // stick.c
 extern UInt32 gMasterTickOwner[32];
 

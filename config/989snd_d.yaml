@@ -43,7 +43,7 @@ segments:
         - [0x6990, c, autopan]
         - [0x7218, c, autopb]
         - [0x7768, c, autoptch]
-        - [0x7cc0, asm, autoverb]
+        - [0x7cc0, c, autoverb]
         - [0x87d8, asm, autovol]
         - [0x8ec4, asm, blocksnd]
         - [0xf150, asm, extern]

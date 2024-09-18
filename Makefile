@@ -1,6 +1,6 @@
 TARGET := 989SND_D.IRX
 BUILDDIR := build
-CFLAGS := -G 0 -O0 -gstabs -Iinclude
+CFLAGS := -G 0 -O0 -gstabs -Iinclude -quiet
 LDFLAGS := -Tconfig/undefined_syms_auto.txt -Tconfig/undefined_funcs_auto.txt -T$(TARGET).ld -Map $(BUILDDIR)/$(TARGET).map
 ASFLAGS := -Iinclude -G0 -g2 -O1 -no-pad-sections
 MASPSXFLAGS := --aspsx-version=2.78

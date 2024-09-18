@@ -14,6 +14,9 @@ extern BOOL gLimit2Meg;
 extern ExternSndIOPAlloc gAllocProc;
 extern ExternSndIOPFree gFreeProc;
 
+// playsnd.c
+extern SInt32 gGlobalExcite;
+
 // stick.c
 extern UInt32 gMasterTickOwner[32];
 

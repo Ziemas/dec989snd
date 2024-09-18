@@ -607,7 +607,7 @@ void snd_CMD_SL_STREAMSAFECDBREAK(SInt8 *msg_data) {
 }
 
 void snd_CMD_SL_STREAMSAFECDREAD(SInt8 *msg_data) {
-	UInt32 *data = (UInt32 *)msg_data);
+	UInt32 *data = (UInt32 *)msg_data;
 
     snd_StreamSafeCdReadEEm(data[0], data[1], (void *)data[2]);
 }

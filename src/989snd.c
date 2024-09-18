@@ -855,7 +855,7 @@ void snd_CMD_SL_GETSOUNDUD(SInt8 *msg_data) {
 	sceSifDmaData transData;
 
     data = (GetSoundUserDataCommandStruct *)msg_data;
-    ret = snd_GetSoundUserData((SoundBankPtr)data->bank, data->bank_name, data->snd_index, data->snd_name, return_hold);
+    ret = snd_GetSoundUserData((SoundBankPtr)data->bank, (char *)data->bank_name, data->snd_index, (char *)data->snd_name, return_hold);
     if (ret) {
         transData.data = (UInt32)return_hold;
         transData.addr = (UInt32)data->destination;
@@ -910,7 +910,7 @@ void snd_CMD_SL_SETALLSOUNDREG(SInt8 *msg_data) {
     UInt32 *data;
 
     data = (UInt32 *)msg_data;
-    snd_SetAllSoundReg(data[0], &data[1]);
+    snd_SetAllSoundReg(data[0], (SInt8 *)&data[1]);
 }
 
 void snd_CMD_SL_SETMASTERVOLUMEDUCKER(SInt8 *msg_data) {

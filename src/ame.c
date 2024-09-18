@@ -117,7 +117,7 @@ void snd_SetAMESoundVolumePan(UInt32 handle, SInt32 vol, SInt32 pan) {
 	MIDIHandlerPtr walk;
 
     snd_LockVoiceAllocatorEx(1, 10);
-    if (!(stream = snd_CheckHandlerStillActive(handle))) {
+    if (!(stream = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         snd_UnlockVoiceAllocator();
         return;
     }
@@ -140,10 +140,10 @@ void snd_SetAMESoundVolumePan(UInt32 handle, SInt32 vol, SInt32 pan) {
 
     snd_UnlockVoiceAllocator();
 
-    walk = stream->SH.first_child;
+    walk = (MIDIHandlerPtr)stream->SH.first_child;
     while (walk) {
         snd_SetMIDIHandlerVolumePan(walk, vol, pan);
-        walk = walk->SH.siblings;
+        walk = (MIDIHandlerPtr)walk->SH.siblings;
     }
 }
 
@@ -153,7 +153,7 @@ void snd_SetAMESoundPitchModifier(UInt32 handle, SInt16 mod) {
 
     snd_LockVoiceAllocatorEx(1, 11);
 
-    if (!(stream = snd_CheckHandlerStillActive(handle))) {
+    if (!(stream = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         snd_UnlockVoiceAllocator();
         return;
     }
@@ -161,10 +161,10 @@ void snd_SetAMESoundPitchModifier(UInt32 handle, SInt16 mod) {
     stream->SH.Current_PM = mod;
     snd_UnlockVoiceAllocator();
 
-    walk = stream->SH.first_child;
+    walk = (MIDIHandlerPtr)stream->SH.first_child;
     while (walk) {
         snd_SetMIDIHandlerPitchModifier(walk, mod);
-        walk = walk->SH.siblings;
+        walk = (MIDIHandlerPtr)walk->SH.siblings;
     }
 }
 
@@ -183,7 +183,7 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
 	AMEHandlerPtr ame_handler;
 
     if (!stream) {
-        return (MIDIHandlerPtr)1;
+        return (SInt8 *)1;
     }
 
     if (!stream->SH.parent) {
@@ -470,7 +470,7 @@ void snd_SetMIDIRegister(UInt32 handle, SInt32 reg, SInt16 value) {
 
     snd_LockMasterTick(10);
 
-    if (((handle >> 24) & 0x1f) != 2 || !(ame = snd_CheckHandlerStillActive(handle))) {
+    if (((handle >> 24) & 0x1f) != 2 || !(ame = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         snd_UnlockMasterTick();
         return;
     }
@@ -494,7 +494,7 @@ void snd_SetAllMIDIRegister(UInt32 handle, SInt8 *vals) {
 
     snd_LockMasterTick(11);
 
-    if (((handle >> 24) & 0x1f) != 2 || !(ame = snd_CheckHandlerStillActive(handle))) {
+    if (((handle >> 24) & 0x1f) != 2 || !(ame = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         snd_UnlockMasterTick();
         return;
     }
@@ -513,7 +513,7 @@ SInt32 snd_GetMIDIRegister(UInt32 handle, SInt32 reg) {
         return 0;
     }
 
-    if (!(ame = snd_CheckHandlerStillActive(handle))) {
+    if (!(ame = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         return 0;
     }
 

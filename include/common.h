@@ -30,7 +30,7 @@
 #include "include_asm.h"
 #define NULL (void *)0
 typedef enum { false, true } bool;
-
+#define abs(x) __builtin_abs(x)
 typedef unsigned int size_t;
 typedef int ssize_t;
 typedef char *caddr_t;

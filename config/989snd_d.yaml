@@ -41,7 +41,7 @@ segments:
         - [0x3efc, c, LFO]
         - [0x4e68, c, ame]
         - [0x6990, c, autopan]
-        - [0x7218, asm, autopb]
+        - [0x7218, c, autopb]
         - [0x7768, asm, autoptch]
         - [0x7cc0, asm, autoverb]
         - [0x87d8, asm, autovol]

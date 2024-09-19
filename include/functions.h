@@ -234,9 +234,9 @@ SInt32 snd_AutoVolHandler(BasicEffectPtr effect, GSoundHandlerPtr handler);
 // FILE -- blocksnd.c
 // *****************************************************************************
 
-UInt32 snd_PlaySFX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan, int pitch_mod, int bend);
+UInt32 snd_PlaySFX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend);
 UInt32 snd_PlaySFXWithStruct(SFXBlock2Ptr block, SInt32 sound, SInt16 sfx_vol, SInt16 sfx_pan, SndPlayParamsPtr params);
-UInt32 snd_PlaySFX_EX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan, int pitch_mod, int bend, int sfx_vol, int sfx_pan);
+UInt32 snd_PlaySFX_EX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend, SInt16 sfx_vol, SInt16 sfx_pan);
 UInt32 snd_PlaySFXGrain(SFXBlock2Ptr block, SInt32 sindex, SInt32 gindex);
 SInt8 snd_GetSFXGlobalReg(SInt32 which);
 void snd_SetSFXGlobalReg(SInt32 which, SInt8 val);

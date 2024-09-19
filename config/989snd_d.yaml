@@ -45,7 +45,7 @@ segments:
         - [0x7768, c, autoptch]
         - [0x7cc0, c, autoverb]
         - [0x87d8, c, autovol]
-        - [0x8ec4, asm, blocksnd]
+        - [0x8ec4, c, blocksnd]
         - [0xf150, asm, extern]
         - [0xf868, asm, init]
         - [0x10014, asm, intr_code]
@@ -78,7 +78,7 @@ segments:
         # .data
         - [0x3b018, .data, 989snd]
         - [0x3b200, .data, LFO]
-        - [0x3c220, data, blocksnd]
+        - [0x3c220, .data, blocksnd]
         - [0x3c2f4, data, extern]
         - [0x3c2fc, data, init]
         - [0x3c320, data, intr_code]

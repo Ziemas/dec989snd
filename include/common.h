@@ -1602,7 +1602,7 @@ enum {
 typedef void (*SpuTransferCallbackProc)(/* parameters unknown */);
 typedef void (*CommandHandler)(SInt8 *data);
 typedef SInt32 (*LFOFunction)(LFOTracker *tracker, int step);
-typedef SInt32 (*GrainHandler)(/* parameters unknown */);
+typedef SInt32 (*GrainHandler)(BlockSoundHandlerPtr handler, SFX2Ptr sfx, SFXGrain2Ptr grain);
 
 typedef struct { // 0x8
 	/* 0x0 */ int *thid;

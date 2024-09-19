@@ -50,20 +50,22 @@ GrainHandler gGrainHandler[] = {
     snd_SFX_GRAIN_TYPE_COPY_REGISTER,
 };
 
-UInt32 snd_PlaySFX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend) {
+UInt32 snd_PlaySFX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan,
+                   SInt16 pitch_mod, SInt16 bend) {
     return snd_PlaySFX_EX(block, sound, vol, pan, pitch_mod, bend, -1, -1);
 }
 
-UInt32 snd_PlaySFXWithStruct(SFXBlock2Ptr block, SInt32 sound, SInt16 sfx_vol, SInt16 sfx_pan, SndPlayParamsPtr params) {
-	SInt32 play_vol;
-	SFX2 *sfx;
-	BlockSoundHandlerPtr hand;
-	SInt32 stop_sound;
-	SInt32 i;
-	SInt32 vol;
-	SInt32 pan;
-	SInt16 pitch_mod;
-	SInt16 bend;
+UInt32 snd_PlaySFXWithStruct(SFXBlock2Ptr block, SInt32 sound, SInt16 sfx_vol,
+                             SInt16 sfx_pan, SndPlayParamsPtr params) {
+    SInt32 play_vol;
+    SFX2 *sfx;
+    BlockSoundHandlerPtr hand;
+    SInt32 stop_sound;
+    SInt32 i;
+    SInt32 vol;
+    SInt32 pan;
+    SInt16 pitch_mod;
+    SInt16 bend;
 
     hand = NULL;
 
@@ -73,7 +75,7 @@ UInt32 snd_PlaySFXWithStruct(SFXBlock2Ptr block, SInt32 sound, SInt16 sfx_vol, S
 
     sfx = &block->FirstSound[sound];
     sfx->Flags |= 0x4000;
-    
+
     if (!sfx->NumGrains) {
         return 0;
     }
@@ -190,10 +192,9 @@ UInt32 snd_PlaySFXWithStruct(SFXBlock2Ptr block, SInt32 sound, SInt16 sfx_vol, S
         stop_sound = snd_DoGrain(hand);
     }
 
-    if (stop_sound || 
-        (!hand->CountDown && !hand->SH.Voices.core[0] 
-            && !hand->SH.Voices.core[1] && !hand->SH.first_child)) {
-        // in this case the sound finished all its grains 
+    if (stop_sound || (!hand->CountDown && !hand->SH.Voices.core[0] &&
+                       !hand->SH.Voices.core[1] && !hand->SH.first_child)) {
+        // in this case the sound finished all its grains
         //  and has no voices or children alive
         snd_StopHandlerPtr((GSoundHandlerPtr)hand, 1, 0, 0);
         hand->SH.Sound = NULL;
@@ -208,7 +209,9 @@ UInt32 snd_PlaySFXWithStruct(SFXBlock2Ptr block, SInt32 sound, SInt16 sfx_vol, S
     return 0;
 }
 
-UInt32 snd_PlaySFX_EX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend, SInt16 sfx_vol, SInt16 sfx_pan) {
+UInt32 snd_PlaySFX_EX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan,
+                      SInt16 pitch_mod, SInt16 bend, SInt16 sfx_vol,
+                      SInt16 sfx_pan) {
     SndPlayParams params;
 
     params.mask = 0x3C;
@@ -221,8 +224,8 @@ UInt32 snd_PlaySFX_EX(SFXBlock2Ptr block, SInt32 sound, SInt32 vol, SInt32 pan, 
 }
 
 UInt32 snd_PlaySFXGrain(SFXBlock2Ptr block, SInt32 sindex, SInt32 gindex) {
-	SFX2 *sfx;
-	BlockSoundHandlerPtr hand;
+    SFX2 *sfx;
+    BlockSoundHandlerPtr hand;
 
     hand = NULL;
     sfx = &block->FirstSound[sindex];
@@ -261,14 +264,15 @@ UInt32 snd_PlaySFXGrain(SFXBlock2Ptr block, SInt32 sindex, SInt32 gindex) {
 
     snd_DoGrain(hand);
     hand->NextGrain = -1;
-    if (!hand->CountDown && !hand->SH.Voices.core[0] && !hand->SH.Voices.core[1] && !hand->SH.first_child) {
-      snd_DeactivateHandler(&hand->SH, 0);
-      hand = 0;
+    if (!hand->CountDown && !hand->SH.Voices.core[0] &&
+        !hand->SH.Voices.core[1] && !hand->SH.first_child) {
+        snd_DeactivateHandler(&hand->SH, 0);
+        hand = 0;
     }
 
     if (hand) {
-      snd_ActivateHandler(&hand->SH);
-      return hand->SH.OwnerID;
+        snd_ActivateHandler(&hand->SH);
+        return hand->SH.OwnerID;
     }
 
     return 0;
@@ -291,8 +295,8 @@ void snd_SetSFXGlobalReg(SInt32 which, SInt8 val) {
 }
 
 SInt8 snd_GetSFXSoundReg(UInt32 handle, SInt32 which) {
-	BlockSoundHandlerPtr hand;
-	SInt8 val;
+    BlockSoundHandlerPtr hand;
+    SInt8 val;
 
     if (which < 0 || which >= 4) {
         return 0;
@@ -311,7 +315,7 @@ SInt8 snd_GetSFXSoundReg(UInt32 handle, SInt32 which) {
 }
 
 void snd_SetSFXSoundReg(UInt32 handle, SInt32 which, SInt8 val) {
-	BlockSoundHandlerPtr hand;
+    BlockSoundHandlerPtr hand;
 
     if (which < 0 || which >= 4) {
         return;
@@ -329,15 +333,15 @@ void snd_SetSFXSoundReg(UInt32 handle, SInt32 which, SInt8 val) {
 }
 
 void snd_SetAllSFXSoundReg(UInt32 handle, SInt8 *vals) {
-	BlockSoundHandlerPtr hand;
-	SInt32 i;
+    BlockSoundHandlerPtr hand;
+    SInt32 i;
 
     snd_LockMasterTick(30);
     if (!(hand = (BlockSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         snd_UnlockMasterTick();
         return;
     }
-        
+
     for (i = 0; i < 4; i++) {
         hand->Registers[i] = vals[i];
     }
@@ -350,9 +354,10 @@ SInt32 snd_ProcessBlockSoundTick(BlockSoundHandlerPtr handler) {
 
     stop_sound = 0;
     if (handler->NextGrain == -1) {
-        if (!handler->SH.first_child && !handler->SH.Voices.core[0] && !handler->SH.Voices.core[1]) {
+        if (!handler->SH.first_child && !handler->SH.Voices.core[0] &&
+            !handler->SH.Voices.core[1]) {
             return 1;
-        } 
+        }
         return 0;
     }
 
@@ -364,9 +369,10 @@ SInt32 snd_ProcessBlockSoundTick(BlockSoundHandlerPtr handler) {
     return stop_sound;
 }
 
-BOOL snd_DoBlockSoundStop(BlockSoundHandlerPtr handler, SInt32 silence, BOOL vlimit_stop) {
-	SInt32 stop_sound;
-	SInt32 stop_index;
+BOOL snd_DoBlockSoundStop(BlockSoundHandlerPtr handler, SInt32 silence,
+                          BOOL vlimit_stop) {
+    SInt32 stop_sound;
+    SInt32 stop_index;
 
     stop_sound = 0;
     stop_index = snd_GetOnStopGrainIndex(handler);
@@ -389,7 +395,8 @@ BOOL snd_DoBlockSoundStop(BlockSoundHandlerPtr handler, SInt32 silence, BOOL vli
 
     snd_UnlockMasterTick();
 
-    if (!handler->SH.Voices.core[0] && !handler->SH.Voices.core[1] && !handler->SH.first_child) {
+    if (!handler->SH.Voices.core[0] && !handler->SH.Voices.core[1] &&
+        !handler->SH.first_child) {
         snd_RemoveLFOsForHandler(handler);
         return 0;
     }
@@ -398,11 +405,11 @@ BOOL snd_DoBlockSoundStop(BlockSoundHandlerPtr handler, SInt32 silence, BOOL vli
 }
 
 SInt32 snd_GetOnStopGrainIndex(BlockSoundHandlerPtr handler) {
-	SInt32 i;
-	SFX2Ptr sfx;
+    SInt32 i;
+    SFX2Ptr sfx;
 
     sfx = (SFX2Ptr)handler->SH.Sound;
-    for (i = 0; i < sfx->NumGrains ; i++) {
+    for (i = 0; i < sfx->NumGrains; i++) {
         if (sfx->FirstGrain[i].OpcodeData.MicroOp.Type == 0x2b) {
             if (i == sfx->NumGrains - 1) {
                 return -1;
@@ -415,19 +422,12 @@ SInt32 snd_GetOnStopGrainIndex(BlockSoundHandlerPtr handler) {
     return -1;
 }
 
-SInt32 snd_SFX_GRAIN_TYPE_NULL(BlockSoundHandlerPtr handler, SFX2Ptr sfx, SFXGrain2Ptr grain) {
+SInt32 snd_SFX_GRAIN_TYPE_NULL(BlockSoundHandlerPtr handler, SFX2Ptr sfx,
+                               SFXGrain2Ptr grain) {
     return 0;
 }
 
 INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFX_GRAIN_TYPE_TONE);
-//SInt32 snd_SFX_GRAIN_TYPE_TONE(BlockSoundHandlerPtr handler, SFX2Ptr sfx, SFXGrain2Ptr grain) {
-//	SInt32 voice;
-//	SInt32 g_pan;
-//	SInt32 priority;
-//	TonePtr tone;
-//	SInt32 core;
-//	SInt32 c_v;
-//}
 
 INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFX_GRAIN_TYPE_XREF_ID);
 
@@ -473,7 +473,8 @@ INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFX_GRAIN_TYPE_GOTO_MARKER);
 
 INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFX_GRAIN_TYPE_GOTO_RANDOM_MARKER);
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFX_GRAIN_TYPE_WAIT_FOR_ALL_VOICES);
+INCLUDE_ASM("asm/nonmatchings/blocksnd",
+            snd_SFX_GRAIN_TYPE_WAIT_FOR_ALL_VOICES);
 
 INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFX_GRAIN_TYPE_PLAY_CYCLE);
 

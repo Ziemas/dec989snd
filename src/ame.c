@@ -2,7 +2,8 @@
 #include "functions.h"
 #include "globals.h"
 
-UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend) {
+UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan,
+                        SInt16 pitch_mod, SInt16 bend) {
     AMEHandlerPtr stream_handler;
     MultiMIDIBlockHeaderPtr ame_master;
 
@@ -47,10 +48,10 @@ UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch
 }
 
 SInt32 snd_StartAMESegment(AMEHandlerPtr parent, SInt32 segment) {
-	GSoundHandlerPtr walk;
-	AMEStreamHeaderPtr stream_ptr;
-	MultiMIDIBlockHeaderPtr ame_master;
-	MIDISoundPtr m_sound;
+    GSoundHandlerPtr walk;
+    AMEStreamHeaderPtr stream_ptr;
+    MultiMIDIBlockHeaderPtr ame_master;
+    MIDISoundPtr m_sound;
 
     m_sound = (MIDISoundPtr)parent->SH.Sound;
     ame_master = (MultiMIDIBlockHeaderPtr)m_sound->MIDIBlock;
@@ -105,7 +106,7 @@ void snd_StopAMESegment(MIDIHandlerPtr handler) {
 }
 
 AMEStreamHeaderPtr snd_FindAMEStream(MIDIHandlerPtr stream1, SInt32 index) {
-	MultiMIDIBlockHeaderPtr ame_master;
+    MultiMIDIBlockHeaderPtr ame_master;
 
     ame_master = ((MIDISoundPtr)(stream1->SH.Sound))->MIDIBlock;
 
@@ -113,8 +114,8 @@ AMEStreamHeaderPtr snd_FindAMEStream(MIDIHandlerPtr stream1, SInt32 index) {
 }
 
 void snd_SetAMESoundVolumePan(UInt32 handle, SInt32 vol, SInt32 pan) {
-	AMEHandlerPtr stream;
-	MIDIHandlerPtr walk;
+    AMEHandlerPtr stream;
+    MIDIHandlerPtr walk;
 
     snd_LockVoiceAllocatorEx(1, 10);
     if (!(stream = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
@@ -132,10 +133,10 @@ void snd_SetAMESoundVolumePan(UInt32 handle, SInt32 vol, SInt32 pan) {
         stream->SH.Current_Vol = 127;
     }
 
-    if ( pan == -1 ) {
-      stream->SH.Current_Pan = stream->SH.Sound->Pan;
-    } else if ( pan != -2 ) {
-      stream->SH.Current_Pan = pan;
+    if (pan == -1) {
+        stream->SH.Current_Pan = stream->SH.Sound->Pan;
+    } else if (pan != -2) {
+        stream->SH.Current_Pan = pan;
     }
 
     snd_UnlockVoiceAllocator();
@@ -148,8 +149,8 @@ void snd_SetAMESoundVolumePan(UInt32 handle, SInt32 vol, SInt32 pan) {
 }
 
 void snd_SetAMESoundPitchModifier(UInt32 handle, SInt16 mod) {
-	AMEHandlerPtr stream;
-	MIDIHandlerPtr walk;
+    AMEHandlerPtr stream;
+    MIDIHandlerPtr walk;
 
     snd_LockVoiceAllocatorEx(1, 11);
 
@@ -168,19 +169,19 @@ void snd_SetAMESoundPitchModifier(UInt32 handle, SInt16 mod) {
     }
 }
 
-SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
-	SInt32 compare_value;
-	UInt8 *command_ptr;
-	SInt16 next_command;
-	SInt32 ignore_next_command;
-	AMEStreamHeaderPtr stream_to_stop;
-	SInt32 y;
-	SInt32 group;
-	SInt32 counter;
-	SInt32 done;
-	SInt32 stop;
-	SInt8 *stream_end;
-	AMEHandlerPtr ame_handler;
+SInt8 *snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
+    SInt32 compare_value;
+    UInt8 *command_ptr;
+    SInt16 next_command;
+    SInt32 ignore_next_command;
+    AMEStreamHeaderPtr stream_to_stop;
+    SInt32 y;
+    SInt32 group;
+    SInt32 counter;
+    SInt32 done;
+    SInt32 stop;
+    SInt8 *stream_end;
+    AMEHandlerPtr ame_handler;
 
     if (!stream) {
         return (SInt8 *)1;
@@ -265,7 +266,8 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
             break;
         case 6:
             if (!ignore_next_command) {
-                if (ame_handler->MIDIRegister[command_ptr[0]] > command_ptr[1] - 1) {
+                if (ame_handler->MIDIRegister[command_ptr[0]] >
+                    command_ptr[1] - 1) {
                     ignore_next_command = 1;
                 }
             } else {
@@ -277,7 +279,8 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
             break;
         case 7:
             if (!ignore_next_command) {
-                if (ame_handler->MIDIRegister[command_ptr[0]] < command_ptr[1] + 1) {
+                if (ame_handler->MIDIRegister[command_ptr[0]] <
+                    command_ptr[1] + 1) {
                     ignore_next_command = 1;
                 }
             } else {
@@ -297,7 +300,8 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
             break;
         case 12:
             if (!ignore_next_command) {
-                stream_end = snd_AMEFunction(stream, ame_handler->MIDIMacro[*command_ptr]);
+                stream_end = snd_AMEFunction(
+                    stream, ame_handler->MIDIMacro[*command_ptr]);
                 if (!stream_end) { // ?
                     stop = 1;
                     done = 1;
@@ -313,7 +317,8 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
             if (!ignore_next_command) {
                 stop = 1;
                 done = 1;
-                snd_StartAMESegment(ame_handler, ame_handler->MIDIRegister[*command_ptr] - 1);
+                snd_StartAMESegment(
+                    ame_handler, ame_handler->MIDIRegister[*command_ptr] - 1);
             } else {
                 if (ignore_next_command == 1) {
                     ignore_next_command = 0;
@@ -323,7 +328,8 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
             break;
         case 14:
             if (!ignore_next_command) {
-                snd_StartAMESegment(ame_handler, ame_handler->MIDIRegister[*command_ptr] - 1);
+                snd_StartAMESegment(
+                    ame_handler, ame_handler->MIDIRegister[*command_ptr] - 1);
             } else {
                 if (ignore_next_command == 1) {
                     ignore_next_command = 0;
@@ -337,7 +343,7 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
                 command_ptr++;
                 ame_handler->group[group].basis = *command_ptr;
                 command_ptr++;
-                for (y = 0; *command_ptr != 0xf7 ; y++) {
+                for (y = 0; *command_ptr != 0xf7; y++) {
                     ame_handler->group[group].channel[y] = command_ptr[0];
                     command_ptr++;
                     ame_handler->group[group].excite_min[y] = command_ptr[0];
@@ -362,15 +368,27 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
                 if (!ame_handler->group[command_ptr[0]].basis) {
                     compare_value = gGlobalExcite;
                 } else {
-                    compare_value = ame_handler->MIDIRegister[ame_handler->group[command_ptr[0]].basis - 1];
+                    compare_value =
+                        ame_handler->MIDIRegister
+                            [ame_handler->group[command_ptr[0]].basis - 1];
                 }
-                for (counter = 0; counter < ame_handler->group[command_ptr[0]].num_channels; counter++) {
-                    if (compare_value > ame_handler->group[command_ptr[0]].excite_min[counter] - 1
-                        && compare_value < ame_handler->group[command_ptr[0]].excite_max[counter] + 1) {
-                            snd_UnmuteMIDIChannel(stream, ame_handler->group[command_ptr[0]].channel[counter]);
-                        } else {
-                            snd_MuteMIDIChannel(stream, ame_handler->group[command_ptr[0]].channel[counter]);
-                        }
+                for (counter = 0;
+                     counter < ame_handler->group[command_ptr[0]].num_channels;
+                     counter++) {
+                    if (compare_value > ame_handler->group[command_ptr[0]]
+                                                .excite_min[counter] -
+                                            1 &&
+                        compare_value < ame_handler->group[command_ptr[0]]
+                                                .excite_max[counter] +
+                                            1) {
+                        snd_UnmuteMIDIChannel(stream,
+                                              ame_handler->group[command_ptr[0]]
+                                                  .channel[counter]);
+                    } else {
+                        snd_MuteMIDIChannel(stream,
+                                            ame_handler->group[command_ptr[0]]
+                                                .channel[counter]);
+                    }
                 }
             } else {
                 if (ignore_next_command == 1) {
@@ -437,7 +455,8 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
             break;
         case 22:
             if (!ignore_next_command) {
-                if (ame_handler->MIDIRegister[command_ptr[0]] != command_ptr[1]) {
+                if (ame_handler->MIDIRegister[command_ptr[0]] !=
+                    command_ptr[1]) {
                     ignore_next_command = 1;
                 }
             } else {
@@ -462,7 +481,7 @@ SInt8* snd_AMEFunction(MIDIHandlerPtr stream, UInt8 *ame_header) {
 }
 
 void snd_SetMIDIRegister(UInt32 handle, SInt32 reg, SInt16 value) {
-	AMEHandlerPtr ame;
+    AMEHandlerPtr ame;
     if (reg < 0 || reg >= 16) {
         snd_ShowError(92, reg, value, 0, 0);
         return;
@@ -470,7 +489,8 @@ void snd_SetMIDIRegister(UInt32 handle, SInt32 reg, SInt16 value) {
 
     snd_LockMasterTick(10);
 
-    if (((handle >> 24) & 0x1f) != 2 || !(ame = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+    if (((handle >> 24) & 0x1f) != 2 ||
+        !(ame = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         snd_UnlockMasterTick();
         return;
     }
@@ -489,25 +509,26 @@ void snd_SetMIDIRegister(UInt32 handle, SInt32 reg, SInt16 value) {
 }
 
 void snd_SetAllMIDIRegister(UInt32 handle, SInt8 *vals) {
-	AMEHandlerPtr ame;
-	SInt32 i;
+    AMEHandlerPtr ame;
+    SInt32 i;
 
     snd_LockMasterTick(11);
 
-    if (((handle >> 24) & 0x1f) != 2 || !(ame = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+    if (((handle >> 24) & 0x1f) != 2 ||
+        !(ame = (AMEHandlerPtr)snd_CheckHandlerStillActive(handle))) {
         snd_UnlockMasterTick();
         return;
     }
 
     for (i = 0; i < 16; i++) {
-        ame->MIDIRegister[i] = vals[i]; 
+        ame->MIDIRegister[i] = vals[i];
     }
-    
+
     snd_UnlockMasterTick();
 }
 
 SInt32 snd_GetMIDIRegister(UInt32 handle, SInt32 reg) {
-	AMEHandlerPtr ame;
+    AMEHandlerPtr ame;
 
     if (((handle >> 24) & 0x1f) != 2) {
         return 0;

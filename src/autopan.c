@@ -1,13 +1,14 @@
 #include "common.h"
 #include "functions.h"
 
-void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt32 delta_from) {
-	SInt32 wouldhavechanged;
-	SInt32 panchange;
-	SInt32 shortest;
-	GSoundHandlerPtr handler;
-	BasicEffectPtr effect;
-	SInt32 new_effect;
+void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time,
+                 SInt32 delta_from) {
+    SInt32 wouldhavechanged;
+    SInt32 panchange;
+    SInt32 shortest;
+    GSoundHandlerPtr handler;
+    BasicEffectPtr effect;
+    SInt32 new_effect;
 
     shortest = 0;
     new_effect = 0;
@@ -26,7 +27,7 @@ void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt3
 
     if (dir > 0 && panchange < 0) {
         panchange += 360;
-    } 
+    }
     if (dir < 0 && panchange > 0) {
         panchange -= 360;
     }
@@ -95,7 +96,7 @@ void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt3
         effect->delta_time = abs(delta_time / panchange);
         effect->ec.delta_type = 1;
         effect->ec.delta_counter = effect->delta_time;
-        effect->delta_value = panchange < 0 ? -1 : 1 ;
+        effect->delta_value = panchange < 0 ? -1 : 1;
     } else {
         effect->delta_value = (panchange << 5) / delta_time;
         effect->ec.delta_type = 0;
@@ -112,10 +113,10 @@ void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt3
     snd_UnlockMasterTick();
 }
 
-//INCLUDE_ASM("asm/nonmatchings/autopan", snd_AutoPanHandler);
+// INCLUDE_ASM("asm/nonmatchings/autopan", snd_AutoPanHandler);
 SInt32 snd_AutoPanHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
-	SInt16 newMpan;
-	SInt16 wrap_dest;
+    SInt16 newMpan;
+    SInt16 wrap_dest;
 
     if (abs(effect->delta_value) >= 2) {
         newMpan = ((handler->Current_Pan << 5) + effect->delta_value) >> 5;
@@ -131,8 +132,10 @@ SInt32 snd_AutoPanHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
         wrap_dest = effect->destination;
     }
 
-    if ((effect->delta_value > 0 && newMpan > wrap_dest && handler->Current_Pan < wrap_dest)
-        || (effect->delta_value < 0 && newMpan < wrap_dest && handler->Current_Pan > wrap_dest)) {
+    if ((effect->delta_value > 0 && newMpan > wrap_dest &&
+         handler->Current_Pan < wrap_dest) ||
+        (effect->delta_value < 0 && newMpan < wrap_dest &&
+         handler->Current_Pan > wrap_dest)) {
         newMpan = effect->destination;
     } else {
         if (newMpan < 0) {
@@ -147,7 +150,7 @@ SInt32 snd_AutoPanHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
         snd_RemoveEffectFromHandler(handler, &effect->ec);
 
         return 0;
-    } 
+    }
 
     if (effect->ec.delta_type == 1) {
         effect->ec.delta_counter = effect->delta_time;
@@ -155,4 +158,3 @@ SInt32 snd_AutoPanHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
 
     return 0;
 }
-

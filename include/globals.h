@@ -26,5 +26,6 @@ extern UInt32 gMasterTickOwner[32];
 
 // valloc.c
 extern UInt32 gVAllocOwnerID;
+extern VoiceAttributes gChannelStatus[48];
 
 #endif

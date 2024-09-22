@@ -2,34 +2,7 @@
 #define _FUNCTIONS_H_
 
 #include "common.h"
-
-// imports
-int printf(const char* fmt, ...);
-int strtol(const char *, char **, int);
-int strncmp(const char *, const char *, int);
-int sceSifCheckInit();
-int sceSifInit();
-int sceSifInitRpc(int);
-int CpuSuspendIntr(int *oldstat);
-int CpuResumeIntr(int oldstat);
-void *AllocSysMemory(int type, unsigned long size, void *addr);
-int FreeSysMemory(void *area);
-int CreateSema(struct SemaParam *param);
-int DeleteSema(int semid);
-int SignalSema(int semid);
-int iSignalSema(int semid);
-int CreateThread(struct ThreadParam *param);
-int WaitSema(int semid);
-int StartThread(int thid, u_long arg);
-int GetThreadId(void);
-void sceSifRpcLoop(sceSifQueueData *);
-void sceSifRegisterRpc(sceSifServeData *, unsigned int,sceSifRpcFunc,void *,sceSifRpcFunc,void *,sceSifQueueData *);
-void sceSifSetRpcQueue(sceSifQueueData *, int);
-int sceCdStatus(void);
-int sceSifDmaStat(unsigned int id);
-unsigned int sceSifSetDmaIntr(sceSifDmaData *sdd, int len, void (*func)(), void *data);
-
-
+#include "libcdvd.h"
 
 // *****************************************************************************
 // FILE -- 989snd.c
@@ -146,9 +119,7 @@ void snd_CMD_SL_SETALLSOUNDREG(SInt8 *msg_data);
 void snd_CMD_SL_SETMASTERVOLUMEDUCKER(SInt8 *msg_data);
 void snd_CMD_SL_CDSTATUS(SInt8 *msg_data);
 void snd_CMD_SL_COMMAND_BATCH(SInt8 *msg_data);
-static void* snd_EEMessageParser(UInt32 command, void *data, SInt32 size);
 SInt32 snd_StartEEMessaging();
-static void* snd_EELoaderMessageParser(UInt32 command, void *data, SInt32 size);
 SInt32 snd_StartEELoaderMessaging();
 SInt32 start(SInt32 argc, SInt8 **argv);
 void snd_ParseCommandLineArg(char *arg);
@@ -443,8 +414,8 @@ SInt32 snd_PauseMovieSound();
 
 void snd_RandInit(SInt16 seed);
 UInt16 snd_RandomUInt16();
-static UInt16 myrand();
-static void mysrand(UInt16 newseed);
+//static UInt16 myrand();
+//static void mysrand(UInt16 newseed);
 
 // *****************************************************************************
 // FILE -- pantable.c

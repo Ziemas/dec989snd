@@ -1,6 +1,10 @@
 #include "common.h"
 #include "functions.h"
 #include "globals.h"
+#include "intrman.h"
+#include "libsd.h"
+#include "sdmacro.h"
+#include "stdio.h"
 
 SInt8 gBlockGlobalReg[32] = {0};
 GrainHandler gGrainHandler[] = {
@@ -1034,7 +1038,6 @@ SInt32 snd_SFX_GRAIN_TYPE_PLUGIN_MESSAGE(BlockSoundHandlerPtr handler,
                             (SInt32)pp->data, (SInt32)handler, 0, 0);
 }
 
-// INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFX_GRAIN_TYPE_BRANCH);
 SInt32 snd_SFX_GRAIN_TYPE_BRANCH(BlockSoundHandlerPtr handler, SFX2Ptr sfx,
                                  SFXGrain2Ptr grain) {
     SInt32 index;
@@ -1055,7 +1058,8 @@ SInt32 snd_SFX_GRAIN_TYPE_BRANCH(BlockSoundHandlerPtr handler, SFX2Ptr sfx,
             index = snd_FindSoundByName(handler->block, psp->snd_name, &block);
             if (index < 0) {
                 if (!gPrefs_Silent) {
-                    printf("989snd: Didn't find child sound named -> %s\n",
+                    printf("989snd: Didn't find child sound "
+                           "named -> %s\n",
                            psp->snd_name);
                 }
                 return -1;
@@ -1174,7 +1178,8 @@ SInt32 snd_SFX_GRAIN_TYPE_STARTCHILDSOUND(BlockSoundHandlerPtr handler,
             index = snd_FindSoundByName(handler->block, psp->snd_name, &block);
             if (index < 0) {
                 if (!gPrefs_Silent) {
-                    printf("989snd: Didn't find child sound named -> %s\n",
+                    printf("989snd: Didn't find child sound "
+                           "named -> %s\n",
                            psp->snd_name);
                 }
 
@@ -1217,7 +1222,8 @@ SInt32 snd_SFX_GRAIN_TYPE_STOPCHILDSOUND(BlockSoundHandlerPtr handler,
             index = snd_FindSoundByName(handler->block, psp->snd_name, &block);
             if (index < 0) {
                 if (!gPrefs_Silent) {
-                    printf("989snd: Didn't find child sound named -> %s\n",
+                    printf("989snd: Didn't find child sound "
+                           "named -> %s\n",
                            psp->snd_name);
                 }
 
@@ -1287,36 +1293,352 @@ SInt32 snd_DoGrain(BlockSoundHandlerPtr handler) {
     return stop_sound;
 }
 
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SetSFXVolPan);
-//void snd_SetSFXVolPan(UInt32 handle, SInt32 vol, SInt32 pan, SInt32 cause) {
-//	BlockSoundHandlerPtr hand;
-//	SInt32 uses_voice;
-//	SInt32 own_the_allocator;
-//	SFX2Ptr sfx;
-//	SInt32 new_vol;
-//	SInt32 new_pan;
-//	GSoundHandlerPtr child_walk;
-//	SInt32 child_vol;
-//	SInt32 intr_state;
-//	SInt32 dis;
-//	SpuVolume spu_vol;
-//	SInt32 g_pan;
-//}
+#else
+void snd_SetSFXVolPan(UInt32 handle, SInt32 vol, SInt32 pan, SInt32 cause) {
+    BlockSoundHandlerPtr hand;
+    SInt32 uses_voice;
+    SInt32 own_the_allocator;
+    SFX2Ptr sfx;
+    SInt32 new_vol;
+    SInt32 new_pan;
+    GSoundHandlerPtr child_walk;
+    SInt32 child_vol;
+    SInt32 intr_state;
+    SInt32 dis;
+    SpuVolume spu_vol;
+    SInt32 g_pan;
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SetSFXPitch);
+    uses_voice = -1;
+    if (!(hand = (BlockSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        return;
+    }
+    sfx = (SFX2Ptr)hand->SH.Sound;
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SetSFXPitchbend);
+    if (vol < 0) {
+        hand->App_Vol = -1 * 1024 * vol / 127;
+    } else if (vol != 0x7fffffff) {
+        hand->App_Vol = vol;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SetSFXPitchModifier);
+    if (pan == -1) {
+        hand->App_Pan = sfx->Pan;
+    } else if (pan != -2) {
+        hand->App_Pan = pan;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_UpdateSFXPitch);
+    new_vol = ((hand->App_Vol * hand->SH.Original_Vol) >> 10) + hand->LFO_Vol;
+    if (new_vol > 127) {
+        new_vol = 127;
+    }
+    if (new_vol < 0) {
+        new_vol = 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_DoesSFXLoop);
+    new_pan = hand->App_Pan + hand->LFO_Pan;
+    while (new_pan >= 360) {
+        new_pan -= 360;
+    }
+    while (new_pan < 0) {
+        new_pan += 360;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SFXOwnerProc);
+    if (new_vol == hand->SH.Current_Vol && new_pan == hand->SH.Current_Pan) {
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_CollapsePan);
+    if (cause == 0 && hand->SH.first_child) {
+        child_walk = hand->SH.first_child;
+        while (child_walk) {
+            child_vol = (hand->App_Vol * hand->SH.Original_Vol) / 127;
+            snd_SetSFXVolPan(child_walk->OwnerID, child_vol, pan, cause);
+            child_walk = child_walk->siblings;
+        }
+    }
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_ScalePriorityForVolume);
+    hand->SH.Current_Vol = new_vol;
+    hand->SH.Current_Pan = new_pan;
 
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_ResetAllHandlersForSound);
+    own_the_allocator = snd_LockVoiceAllocatorEx(1, 27);
+    dis = CpuSuspendIntr(&intr_state);
+
+    while ((uses_voice = snd_GetNextHandlerVoice(hand, uses_voice + 1)) != -1) {
+        g_pan = 0;
+        if (((SFX2Ptr)hand->SH.Sound)->Flags & 4) {
+            g_pan = snd_CollapsePan(
+                gChannelStatus[uses_voice].OwnerData.BlockData.g_pan,
+                hand->App_Vol, sfx);
+        } else {
+            g_pan = gChannelStatus[uses_voice].OwnerData.BlockData.g_pan;
+        }
+
+        snd_MakeVolumes(127, 0, hand->SH.Current_Vol, hand->SH.Current_Pan,
+                        gChannelStatus[uses_voice].OwnerData.BlockData.g_vol,
+                        g_pan, &gChannelStatus[uses_voice].Volume);
+
+        if ((hand->SH.flags & 2) == 0) {
+            spu_vol.left = (UInt16)snd_AdjustVolToGroup(
+                               gChannelStatus[uses_voice].Volume.left,
+                               hand->SH.VolGroup) >>
+                           1;
+            spu_vol.right = (UInt16)snd_AdjustVolToGroup(
+                                gChannelStatus[uses_voice].Volume.right,
+                                hand->SH.VolGroup) >>
+                            1;
+
+            sceSdSetParam(uses_voice / 24 | SD_VOICE(uses_voice % 24) |
+                              SD_VP_VOLL,
+                          spu_vol.left);
+            sceSdSetParam(uses_voice / 24 | SD_VOICE(uses_voice % 24) |
+                              SD_VP_VOLR,
+                          spu_vol.right);
+        }
+
+        gChannelStatus[uses_voice].Priority = snd_ScalePriorityForVolume(
+            hand->App_Vol, gChannelStatus[uses_voice].Tone);
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    if (own_the_allocator) {
+        snd_UnlockVoiceAllocator();
+    }
+}
+#endif
+
+void snd_SetSFXPitch(UInt32 handle, SInt32 pitch) {
+    BlockSoundHandlerPtr hand;
+
+    if (!(hand = (BlockSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        return;
+    }
+
+    hand->Current_Note = pitch / 128;
+    hand->Current_Fine = pitch % 128;
+
+    snd_UpdateSFXPitch(hand);
+}
+
+void snd_SetSFXPitchbend(UInt32 handle, SInt16 bend) {
+    BlockSoundHandlerPtr hand;
+    GSoundHandlerPtr child_walk;
+
+    if (!(hand = (BlockSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        return;
+    }
+
+    if (hand->SH.first_child) {
+        child_walk = hand->SH.first_child;
+        while (child_walk) {
+            snd_SetSFXPitchbend(child_walk->OwnerID, bend);
+            child_walk = child_walk->siblings;
+        }
+    }
+
+    hand->App_PB = bend;
+    snd_UpdateSFXPitch(hand);
+}
+
+void snd_SetSFXPitchModifier(UInt32 handle, SInt16 mod) {
+    BlockSoundHandlerPtr hand;
+    GSoundHandlerPtr child_walk;
+
+    if (!(hand = (BlockSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        return;
+    }
+
+    if (hand->SH.first_child) {
+        child_walk = hand->SH.first_child;
+        while (child_walk) {
+            snd_SetSFXPitchModifier(child_walk->OwnerID, mod);
+            child_walk = child_walk->siblings;
+        }
+    }
+
+    hand->App_PM = mod;
+    snd_UpdateSFXPitch(hand);
+}
+
+void snd_UpdateSFXPitch(BlockSoundHandlerPtr hand) {
+    SInt32 own_the_allocator;
+    SInt32 uses_voice;
+    SInt32 note;
+    SInt32 fine;
+    SInt32 new_pb;
+    SInt32 intr_state;
+    SInt32 dis;
+    SInt32 clock;
+
+    uses_voice = -1;
+    hand->SH.Current_PM = hand->App_PM + hand->LFO_PM;
+    new_pb = hand->App_PB + hand->LFO_PB;
+
+    if (new_pb > 32767) {
+        hand->Current_PB = 32767;
+    } else if (new_pb < -32768) {
+        hand->Current_PB = -32768;
+    } else {
+        hand->Current_PB = new_pb;
+    }
+
+    own_the_allocator = snd_LockVoiceAllocatorEx(1, 28);
+    while ((uses_voice = snd_GetNextHandlerVoice(hand, uses_voice + 1)) != -1) {
+        gChannelStatus[uses_voice].Current_PB = hand->Current_PB;
+        gChannelStatus[uses_voice].Current_PM = hand->SH.Current_PM;
+
+        if ((hand->SH.flags & 2) == 0) {
+            dis = CpuSuspendIntr(&intr_state);
+
+            if ((gChannelStatus[uses_voice].Tone->Flags & 8) == 0) {
+                snd_PitchBendTone(gChannelStatus[uses_voice].Tone,
+                                  hand->Current_PB, hand->SH.Current_PM,
+                                  hand->Current_Note, hand->Current_Fine, &note,
+                                  &fine);
+                sceSdSetParam(
+                    ((uses_voice / 24) | SD_VOICE(uses_voice % 24)) |
+                        SD_VP_PITCH,
+                    PS1Note2Pitch(gChannelStatus[uses_voice].Tone->CenterNote,
+                                  gChannelStatus[uses_voice].Tone->CenterFine,
+                                  note, fine));
+            } else {
+                clock = gChannelStatus[uses_voice].Tone->CenterNote +
+                        32 * gChannelStatus[uses_voice].Current_PB / 0x7FFF;
+                if (clock < 0)
+                    clock = 0;
+                if (clock >= 64)
+                    clock = 63;
+                sceSdSetCoreAttr((uses_voice / 24) | 8, clock);
+            }
+
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+        }
+    }
+
+    if (own_the_allocator) {
+        snd_UnlockVoiceAllocator();
+    }
+}
+
+SInt32 snd_DoesSFXLoop(SFXBlock2Ptr block, SInt32 sound) {
+    return block->FirstSound[sound].Flags & 1;
+}
+
+void snd_SFXOwnerProc(SInt32 voice, UInt32 owner, SInt32 flag) {
+    BlockSoundHandlerPtr snd;
+    SInt32 core;
+    SInt32 c_v;
+    BlockSoundHandlerPtr parent;
+
+    snd = (BlockSoundHandlerPtr)owner;
+    core = voice / 24;
+    c_v = voice % 24;
+
+    snd->SH.Voices.core[core] &= ~(1 << c_v);
+    if (!snd->SH.Voices.core[0] && !snd->SH.Voices.core[1] &&
+        snd->NextGrain == -1 && (snd->SH.parent || !snd->SH.first_child)) {
+        snd_LockMasterTick(16);
+        parent = (BlockSoundHandler *)snd->SH.parent;
+        snd_RemoveLFOsForHandler(snd);
+        snd_DeactivateHandler(&snd->SH, 0);
+
+        if (parent && !parent->SH.first_child && !parent->SH.Voices.core[0] &&
+            !parent->SH.Voices.core[1] && parent->NextGrain == -1) {
+            snd_RemoveLFOsForHandler(parent);
+            snd_DeactivateHandler(&parent->SH, 0);
+        }
+        snd_UnlockMasterTick();
+    }
+}
+
+SInt32 snd_CollapsePan(SInt32 g_pan, SInt32 app_vol, SFX2 *sfx) {
+    SInt32 w_vol;
+    SInt32 m_vol;
+    SInt32 f_vol;
+
+    w_vol = 0x400;
+    m_vol = w_vol / 6;
+    f_vol = w_vol - m_vol;
+
+    if (app_vol < f_vol) {
+        if (app_vol > m_vol) {
+            if (g_pan > 180) {
+                g_pan = 360 -
+                        (((360 - g_pan) * (app_vol - m_vol)) / (f_vol - m_vol));
+            } else {
+                g_pan = ((app_vol - m_vol) * g_pan) / (f_vol - m_vol);
+            }
+        } else {
+            g_pan = 0;
+        }
+    }
+
+    return g_pan;
+}
+
+SInt8 snd_ScalePriorityForVolume(SInt32 vol, TonePtr tone) {
+    SInt32 p;
+    SInt32 depth;
+    SInt32 var;
+
+    p = tone->Priority;
+    depth = (tone->Flags >> 1) & 3;
+    if (!(tone->Flags & 6)) {
+        return p;
+    }
+
+    switch (depth) {
+    case 1:
+        var = p / 5;
+        break;
+    case 2:
+        var = p / 2;
+        break;
+    default:
+        var = p;
+        break;
+    }
+
+    if (!var) {
+        return p;
+    }
+
+    if (vol > 950) {
+        return p;
+    }
+
+    p -= var - (var * vol / 950);
+    return p;
+}
+
+void snd_ResetAllHandlersForSound(SFX2 *sfx) {
+    GSoundHandlerPtr walk;
+    BlockSoundHandlerPtr hand;
+    int x;
+
+    snd_LockMasterTick(17);
+    walk = gActiveSoundListHead;
+    while (walk) {
+        if (walk->Sound == (SoundPtr)sfx && !walk->parent) {
+            hand = (BlockSoundHandlerPtr)walk;
+            hand->SH.Original_Vol = sfx->Vol;
+            hand->SH.Original_Pan = sfx->Pan;
+            hand->SH.Current_Vol = -1;
+
+            for (x = 0; x < 4; x++) {
+                if (hand->lfo[x].type && hand->lfo[x].target == 1) {
+                    snd_CalcLFODepth(hand->lfo);
+                }
+            }
+
+            snd_SetSFXVolPan(hand->SH.OwnerID, 0x7fffffff, -2, 0);
+            snd_UpdateSFXPitch(hand);
+        }
+        walk = walk->next;
+    }
+    snd_UnlockMasterTick();
+}

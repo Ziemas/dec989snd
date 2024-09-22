@@ -292,11 +292,11 @@ INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_RAND);
 SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step) {
     if (step >= 0x400 && tracker->state_hold2 == 1) {
         tracker->state_hold2 = 0;
-        tracker->state_hold1 = 2 * ((snd_RandomUInt16() & 0x7FFF) - 0x3FFF);
+        tracker->state_hold1 = 2 * ((snd_RandomUInt16() % 0x8000) - 0x3FFF);
     } else if (step < 0x400 && tracker->state_hold2 == 0) {
         tracker->state_hold2 = 1;
         tracker->state_hold1 =
-            -1 * ((snd_RandomUInt16() & 0x7FFF) * (snd_RandomUInt16() & 1));
+            -1 * ((snd_RandomUInt16() % 0x8000) * (snd_RandomUInt16() % 2));
     }
 
     return tracker->state_hold1;

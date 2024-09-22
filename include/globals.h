@@ -21,6 +21,9 @@ extern SInt32 gGlobalExcite;
 extern SInt16 gReverbDepthL[2];
 extern SInt16 gReverbDepthR[2];
 
+// sndhand.c
+extern GSoundHandlerPtr gActiveSoundListHead;
+
 // stick.c
 extern UInt32 gMasterTickOwner[32];
 

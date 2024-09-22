@@ -4,7 +4,7 @@
 #include "intrman.h"
 #include "loadcore.h"
 
-/* data 12dc */ SInt32 gResLibInited;
+/* data 12dc */ SInt32 gResLibInited = 0;
 
 extern libhead snd989_entry;
 

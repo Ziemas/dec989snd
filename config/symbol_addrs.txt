@@ -1,5 +1,7 @@
 _retonly = 0x3a3b8; // type:func size:0x8
 
+snd989_entry = 0x3a1a0;
+
 sysmem_stub = 0x3a3c0; // size:0x14
 AllocSysMemory = 0x3a3d4; // type:func size:0x8
 FreeSysMemory = 0x3a3dc; // type:func size:0x8

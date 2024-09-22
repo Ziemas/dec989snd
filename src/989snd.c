@@ -3,6 +3,7 @@
 #include "globals.h"
 #include "intrman.h"
 #include "libcdvd.h"
+#include "loadcore.h"
 #include "sif.h"
 #include "sifrpc.h"
 #include "stdio.h"

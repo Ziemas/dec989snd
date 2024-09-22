@@ -270,7 +270,7 @@ void snd_ResetAllHandlersForSound(SFX2 *sfx);
 // *****************************************************************************
 
 SInt32 InitResidentModule();
-UInt32 snd_PlaySoundByNameVolPanPMPB_E(SoundBankPtr block, char *block_name, char *sound, SInt32 vol, SInt32 pan, int pitch_mod, int bend);
+UInt32 snd_PlaySoundByNameVolPanPMPB_E(SoundBankPtr block, char *block_name, char *sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend);
 SInt32 snd_GetSoundUserData_E(SoundBankPtr bank, char *bank_name, int sound_index, char *sound_name, int *destination);
 void snd_SetMIDIRegister_E(UInt32 handle, SInt32 reg, SInt16 value);
 SInt32 snd_GetMIDIRegister_E(UInt32 handle, SInt32 reg);

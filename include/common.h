@@ -34,13 +34,6 @@ typedef enum { false, true } bool;
 
 #define abs(x) __builtin_abs(x)
 
-struct _moduleinfo { // 0x8
-	/* 0x0 */ char *name;
-	/* 0x4 */ short unsigned int version;
-};
-
-typedef struct _moduleinfo ModuleInfo;
-
 typedef char SInt8;
 typedef unsigned char UInt8;
 typedef short int SInt16;

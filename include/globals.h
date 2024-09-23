@@ -4,6 +4,7 @@
 #include "common.h"
 
 // 989snd.c
+extern Extern989MonitorInfo *g989Monitor;
 extern SInt32 gThreadPriority_TICK;
 
 // loader.c
@@ -14,6 +15,9 @@ extern BOOL gPrefs_Silent;
 
 // intr_code.c
 extern BOOL gKillTimer;
+extern SInt32 gTransfering;
+extern SpuTransferCallbackProc gTransferDoneCallback;
+extern SInt32 gSPURAMTransSema;
 
 // loader.c
 extern BOOL gLimit2Meg;

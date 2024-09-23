@@ -1,5 +1,12 @@
 _retonly = 0x3a3b8; // type:func size:0x8
 
+
+// function statics
+// UnregisterMIDI
+working_mmd = 0x3c30c; // size:0x4
+// ProcessMIDITick
+in_function = 0x3c310; // size:0x4
+
 snd989_entry = 0x3a1a0;
 
 sysmem_stub = 0x3a3c0; // size:0x14

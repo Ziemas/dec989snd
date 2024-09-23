@@ -187,9 +187,6 @@ void snd_SetDataSourceMark() {
 
 SInt32 snd_GetLastLoadError() { return gLastLoadError; }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/loader", snd_ReadBytesFromEE);
-#else
 SInt32 snd_ReadBytesFromEE(UInt32 ee_loc, void *iop_loc, SInt32 bytes) {
     SInt32 ret;
     sceSifReceiveData data_track;
@@ -199,9 +196,9 @@ SInt32 snd_ReadBytesFromEE(UInt32 ee_loc, void *iop_loc, SInt32 bytes) {
     SInt32 part_size;
 
     read_bytes = bytes;
-    if ((ee_loc & 0xf)) {
-        part_size = 16 - (ee_loc & 0xf);
-        ee_loc -= ee_loc & 0xf;
+    if ((ee_loc % 16)) {
+        part_size = 16 - (ee_loc % 16);
+        ee_loc -= ee_loc % 16;
         ret = sceSifGetOtherData(&data_track, (void *)ee_loc, gEEAlignBuffer,
                                  16, 0);
         if (ret < 0) {
@@ -240,7 +237,6 @@ SInt32 snd_ReadBytesFromEE(UInt32 ee_loc, void *iop_loc, SInt32 bytes) {
 
     return read_bytes;
 }
-#endif
 
 SInt32 snd_ReadBytes(void *buffer, SInt32 count) {
     SInt32 ret;

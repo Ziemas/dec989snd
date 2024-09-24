@@ -6,6 +6,7 @@
 // 989snd.c
 extern Extern989MonitorInfo *g989Monitor;
 extern SInt32 gThreadPriority_TICK;
+extern SInt32 gFileReadMutex;
 
 // loader.c
 extern char *gEEStatusAddr;

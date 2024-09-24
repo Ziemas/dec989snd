@@ -551,23 +551,259 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     return bank_head;
 }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FileRead);
+// INCLUDE_ASM("asm/nonmatchings/loader", snd_FileRead);
+SInt32 snd_FileRead(SInt32 sect_loc, SInt32 offset, SInt32 size,
+                    SInt8 *buffer) {
+    sceCdRMode mode;
+    SInt32 bytes_needed;
+    SInt32 move_bytes;
+    SInt32 sector;
+    SInt32 get_whole_sectors;
+    SInt32 err;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_BankLoadByLocEx);
+    move_bytes = 0;
+    WaitSema(gFileReadMutex);
+    snd_StreamSafeCdSync(0);
+    snd_StreamSafeCdSync(16);
+    snd_SetCDSifReg(1, 0);
+    mode.trycount = 0x64;
+    mode.spindlctrl = 0;
+    mode.datapattern = 0;
+    bytes_needed = size;
+    sector = sect_loc + offset / 2048;
+    offset %= 2048;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_BankLoadFromEEEx);
+    if (bytes_needed < 2048 || offset) {
+        if (sector != gReadBufferHasSector) {
+            err = snd_StreamSafeCdRead(sector, 1, gFileLoadBuffer);
+            if (!err && !gPrefs_Silent) {
+                printf("Error Kicking Off Read!\n");
+            }
+            snd_StreamSafeCdSync(0);
+            if (!err || (err = snd_StreamSafeCdGetError()) != 0) {
+                gReadBufferHasSector = 0;
+                if (!err) {
+                    err = 48;
+                }
+                snd_SetCDSifReg(0, err);
+                gLastLoadError = err;
+                SignalSema(gFileReadMutex);
+                return 0;
+            }
+            gReadBufferHasSector = sector;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_GetSRAMUsedByBank);
+        move_bytes = 2048 - offset % 2048;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_BankLoadFromIOPEx);
+        if (move_bytes > bytes_needed) {
+            move_bytes = bytes_needed;
+        }
+        memcpy(buffer, gFileLoadBuffer + offset % 2048, move_bytes);
+        bytes_needed = bytes_needed - move_bytes;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_UnloadBank);
+        if (bytes_needed == 0) {
+            snd_SetCDSifReg(0, 0);
+            SignalSema(gFileReadMutex);
+            return 1;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_BankLoaded);
+        sector++;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_UnloadBlock);
+    get_whole_sectors = bytes_needed / 2048;
+    if (get_whole_sectors) {
+        err = snd_StreamSafeCdRead(sector, get_whole_sectors,
+                                   &buffer[move_bytes]);
+        snd_StreamSafeCdSync(0);
+        if (!err || (err = snd_StreamSafeCdGetError()) != 0) {
+            if (!err) {
+                err = 48;
+            }
+            snd_SetCDSifReg(0, err);
+            gLastLoadError = err;
+            SignalSema(gFileReadMutex);
+            return 0;
+        }
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_BlockLoaded);
+    sector += get_whole_sectors;
+    bytes_needed -= get_whole_sectors * 2048;
+
+    if (bytes_needed) {
+        if (sector != gReadBufferHasSector) {
+            err = snd_StreamSafeCdRead(sector, 1, gFileLoadBuffer);
+            snd_StreamSafeCdSync(0);
+            if (!err || (err = snd_StreamSafeCdGetError()) != 0) {
+                gReadBufferHasSector = 0;
+                if (!err) {
+                    err = 48;
+                }
+                snd_SetCDSifReg(0, err);
+                gLastLoadError = err;
+                SignalSema(gFileReadMutex);
+                return 0;
+            }
+            gReadBufferHasSector = sector;
+        }
+
+        memcpy(&buffer[size - bytes_needed], &gFileLoadBuffer, bytes_needed);
+    }
+
+    snd_SetCDSifReg(0, 0);
+    SignalSema(gFileReadMutex);
+    return 1;
+}
+
+SoundBankPtr snd_BankLoadByLocEx(SInt32 sect_loc, SInt32 file_offset,
+                                 UInt32 spu_mem_loc, UInt32 spu_mem_size) {
+    SoundBankPtr ret;
+
+    if (!snd_OpenDataSourceByLoc(sect_loc, file_offset))
+        return 0;
+
+    gLastLoadError = 0;
+    ret = snd_ReadBank(spu_mem_loc, spu_mem_size);
+    snd_CloseDataSource();
+
+    if (ret && g989Monitor) {
+        if (g989Monitor->bnk_load) {
+            g989Monitor->bnk_load(ret, 1);
+        }
+    }
+
+    return ret;
+}
+
+SoundBankPtr snd_BankLoadFromEEEx(UInt32 ee_loc, UInt32 spu_mem_loc,
+                                  UInt32 spu_mem_size) {
+    SoundBankPtr ret;
+
+    if (!snd_OpenDataSourceFromEE(ee_loc))
+        return 0;
+
+    gLastLoadError = 0;
+    ret = snd_ReadBank(spu_mem_loc, spu_mem_size);
+    snd_CloseDataSource();
+
+    if (ret && g989Monitor) {
+        if (g989Monitor->bnk_load) {
+            g989Monitor->bnk_load(ret, 1);
+        }
+    }
+
+    return ret;
+}
+
+UInt32 snd_GetSRAMUsedByBank(SoundBankPtr bank) {
+    SFXBlock2Ptr block;
+
+    block = (SFXBlock2Ptr)bank;
+
+    if (bank->DataID == 0x6B6C4253) {
+        return block->SRAMAllocSize;
+    }
+
+    return bank->VagDataSize;
+}
+
+SoundBankPtr snd_BankLoadFromIOPEx(void *iop_loc, UInt32 spu_mem_loc,
+                                   UInt32 spu_mem_size) {
+    SoundBankPtr ret;
+
+    gLastLoadError = 0;
+    ret = snd_ParseIOPBank(iop_loc, spu_mem_loc, spu_mem_size);
+
+    if (ret && g989Monitor) {
+        if (g989Monitor->bnk_load) {
+            g989Monitor->bnk_load(ret, 1);
+        }
+    }
+
+    return ret;
+}
+
+void snd_UnloadBank(SoundBankPtr bank) {
+    SoundBankPtr mem_to_free;
+
+    mem_to_free = bank;
+    if (!bank || bank == (SoundBankPtr)-1) {
+        snd_ShowError(20, 0, 0, 0, 0);
+        return;
+    }
+
+    if (bank->DataID == 0x6B6C4253) {
+        snd_UnloadBlock(bank);
+        return;
+    }
+
+    if (!snd_BankLoaded(bank)) {
+        snd_ShowError(21, 0, 0, 0, 0);
+        return;
+    }
+
+    if (g989Monitor && g989Monitor->bnk_load) {
+        g989Monitor->bnk_load(bank, 0);
+    }
+
+    if (bank->Flags & 8) {
+        mem_to_free = (SoundBank *)((char *)bank - 4);
+        snd_UnloadMMD((MultiMIDIBlockHeaderPtr)mem_to_free->DataID);
+    }
+
+    snd_RemoveBank(bank);
+    gFreeProc(mem_to_free);
+}
+
+BOOL snd_BankLoaded(SoundBankPtr bank) {
+    SoundBankPtr walker;
+
+    walker = gBankListHead;
+    if (!bank || bank == (SoundBankPtr)-1) {
+        return false;
+    }
+
+    while (walker) {
+        if (bank == walker) {
+            return true;
+        }
+        walker = walker->NextBank;
+    }
+
+    return false;
+}
+
+void snd_UnloadBlock(SFXBlock2Ptr block) {
+    if (!snd_BlockLoaded(block)) {
+        snd_ShowError(22, 0, 0, 0, 0);
+        return;
+    }
+
+    if (g989Monitor && g989Monitor->bnk_load) {
+        g989Monitor->bnk_load(block, 0);
+    }
+
+    snd_RemoveBlock(block);
+    gFreeProc(block);
+}
+
+BOOL snd_BlockLoaded(SFXBlock2Ptr block) {
+	SFXBlock2Ptr walker;
+
+    walker = gBlockListHead;
+    if (!block|| block == (SFXBlock2Ptr)-1) {
+        return false;
+    }
+
+    while (walker) {
+        if (block== walker) {
+            return true;
+        }
+
+        walker = walker->NextBlock;
+    }
+
+    return false;
+}
 
 INCLUDE_ASM("asm/nonmatchings/loader", snd_MMDLoad);
 

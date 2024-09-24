@@ -312,9 +312,244 @@ void snd_IterateBlockListToMonitor() {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_ParseIOPBank);
+SoundBankPtr snd_ParseIOPBank(SInt8 *iop_loc, UInt32 spu_mem_loc,
+                              UInt32 spu_mem_size) {
+    SInt32 result;
+    SoundBankPtr bank_head;
+    SFXBlock2Ptr block;
+    SInt8 *bank_head_ram;
+    FileAttributesPtr fa;
+    SInt32 size;
+    SInt8 *data_loc;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_ReadBank);
+    bank_head = NULL;
+    fa = (FileAttributesPtr)iop_loc;
+    if (fa->type == 1 || fa->type == 3) {
+        // If we have a midi chunk we want to be able to store its ptr, so add
+        // space for it
+        size =
+            (fa->num_chunks >= 3) ? (fa->where[0].size + 4) : fa->where[0].size;
+        bank_head_ram = gAllocProc(size, 1, 0);
+        if (!bank_head_ram) {
+            snd_ShowError(15, size, 0, 0, 0);
+            gLastLoadError = 258;
+            return 0;
+        }
+
+        if (fa->num_chunks == 3) {
+            // first 4 bytes will host the midi chunk ptr
+            bank_head = (SoundBankPtr)(bank_head_ram + 4);
+        } else {
+            bank_head = (SoundBankPtr)(bank_head_ram);
+        }
+
+        memcpy(bank_head, iop_loc + fa->where[0].offset, fa->where[0].size);
+
+        if (fa->where[1].size) {
+            data_loc = iop_loc + fa->where[1].offset;
+            result = snd_BankTransfer(bank_head, data_loc, fa->where[1].size, 0,
+                                      0, spu_mem_loc, spu_mem_size, 0);
+            snd_IsCurrentTransferComplete(1);
+            snd_EndBankTransfer(bank_head);
+        } else {
+            if (bank_head->DataID == 0x32764253) {
+                bank_head->FirstSound =
+                    (SoundPtr)((UInt32)bank_head->FirstSound +
+                               (UInt32)bank_head);
+                bank_head->FirstProg =
+                    (ProgPtr)((UInt32)bank_head->FirstProg + (UInt32)bank_head);
+                bank_head->FirstTone =
+                    (TonePtr)((UInt32)bank_head->FirstTone + (UInt32)bank_head);
+                bank_head->Flags |= 1;
+            } else {
+                block = (SFXBlock2Ptr)bank_head;
+                block->FirstSound =
+                    (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
+                block->FirstGrain =
+                    (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
+                block->Flags |= 1;
+            }
+            snd_EndBankTransfer(bank_head);
+        }
+
+        if (fa->num_chunks == 3) {
+            *((MultiMIDIBlockHeaderPtr *)bank_head_ram) =
+                snd_MMDLoadFromIOPLoc(iop_loc + fa->where[2].offset);
+            if ((*(MultiMIDIBlockHeaderPtr *)bank_head_ram) == NULL) {
+                snd_RemoveBank(bank_head);
+                gFreeProc(bank_head_ram);
+                snd_ShowError(19, 0, 0, 0, 0);
+                return 0;
+            } else {
+                bank_head->Flags |= 8;
+            }
+        }
+    } else {
+        snd_ShowError(84, 0, 0, 0, 0);
+        gLastLoadError = 263;
+        bank_head = 0;
+    }
+
+    return bank_head;
+}
+
+SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
+    SInt32 result;
+    SInt32 max_length;
+    SoundBankPtr bank_head;
+    SFXBlock2Ptr block_head;
+    SInt8 *bank_head_ram;
+    SInt8 *bank_body;
+    FileAttributesPtr fa;
+    SInt32 block;
+    SInt32 size;
+    SInt32 sram_offset;
+    SInt8 buff[32];
+
+    bank_head = NULL;
+    bank_body = NULL;
+
+    result = snd_ReadBytes(buff, sizeof(buff));
+    if (result != 32) {
+        gReadBufferHasSector = 0;
+        snd_ShowError(14, gLastLoadError, 0, 0, 0);
+        return NULL;
+    }
+
+    fa = (FileAttributesPtr)buff;
+    if (fa->type == 1 || fa->type == 3) {
+        // If we have a midi chunk we want to be able to store its ptr, so add
+        // space for it
+        size =
+            (fa->num_chunks >= 3) ? (fa->where[0].size + 4) : fa->where[0].size;
+
+        bank_head_ram = gAllocProc(size, 1, 0);
+        if (!bank_head_ram) {
+            snd_ShowError(15, size, 0, 0, 0);
+            gLastLoadError = 258;
+            return 0;
+        }
+
+        if (fa->num_chunks == 3) {
+            // first 4 bytes will host the midi chunk ptr
+            bank_head = (SoundBankPtr)(bank_head_ram + 4);
+        } else {
+            bank_head = (SoundBankPtr)(bank_head_ram);
+        }
+
+        if (fa->where[1].size) {
+            bank_body = gAllocProc(fa->where[1].size, 8, &max_length);
+            if (max_length > fa->where[1].size) {
+                max_length = fa->where[1].size;
+            }
+            if (!bank_body) {
+                snd_ShowError(16, 0, 0, 0, 0);
+                gFreeProc(bank_head_ram);
+                gLastLoadError = 258;
+                return 0;
+            }
+        }
+
+        snd_SeekDataSource(fa->where[0].offset, 0);
+        result = snd_ReadBytes((char *)bank_head, fa->where[0].size);
+        if (result != fa->where[0].size) {
+            gReadBufferHasSector = 0;
+            snd_ShowError(17, gLastLoadError, 0, 0, 0);
+            gFreeProc(bank_head_ram);
+            gFreeProc(bank_body);
+            return 0;
+        }
+        if (bank_head->DataID == 0x6B6C4253 && bank_head->Version < 2) {
+            snd_ShowError(113, 0, 0, 0, 0);
+            gFreeProc(bank_head_ram);
+            gFreeProc(bank_body);
+            return 0;
+        }
+        if (fa->where[1].size) {
+            snd_SeekDataSource(fa->where[1].offset, 0);
+            block = 0;
+            sram_offset = 0;
+            while (fa->where[1].size) {
+                result = snd_ReadBytes(bank_body, max_length);
+                if (result != max_length) {
+                    gReadBufferHasSector = 0;
+                    snd_ShowError(14, gLastLoadError, 0, 0, 0);
+                    gFreeProc(bank_head_ram);
+                    gFreeProc(bank_body);
+                    return 0;
+                }
+
+                if (!block) {
+                    result =
+                        snd_BankTransfer(bank_head, bank_body, max_length, 0, 0,
+                                         spu_mem_loc, spu_mem_size, 0);
+                } else {
+                    result = snd_BankTransfer(bank_head, bank_body, max_length,
+                                              sram_offset, 1, spu_mem_loc,
+                                              spu_mem_size, 0);
+                }
+                if (result < 0) {
+                    snd_ShowError(18, 0, 0, 0, 0);
+                    gFreeProc(bank_head_ram);
+                    gFreeProc(bank_body);
+                    return 0;
+                }
+                snd_IsCurrentTransferComplete(1);
+                sram_offset += max_length;
+                ++block;
+                fa->where[1].size -= max_length;
+                if (fa->where[1].size < max_length) {
+                    max_length = fa->where[1].size;
+                }
+            }
+
+            snd_EndBankTransfer((SFXBlock2Ptr)bank_head);
+            gFreeProc(bank_body);
+        } else {
+            if (bank_head->DataID == 0x32764253) {
+                bank_head->FirstSound =
+                    (SoundPtr)((UInt32)bank_head->FirstSound +
+                               (UInt32)bank_head);
+                bank_head->FirstProg =
+                    (ProgPtr)((UInt32)bank_head->FirstProg + (UInt32)bank_head);
+                bank_head->FirstTone =
+                    (TonePtr)((UInt32)bank_head->FirstTone + (UInt32)bank_head);
+                bank_head->Flags |= 1;
+            } else {
+                block_head = (SFXBlock2Ptr)bank_head;
+                block_head->FirstSound =
+                    (SFX2Ptr)((UInt32)block_head->FirstSound +
+                              (UInt32)block_head);
+                block_head->FirstGrain =
+                    (SFX2Ptr)((UInt32)block_head->FirstGrain +
+                              (UInt32)block_head);
+                block_head->Flags |= 1;
+            }
+            snd_EndBankTransfer(bank_head);
+        }
+        if (fa->num_chunks == 3) {
+            snd_SeekDataSource(fa->where[2].offset, 0);
+            *(MultiMIDIBlockHeaderPtr *)bank_head_ram =
+                snd_MMDLoadFromDataSource();
+            if (!*(MultiMIDIBlockHeaderPtr *)bank_head_ram) {
+                snd_RemoveBank(bank_head);
+                gFreeProc(bank_head_ram);
+                snd_ShowError(19, 0, 0, 0, 0);
+                return 0;
+            } else {
+                bank_head->Flags |= 8u;
+            }
+        }
+    } else {
+        snd_ShowError(84, (UInt32)buff, gFileStartSector, gReadBufferHasSector,
+                      0);
+        gReadBufferHasSector = -1;
+        gLastLoadError = 263;
+        bank_head = NULL;
+    }
+
+    return bank_head;
+}
 
 INCLUDE_ASM("asm/nonmatchings/loader", snd_FileRead);
 

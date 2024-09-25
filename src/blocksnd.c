@@ -1631,6 +1631,7 @@ void snd_ResetAllHandlersForSound(SFX2 *sfx) {
 
             for (x = 0; x < 4; x++) {
                 if (hand->lfo[x].type && hand->lfo[x].target == 1) {
+                    // BUG: missing array index
                     snd_CalcLFODepth(hand->lfo);
                 }
             }

@@ -1,6 +1,9 @@
 #include "common.h"
 #include "functions.h"
 #include "globals.h"
+#include "intrman.h"
+#include "kerror.h"
+#include "libsd.h"
 #include "sifrpc.h"
 #include "stdio.h"
 #include "thread.h"
@@ -107,7 +110,6 @@ BOOL snd_OpenDataSourceFromEE(UInt32 ee_loc) {
     return 1;
 }
 
-// INCLUDE_ASM("asm/nonmatchings/loader", snd_CloseDataSource);
 void snd_CloseDataSource() {
     if (gFileHandle == -1) {
         return;
@@ -551,7 +553,6 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     return bank_head;
 }
 
-// INCLUDE_ASM("asm/nonmatchings/loader", snd_FileRead);
 SInt32 snd_FileRead(SInt32 sect_loc, SInt32 offset, SInt32 size,
                     SInt8 *buffer) {
     sceCdRMode mode;
@@ -787,15 +788,15 @@ void snd_UnloadBlock(SFXBlock2Ptr block) {
 }
 
 BOOL snd_BlockLoaded(SFXBlock2Ptr block) {
-	SFXBlock2Ptr walker;
+    SFXBlock2Ptr walker;
 
     walker = gBlockListHead;
-    if (!block|| block == (SFXBlock2Ptr)-1) {
+    if (!block || block == (SFXBlock2Ptr)-1) {
         return false;
     }
 
     while (walker) {
-        if (block== walker) {
+        if (block == walker) {
             return true;
         }
 
@@ -805,31 +806,430 @@ BOOL snd_BlockLoaded(SFXBlock2Ptr block) {
     return false;
 }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_MMDLoad);
+MultiMIDIBlockHeaderPtr snd_MMDLoad(SInt8 *name, SInt32 offset) {
+    MultiMIDIBlockHeaderPtr ret;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_MMDLoadFromIOPLoc);
+    if (!snd_OpenDataSourceByName(name, offset)) {
+        return 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_MMDLoadFromDataSource);
+    ret = snd_MMDLoadFromDataSource();
+    snd_CloseDataSource();
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_MMDLoadByLoc);
+    return ret;
+}
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_UnloadMMD);
+MultiMIDIBlockHeaderPtr snd_MMDLoadFromIOPLoc(SInt8 *iop_loc) {
+    SInt32 length;
+    MultiMIDIBlockHeaderPtr mmd;
+    FileAttributesPtr fa;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_UnloadAllMMD);
+    fa = (FileAttributesPtr)iop_loc;
+    length = fa->where[0].size;
+    mmd = gAllocProc(length, 3, 0);
+    if (!mmd) {
+        snd_ShowError(23, length, 0, 0, 0);
+        gLastLoadError = 258;
+        return 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_BankTransfer);
+    memcpy(mmd, iop_loc + fa->where[0].offset, length);
+    if (!snd_RegisterMIDI((MIDIBlockHeaderPtr)mmd)) {
+        gFreeProc(mmd);
+        snd_ShowError(121, 0, 0, 0, 0);
+        gLastLoadError = 263;
+        return 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_ClearTransSema);
+    return mmd;
+}
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_IsCurrentTransferComplete);
+MultiMIDIBlockHeaderPtr snd_MMDLoadFromDataSource() {
+    SInt32 result;
+    SInt32 length;
+    MultiMIDIBlockHeaderPtr mmd;
+    FileAttributesPtr fa;
+    SInt8 buff[16];
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_EndBankTransfer);
+    snd_SetDataSourceMark();
+    result = snd_ReadBytes(buff, sizeof(buff));
+    if (result != sizeof(buff)) {
+        return NULL;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_RemoveBank);
+    fa = (FileAttributesPtr)buff;
+    length = fa->where[0].size;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_RemoveBlock);
+    snd_SeekDataSource(fa->where[0].offset, 1);
+    mmd = gAllocProc(length, 3, NULL);
+    if (!mmd) {
+        snd_ShowError(23, length, 0, 0, 0);
+        gLastLoadError = 258;
+        return NULL;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_UnloadAllBanks);
+    result = snd_ReadBytes(mmd, length);
+    if (result != length) {
+        gFreeProc(mmd);
+        return NULL;
+    }
+
+    if (!snd_RegisterMIDI((MIDIBlockHeaderPtr)mmd)) {
+        gFreeProc(mmd);
+        snd_ShowError(121, 0, 0, 0, 0);
+        gLastLoadError = 263;
+        return 0;
+    }
+
+    return mmd;
+}
+
+MultiMIDIBlockHeaderPtr snd_MMDLoadByLoc(SInt32 sect_loc, SInt32 file_offset) {
+    MultiMIDIBlockHeaderPtr ret;
+
+    if (!snd_OpenDataSourceByLoc(sect_loc, file_offset)) {
+        return NULL;
+    }
+
+    ret = snd_MMDLoadFromDataSource();
+    snd_CloseDataSource();
+
+    return ret;
+}
+
+void snd_UnloadMMD(MultiMIDIBlockHeaderPtr mmd) {
+    snd_UnregisterMIDI(mmd);
+    gFreeProc(mmd);
+}
+
+void snd_UnloadAllMMD() {
+    MIDIBlockHeaderPtr walk;
+
+    walk = gMIDIListHead;
+    while (walk) {
+        if (walk->DataID == 0x44494D4D) {
+            snd_UnloadMMD(walk);
+        }
+        walk = walk->NextMIDIBlock;
+    }
+
+    while (gMIDIListHead) {
+        snd_UnloadMMD(gMIDIListHead);
+    }
+}
+
+SInt32 snd_BankTransfer(SoundBankPtr bank, SInt8 *data, UInt32 data_size,
+                        SInt32 offset, SInt32 state, UInt32 spu_mem_loc,
+                        UInt32 spu_mem_size, SpuTransferCallbackProc callback) {
+    UInt32 size;
+    SInt32 ch;
+    SInt32 msg;
+    void *sram_loc;
+    UInt32 sram_size;
+    SFXBlock2Ptr block;
+    SInt32 dis;
+    SInt32 oldstat;
+
+    msg = 0;
+    block = (SFXBlock2Ptr)bank;
+
+    // BUG: checking function address instead of calling
+    if (!snd_SystemRunning) {
+        snd_ShowError(24, 0, 0, 0, 0);
+        return -2;
+    }
+
+    if (gTransfering) {
+        snd_ShowError(25, 0, 0, 0, 0);
+        gLastLoadError = 260;
+        return -10;
+    }
+
+    if (bank->DataID == 0x32764253) {
+        if (spu_mem_size) {
+            if (bank->VagDataSize > spu_mem_size) {
+                snd_ShowError(105, spu_mem_size, bank->VagDataSize, 0, 0);
+            }
+            bank->VagDataSize = spu_mem_size;
+        }
+        if (spu_mem_loc) {
+            bank->Flags &= ~4u;
+            bank->VagsInSR = (void *)spu_mem_loc;
+        }
+        sram_size = bank->VagDataSize;
+        sram_loc = (void *)bank->VagsInSR;
+    } else {
+        if (spu_mem_size) {
+            if (block->VagDataSize > spu_mem_size) {
+                snd_ShowError(105, spu_mem_size, block->VagDataSize, 0, 0);
+            }
+            block->SRAMAllocSize = spu_mem_size;
+        }
+        if (spu_mem_loc) {
+            bank->Flags &= ~4u;
+            block->VagsInSR = (void *)spu_mem_loc;
+        }
+        sram_size = block->SRAMAllocSize;
+        sram_loc = block->VagsInSR;
+    }
+
+    if (!state) {
+        if (bank->Flags & 4) {
+            dis = CpuSuspendIntr(&oldstat);
+            sram_loc = (void *)snd_SRAMMalloc(sram_size);
+            if (!dis) {
+                CpuResumeIntr(oldstat);
+            }
+            if (!sram_loc) {
+                snd_ShowError(26, sram_size, 0, 0, 0);
+                gLastLoadError = 259;
+                return -11;
+            }
+
+            if (bank->DataID == 0x32764253) {
+                bank->VagsInSR = sram_loc;
+            } else {
+                block->VagsInSR = sram_loc;
+            }
+        } else {
+            dis = CpuSuspendIntr(&oldstat);
+            if (!snd_SRAMMarkUsed(sram_loc, sram_size)) {
+                if (!dis) {
+                    CpuResumeIntr(oldstat);
+                }
+                snd_ShowError(27, sram_size, (UInt32)sram_loc, 0, 0);
+                gLastLoadError = 259;
+                return -11;
+            }
+
+            if (!dis) {
+                CpuResumeIntr(oldstat);
+            }
+        }
+
+        if ((bank->Flags & 1) == 0) {
+            if (bank->DataID == 0x32764253) {
+                bank->FirstSound =
+                    (SoundPtr)((UInt32)bank->FirstSound + (UInt32)bank);
+                bank->FirstProg =
+                    (ProgPtr)((UInt32)bank->FirstProg + (UInt32)bank);
+                bank->FirstTone =
+                    (TonePtr)((UInt32)bank->FirstTone + (UInt32)bank);
+                bank->Flags |= 1;
+            } else {
+                block->FirstSound =
+                    (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
+                block->FirstGrain =
+                    (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
+                block->Flags |= 1;
+            }
+        }
+    }
+
+    gTransferDoneCallback = callback;
+    while ((ch = snd_GetFreeSPUDMA()) == -1) {
+        if (!msg) {
+            msg = 1;
+        }
+        while (ch < 1000) {
+            ++ch;
+        }
+
+        ch = 0;
+    }
+    gTransfering = ch + 1;
+    snd_ClearTransSema();
+    sceSdSetTransIntrHandler(ch, snd_TransCallback, NULL);
+    size = sceSdVoiceTrans(ch, 0, data, sram_loc + offset, data_size);
+    if (size < data_size) {
+        snd_FreeSPUDMA(gTransfering - 1);
+        gTransfering = 0;
+        gLastLoadError = 261;
+        return -12;
+    }
+
+    return 0;
+}
+
+void snd_ClearTransSema() {
+    while (PollSema(gSPURAMTransSema) != KE_SEMA_ZERO)
+        ;
+}
+
+SInt32 snd_IsCurrentTransferComplete(BOOL wait) {
+    if (wait) {
+        WaitSema(gSPURAMTransSema);
+    }
+
+    if (gTransfering) {
+        return 0;
+    }
+
+    return 1;
+}
+
+SInt32 snd_EndBankTransfer(SoundBankPtr bank) {
+    SInt32 x;
+    SFXBlock2Ptr block;
+
+    block = (SFXBlock2Ptr)bank;
+
+    if (bank->DataID == 0x32764253) {
+        SoundBankPtr walker;
+        for (x = 0; x < bank->NumTones; ++x) {
+            bank->FirstTone[x].VAGInSR =
+                (void *)((UInt32)bank->FirstTone[x].VAGInSR +
+                         (UInt32)bank->VagsInSR);
+        }
+        for (x = 0; x < bank->NumProgs; ++x) {
+            bank->FirstProg[x].FirstTone =
+                (TonePtr)((UInt32)bank + (UInt32)bank->FirstProg[x].FirstTone);
+        }
+
+        if (!gBankListHead) {
+            gBankListHead = bank;
+        } else {
+            walker = gBankListHead;
+            while (walker->NextBank) {
+                walker = walker->NextBank;
+            }
+            walker->NextBank = bank;
+        }
+    } else {
+        block->GrainData = (char *)((UInt32)block->GrainData + (UInt32)block);
+        for (x = 0; x < block->NumGrains; ++x) {
+            TonePtr tp;
+            if (block->FirstGrain[x].OpcodeData.MicroOp.Type == 1) {
+                tp = (TonePtr)((char *)block->GrainData +
+                               (block->FirstGrain[x].OpcodeData.Opcode &
+                                0xFFFFFF));
+                tp->VAGInSR = (void *)(tp->VAGInSR + (UInt32)block->VagsInSR);
+            }
+        }
+        for (x = 0; x < block->NumSounds; ++x) {
+            block->FirstSound[x].FirstGrain =
+                (SFXGrain2Ptr)((UInt32)block->FirstGrain +
+                               (UInt32)block->FirstSound[x].FirstGrain);
+            block->FirstSound[x].Flags &= ~0x4000u;
+        }
+
+        if ((block->Flags & 0x100) != 0) {
+            block->BlockNames =
+                (SFXBlockNames *)((UInt32)block->BlockNames + (UInt32)block);
+            block->BlockNames->SFXNameTableOffset +=
+                (UInt32)block->BlockNames->BlockName;
+            block->BlockNames->VAGNameTableOffset +=
+                (UInt32)block->BlockNames->BlockName;
+            block->BlockNames->VAGImportsTableOffset +=
+                (UInt32)block->BlockNames->BlockName;
+            block->BlockNames->VAGExportsTableOffset +=
+                (UInt32)block->BlockNames->BlockName;
+        }
+        if ((block->Flags & 0x200) != 0) {
+            block->SFXUD =
+                (SFXUserData *)((UInt32)block + (UInt32)block->SFXUD);
+        }
+
+        if (!gBlockListHead) {
+            gBlockListHead = block;
+        } else {
+            SFXBlock2Ptr walker;
+            walker = gBlockListHead;
+            while (walker->NextBlock) {
+                walker = walker->NextBlock;
+            }
+            walker->NextBlock = block;
+        }
+    }
+
+    return 0;
+}
+
+void snd_RemoveBank(SoundBankPtr bank) {
+    SoundBankPtr walker;
+    SoundBankPtr prev;
+    SInt32 dis;
+    SInt32 oldstat;
+
+    walker = gBankListHead;
+    prev = NULL;
+    if (bank->DataID == 0x6B6C4253) {
+        snd_RemoveBlock((SFXBlock2Ptr)bank);
+        return;
+    }
+
+    if (!bank) {
+        return;
+    }
+
+    while (walker && walker != bank) {
+        prev = walker;
+        walker = walker->NextBank;
+    }
+
+    if (walker == bank) {
+        snd_StopAllSoundsInBank(bank, 1);
+        if (prev) {
+            prev->NextBank = walker->NextBank;
+        } else {
+            gBankListHead = walker->NextBank;
+        }
+
+        dis = CpuSuspendIntr(&oldstat);
+        if (bank->VagDataSize) {
+            snd_SRAMFree(bank->VagsInSR, bank->VagDataSize);
+        }
+        if (!dis) {
+            CpuResumeIntr(oldstat);
+        }
+    }
+}
+
+void snd_RemoveBlock(SFXBlock2Ptr block) {
+    SFXBlock2Ptr walker;
+    SFXBlock2Ptr prev;
+    SInt32 dis;
+    SInt32 oldstat;
+
+    walker = gBlockListHead;
+    prev = NULL;
+
+    if (!block) {
+        return;
+    }
+
+    while (walker && walker != block) {
+        prev = walker;
+        walker = walker->NextBlock;
+    }
+
+    if (walker == block) {
+        snd_StopAllSoundsInBank(block, 1);
+        if (prev) {
+            prev->NextBlock = walker->NextBlock;
+        } else {
+            gBlockListHead = walker->NextBlock;
+        }
+
+        dis = CpuSuspendIntr(&oldstat);
+        if (block->SRAMAllocSize) {
+            snd_SRAMFree(block->VagsInSR, block->SRAMAllocSize);
+        }
+        if (!dis) {
+            CpuResumeIntr(oldstat);
+        }
+    }
+}
+
+void snd_UnloadAllBanks() {
+    while (gBankListHead) {
+        snd_UnloadBank(gBankListHead);
+    }
+
+    while (gBlockListHead) {
+        snd_UnloadBlock(gBlockListHead);
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/loader", snd_ResolveBankXREFS);
 

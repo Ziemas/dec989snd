@@ -4,10 +4,11 @@
 #include "intrman.h"
 #include "kerror.h"
 #include "libsd.h"
+#include "sif.h"
 #include "sifrpc.h"
 #include "stdio.h"
+#include "sysmem.h"
 #include "thread.h"
-#include <string.h>
 
 /* data 1344 */ BOOL gLimit2Meg = 0;
 /* data 1348 */ SInt32 gFileHandle = -1;
@@ -1231,36 +1232,452 @@ void snd_UnloadAllBanks() {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_ResolveBankXREFS);
+void snd_ResolveBankXREFS() {
+    SoundBankPtr bank;
+    SFXBlock2Ptr block;
+    SInt32 x;
+    MIDISoundPtr midisound;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FindBankByID);
+    bank = gBankListHead;
+    while (bank) {
+        for (x = 0; x < bank->NumSounds; ++x) {
+            bank->FirstSound[x].Bank = bank;
+            if (bank->FirstSound[x].Type == 4 ||
+                bank->FirstSound[x].Type == 5) {
+                midisound = (MIDISound *)&bank->FirstSound[x];
+                midisound->MIDIBlock =
+                    (MultiMIDIBlockHeaderPtr)snd_FindMIDIBlock(
+                        midisound->MIDIID);
+                if (!midisound->MIDIBlock)
+                    snd_ShowError(90, midisound->MIDIID, 0, 0, 0);
+            }
+        }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FindBlockByName);
+        bank->Flags |= 2u;
+        bank = bank->NextBank;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FindBlockByID);
+    block = gBlockListHead;
+    while (block) {
+        block->Flags |= 2u;
+        block = block->NextBlock;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FindBankByNum);
+SoundBankPtr snd_FindBankByID(UInt32 id) {
+    SoundBankPtr bank;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FindBlockByNum);
+    bank = gBankListHead;
+    while (bank) {
+        if (bank->BankID == id) {
+            return bank;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_RegisterMIDI);
+        bank = bank->NextBank;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_UnregisterMIDI);
+    if (!bank) {
+        return snd_FindBlockByID(id);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FindMIDIBlock);
+    return bank;
+}
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_InsertMIDIBlockInList);
+SFXBlock2Ptr snd_FindBlockByName(UInt32 *name) {
+    SFXBlock2Ptr block;
+    SFXBlockNames *names_header;
+    UInt32 *buffer;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_MIDIStreamGone);
+    block = gBlockListHead;
+    buffer = name;
+    while (block) {
+        if ((block->Flags & 0x100) != 0) {
+            names_header = block->BlockNames;
+            if (names_header->BlockName[0] == buffer[0] &&
+                names_header->BlockName[1] == buffer[1])
+                return block;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_SetCDSifReg);
+        block = block->NextBlock;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_IOPMemAlloc);
+    return block;
+}
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_IOPMemFree);
+SFXBlock2Ptr snd_FindBlockByID(UInt32 id) {
+    SFXBlock2Ptr block;
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_GetFreeSPUDMA);
+    block = gBlockListHead;
+    while (block) {
+        if (block->BlockID == id) {
+            return block;
+        }
+        block = block->NextBlock;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_FreeSPUDMA);
+    return block;
+}
 
-INCLUDE_ASM("asm/nonmatchings/loader", snd_WaitDMADone);
+SoundBankPtr snd_FindBankByNum(SInt8 num) {
+    SoundBankPtr bank;
+
+    bank = gBankListHead;
+    while (bank) {
+        if (bank->BankNum == num) {
+            return bank;
+        }
+
+        bank = bank->NextBank;
+    }
+
+    if (!bank) {
+        return snd_FindBlockByNum(num);
+    }
+
+    return bank;
+}
+
+SFXBlock2Ptr snd_FindBlockByNum(SInt8 num) {
+    SFXBlock2Ptr block;
+
+    block = gBlockListHead;
+    while (block) {
+        if (block->BlockNum == num) {
+            return block;
+        }
+
+        block = block->NextBlock;
+    }
+
+    return block;
+}
+
+SInt32 snd_RegisterMIDI(MIDIBlockHeaderPtr midi) {
+    MultiMIDIBlockHeaderPtr mmid;
+    MIDIBlockHeaderPtr hold;
+    SInt32 x;
+
+    switch (midi->DataID) {
+    case 0x2044494D:
+        midi->BankPtr = (SoundBankPtr)snd_FindBankByID(midi->BankID);
+        if (!midi->BankPtr) {
+            snd_ShowError(91, midi->BankID, 0, 0, 0);
+        }
+        midi->DataStart += (UInt32)midi;
+        midi->NextMIDIBlock = 0;
+        midi->MultiMIDIParent = 0;
+        snd_InsertMIDIBlockInList(midi);
+        break;
+    case 0x44494D4D:
+        mmid = (MultiMIDIBlockHeaderPtr)midi;
+        mmid->NextMIDIBlock = NULL;
+        if (mmid->Version < 2) {
+            return 0;
+        }
+        snd_InsertMIDIBlockInList(mmid);
+        for (x = 0; x < mmid->NumMIDIBlocks; x++) {
+            mmid->BlockPtr[x] =
+                (SInt8 *)((UInt32)mmid->BlockPtr[x] + (UInt32)mmid);
+            hold = mmid->BlockPtr[x];
+            snd_RegisterMIDI(hold);
+            hold->MultiMIDIParent = mmid;
+        }
+        break;
+    }
+
+    return 1;
+}
+
+void snd_UnregisterMIDI(MIDIBlockHeaderPtr midi) {
+    MultiMIDIBlockHeaderPtr mmid;
+    MIDIBlockHeaderPtr hold;
+    SInt32 x;
+    MIDIBlockHeaderPtr walk;
+    static SInt32 working_mmd;
+
+    if (!working_mmd) {
+        snd_MIDIStreamGone(midi);
+    }
+
+    if (midi->DataID == 0x44494D4D) {
+        mmid = (MultiMIDIBlockHeaderPtr)midi;
+        working_mmd = 1;
+
+        for (x = 0; x < mmid->NumMIDIBlocks; ++x) {
+            hold = (MIDIBlockHeaderPtr)mmid->BlockPtr[x];
+            snd_UnregisterMIDI(hold);
+        }
+        working_mmd = 0;
+    }
+
+    if (!gMIDIListHead) {
+        return;
+    }
+
+    if (gMIDIListHead == midi) {
+        gMIDIListHead = midi->NextMIDIBlock;
+    } else {
+        walk = gMIDIListHead;
+        while (walk->NextMIDIBlock != midi) {
+            walk = walk->NextMIDIBlock;
+        }
+
+        if (walk->NextMIDIBlock != midi) {
+            return;
+        }
+
+        walk->NextMIDIBlock = midi->NextMIDIBlock;
+    }
+}
+
+MIDIBlockHeaderPtr snd_FindMIDIBlock(UInt32 id) {
+    MIDIBlockHeaderPtr walk;
+
+    walk = gMIDIListHead;
+    while (walk && walk->ID != id) {
+        walk = walk->NextMIDIBlock;
+    }
+
+    return walk;
+}
+
+void snd_InsertMIDIBlockInList(MIDIBlockHeaderPtr midi) {
+    MIDIBlockHeaderPtr walk;
+
+    if (!gMIDIListHead) {
+        gMIDIListHead = midi;
+    } else {
+        walk = gMIDIListHead;
+        while (walk->NextMIDIBlock) {
+            walk = walk->NextMIDIBlock;
+        }
+
+        walk->NextMIDIBlock = midi;
+    }
+}
+
+void snd_MIDIStreamGone(MIDIBlockHeaderPtr midi) {
+    SoundBankPtr bank;
+    SInt32 x;
+    MIDISoundPtr midisound;
+
+    bank = gBankListHead;
+    while (bank) {
+        for (x = 0; x < bank->NumSounds; ++x) {
+            if (bank->FirstSound[x].Type == 4 ||
+                bank->FirstSound[x].Type == 5) {
+
+                midisound = (MIDISoundPtr)&bank->FirstSound[x];
+                if (midisound->MIDIBlock == midi) {
+                    snd_LockMasterTick(512);
+                    snd_StopAllHandlersForSound(
+                        (MIDISound *)&bank->FirstSound[x], 0, 0);
+                    snd_UnlockMasterTick();
+                    midisound->MIDIBlock = 0;
+                }
+            }
+        }
+
+        bank = bank->NextBank;
+    }
+}
+
+void snd_SetCDSifReg(SInt32 reg8, SInt32 reg9) {
+    SInt32 did;
+    SInt32 dis;
+    SInt32 intr_state;
+    sceSifDmaData transData;
+
+    gStats.cd_busy = reg8;
+    gStats.cd_error = reg9;
+
+    if (!gEEStatusAddr) {
+        return;
+    }
+    transData.size = 16;
+    transData.mode = 0;
+
+    if (gStats.cd_busy) {
+        transData.data = (UInt32)&gStats;
+        transData.addr = (UInt32)gEEStatusAddr;
+        dis = CpuSuspendIntr(&intr_state);
+
+        did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone, &gEEDMADoneSema);
+
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+
+        while (sceSifDmaStat(did) > -1) {
+            WaitSema(gEEDMADoneSema);
+        }
+    }
+
+    transData.data = (UInt32)&gStats.cd_error;
+    transData.addr = (UInt32)(gEEStatusAddr + 16);
+    dis = CpuSuspendIntr(&intr_state);
+    did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone, &gEEDMADoneSema);
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+    while (sceSifDmaStat(did) > -1) {
+        WaitSema(gEEDMADoneSema);
+    }
+
+    if (!reg8) {
+        transData.data = (UInt32)&gStats;
+        transData.addr = (UInt32)gEEStatusAddr;
+        dis = CpuSuspendIntr(&intr_state);
+        did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone, &gEEDMADoneSema);
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+        while (sceSifDmaStat(did) > -1) {
+            WaitSema(gEEDMADoneSema);
+        }
+    }
+}
+
+void *snd_IOPMemAlloc(SInt32 size, SInt32 use, SInt32 *act_size) {
+    void *mem;
+    SInt32 max_avail;
+    SInt32 from_where;
+    SInt32 dis;
+    SInt32 oldstat;
+
+    mem = NULL;
+    from_where = 0;
+
+    dis = CpuSuspendIntr(&oldstat);
+
+    if (use == 8) {
+        max_avail = QueryMaxFreeMemSize();
+        if (gLimit2Meg && max_avail > 0x200000) {
+            if (!gPrefs_Silent) {
+                printf("989snd: detected more then 2 meg free (%d free).\n",
+                       max_avail);
+            }
+            max_avail -= 0x600000;
+            if (max_avail < 0) {
+                max_avail = 0;
+            }
+            if (!gPrefs_Silent) {
+                printf("        subtracting 6 meg (%d)\n", 0x600000);
+                printf("        max avail then is %d\n", max_avail);
+            }
+            if (!max_avail) {
+                max_avail = 10240;
+                if (!gPrefs_Silent) {
+                    printf("        allowing a 10k buffer!\n");
+                }
+            }
+        }
+
+        if (max_avail % 16) {
+            max_avail = max_avail - (max_avail % 16);
+        }
+
+        if (max_avail < size) {
+            size = max_avail;
+        }
+
+        if (!size) {
+            if (!dis) {
+                CpuResumeIntr(oldstat);
+            }
+
+            return NULL;
+        }
+    }
+
+    switch (use) {
+    case 1:
+    case 2:
+    case 3:
+    case 4:
+    case 5:
+    case 7:
+        from_where = 1;
+        break;
+
+    case 8:
+    default:
+        from_where = 0;
+        break;
+    }
+
+    mem = AllocSysMemory(from_where, size, 0);
+
+    if (mem && act_size)
+        *act_size = size;
+
+    if (!dis) {
+        CpuResumeIntr(oldstat);
+    }
+
+    return mem;
+}
+
+void snd_IOPMemFree(void *mem) {
+    SInt32 dis;
+    SInt32 oldstat;
+
+    dis = CpuSuspendIntr(&oldstat);
+
+    FreeSysMemory(mem);
+
+    if (!dis) {
+        CpuResumeIntr(oldstat);
+    }
+}
+
+SInt32 snd_GetFreeSPUDMA() {
+    SInt32 intr_state;
+    SInt32 dis;
+
+    dis = CpuSuspendIntr(&intr_state);
+
+    if (!gDMAInUse[0]) {
+        gDMAInUse[0] = 1;
+
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+
+        sceSdSetTransIntrHandler(0, NULL, NULL);
+        return 0;
+    }
+
+    if (!gDMAInUse[1]) {
+        gDMAInUse[1] = 1;
+
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+
+        sceSdSetTransIntrHandler(1, NULL, NULL);
+        return 1;
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    return -1;
+}
+
+void snd_FreeSPUDMA(SInt32 ch) {
+    gDMAInUse[ch] = 0;
+    if (VAGStreamDMAList) {
+        SignalSema(gStartDMASema);
+    }
+}
+
+void snd_WaitDMADone() {
+    while (gDMAInUse[0] || gDMAInUse[1]) {
+        gWaitingDMAComplete = GetThreadId();
+        SleepThread();
+    }
+
+    gWaitingDMAComplete = 0;
+}

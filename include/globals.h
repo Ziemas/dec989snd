@@ -49,6 +49,7 @@ extern SInt32 gStartDMASema;
 
 // valloc.c
 extern UInt32 gVAllocOwnerID;
+extern VoiceAttributes *gPlayingListHead;
 extern VoiceAttributes gChannelStatus[48];
 extern UInt32 gAwaitingKeyOff[2];
 

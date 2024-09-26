@@ -2,7 +2,6 @@
 #include "functions.h"
 #include "globals.h"
 
-// INCLUDE_ASM("asm/nonmatchings/midi", snd_PlayMIDISound);
 UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan,
                          SInt16 pitch_mod, SInt16 bend) {
     MIDIBlockHeaderPtr data_stream;
@@ -88,7 +87,6 @@ void snd_UnmuteMIDIChannel(MIDIHandlerPtr stream, SInt32 channel) {
     stream->MuteState &= ~(1 << channel);
 }
 
-// INCLUDE_ASM("asm/nonmatchings/midi", snd_ProcessMIDITick);
 SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
     static SInt32 in_function = 0;
     SInt32 used_bytes;
@@ -277,13 +275,134 @@ UInt32 ReadVarLen(UInt8 *buffer, SInt32 *used_bytes) {
     return ret_val;
 }
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_MIDINoteOn);
+void snd_MIDINoteOn(MIDIHandlerPtr stream) {
+    TonePtr tones[32];
+    SInt32 num_tones;
+    SInt32 x;
+    SInt32 voice;
+    SInt32 midi_channel;
+    SInt32 program;
+    SInt8 note;
+    SInt8 vol;
+    SInt32 pan_calc;
+    SInt32 core;
+    SInt32 c_v;
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_MIDINoteOff);
+    midi_channel = stream->RunningStatus & 0xF;
+    program = stream->Prog[midi_channel];
+    note = *stream->PlayPos;
+    vol = stream->PlayPos[1];
+    num_tones = snd_CollectTones(stream->BankPtr, program, note, tones);
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_ReleaseDamper);
+    if (!snd_LockVoiceAllocatorEx(1, 42)) {
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_ResetControllers);
+    for (x = 0; x < num_tones; x++) {
+        voice =
+            snd_AllocateVoice(stream->SH.Sound->VolGroup, tones[x]->Priority);
+        if (voice != -1) {
+            core = voice / 24;
+            c_v = voice % 24;
+            stream->SH.Voices.core[core] |= 1 << c_v;
+            gChannelStatus[voice].Owner = &stream->SH;
+            gChannelStatus[voice].OwnerProc = snd_MIDISoundOwnerProc;
+            gChannelStatus[voice].Tone = tones[x];
+            gChannelStatus[voice].StartNote = note;
+            gChannelStatus[voice].StartFine = 0;
+            gChannelStatus[voice].Priority = tones[x]->Priority;
+            gChannelStatus[voice].VolGroup = stream->SH.Sound->VolGroup;
+            gChannelStatus[voice].Volume.left =
+                gChannelStatus[voice].Volume.right = 0;
+            pan_calc = stream->Pan[midi_channel] + stream->SH.Current_Pan;
+            if (pan_calc >= 360)
+                pan_calc -= 360;
+            snd_MakeVolumesB(
+                stream->SH.Current_Vol, vol * stream->Vol[midi_channel] / 127,
+                pan_calc, stream->BankPtr->FirstProg[program].Vol,
+                stream->BankPtr->FirstProg[program].Pan, tones[x]->Vol,
+                tones[x]->Pan, &gChannelStatus[voice].Volume);
+            gChannelStatus[voice].OwnerData.MIDIData.MidiChannel = midi_channel;
+            gChannelStatus[voice].Current_PB = stream->PitchBend[midi_channel];
+            gChannelStatus[voice].Current_PM = stream->SH.Current_PM;
+            gChannelStatus[voice].OwnerData.MIDIData.KeyOnVelocity = vol;
+            gChannelStatus[voice].OwnerData.MIDIData.KeyOnProg =
+                &stream->BankPtr->FirstProg[program];
+            gChannelStatus[voice].OwnerData.MIDIData.ShouldBeOff = 0;
+            snd_StartVAGVoice(voice, 0);
+        }
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+void snd_MIDINoteOff(MIDIHandlerPtr stream) {
+    VoiceAttributes *walk;
+    SInt32 midi_channel;
+    SInt8 note;
+
+    midi_channel = stream->RunningStatus & 0xf;
+    note = stream->PlayPos[0];
+
+    if (!snd_LockVoiceAllocatorEx(1, 43)) {
+        return;
+    }
+
+    walk = gPlayingListHead;
+    while (walk) {
+        if (walk->Owner == stream &&
+            walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
+            walk->StartNote == note) {
+            if (((stream->DamperState >> midi_channel) & 1) == 0) {
+                snd_KeyOffVoice(walk->voice);
+            } else {
+                walk->OwnerData.MIDIData.ShouldBeOff = 1;
+            }
+        }
+
+        walk = walk->playlist;
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+void snd_ReleaseDamper(MIDIHandlerPtr stream) {
+    VoiceAttributes *walk;
+    SInt32 midi_channel;
+
+    midi_channel = stream->RunningStatus & 0xf;
+    stream->DamperState &= ~(1 << midi_channel);
+
+    snd_LockVoiceAllocatorEx(1, 44);
+
+    walk = gPlayingListHead;
+    while (walk) {
+        if (walk->Owner == stream &&
+            walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
+            walk->OwnerData.MIDIData.ShouldBeOff == 1) {
+
+            snd_KeyOffVoice(walk->voice);
+        }
+
+        walk = walk->playlist;
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+void snd_ResetControllers(MIDIHandlerPtr stream) {
+	SInt32 x;
+
+    stream->MuteState = 0;
+    for (x = 0; x < 16; x++) {
+        stream->Prog[x] = 0;
+        stream->Vol[x] = 127;
+        stream->Pan[x] = 0;
+        stream->PitchBend[x] = 0;
+    }
+
+    stream->DamperState = 0;
+}
 
 INCLUDE_ASM("asm/nonmatchings/midi", snd_PitchBend);
 

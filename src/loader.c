@@ -1393,7 +1393,7 @@ void snd_UnregisterMIDI(MIDIBlockHeaderPtr midi) {
     MIDIBlockHeaderPtr hold;
     SInt32 x;
     MIDIBlockHeaderPtr walk;
-    static SInt32 working_mmd;
+    static SInt32 working_mmd = 0;
 
     if (!working_mmd) {
         snd_MIDIStreamGone(midi);

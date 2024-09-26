@@ -374,7 +374,7 @@ void snd_WaitDMADone();
 // FILE -- midi.c
 // *****************************************************************************
 
-UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, int bend);
+UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend);
 void snd_SetupMIDIStreamHandler(MIDIHandlerPtr hand, MIDIBlockHeaderPtr stream);
 MIDIBlockHeaderPtr snd_GetRealMIDIDataStream(MIDISoundPtr sound);
 void snd_MuteMIDIChannel(MIDIHandlerPtr stream, SInt32 channel);

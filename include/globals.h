@@ -13,6 +13,7 @@ extern SInt32 gFileReadMutex;
 extern char *gEEStatusAddr;
 
 // init.c
+extern UInt32 gMicsPerTick;
 extern BOOL gPrefs_Silent;
 
 // intr_code.c

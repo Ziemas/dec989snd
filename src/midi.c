@@ -1,6 +1,9 @@
 #include "common.h"
 #include "functions.h"
 #include "globals.h"
+#include "intrman.h"
+#include "libsd.h"
+#include "sdmacro.h"
 
 UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan,
                          SInt16 pitch_mod, SInt16 bend) {
@@ -391,7 +394,7 @@ void snd_ReleaseDamper(MIDIHandlerPtr stream) {
 }
 
 void snd_ResetControllers(MIDIHandlerPtr stream) {
-	SInt32 x;
+    SInt32 x;
 
     stream->MuteState = 0;
     for (x = 0; x < 16; x++) {
@@ -404,14 +407,189 @@ void snd_ResetControllers(MIDIHandlerPtr stream) {
     stream->DamperState = 0;
 }
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_PitchBend);
+void snd_PitchBend(MIDIHandlerPtr stream) {
+    SInt32 core;
+    SInt32 c_v;
+    SInt32 new_note;
+    SInt32 new_fine;
+    VoiceAttributes *walk;
+    UInt32 hold;
+    SInt32 intr_state;
+    SInt32 dis;
+    SInt32 midi_channel;
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_SetMIDISoundVolumePan);
+    midi_channel = stream->RunningStatus & 0xF;
+    hold = (stream->PlayPos[0] & 0x7F | ((stream->PlayPos[1] & 0x7Fu) << 7));
+    hold = 0xFFFF * hold / 0x3FFF;
+    stream->PitchBend[midi_channel] = (SInt32)hold - 0x8000;
+    snd_LockVoiceAllocatorEx(1, 45);
+    walk = gPlayingListHead;
+    dis = CpuSuspendIntr(&intr_state);
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_SetMIDIHandlerVolumePan);
+    while (walk) {
+        if (walk->Owner == stream &&
+            walk->OwnerData.MIDIData.MidiChannel == midi_channel) {
+            walk->Current_PB = stream->PitchBend[midi_channel];
+            core = walk->voice / 24;
+            c_v = walk->voice % 24;
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_SetMIDISoundPitchModifier);
+            snd_PitchBendTone(walk->Tone, walk->Current_PB, walk->Current_PM,
+                              walk->StartNote, walk->StartFine, &new_note,
+                              &new_fine);
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_SetMIDIHandlerPitchModifier);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH,
+                          PS1Note2Pitch(walk->Tone->CenterNote,
+                                        walk->Tone->CenterFine, new_note,
+                                        new_fine));
+        }
 
-INCLUDE_ASM("asm/nonmatchings/midi", snd_MIDISoundOwnerProc);
+        walk = walk->playlist;
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+void snd_SetMIDISoundVolumePan(UInt32 handle, SInt32 vol, SInt32 pan) {
+    MIDIHandlerPtr stream;
+
+    if (!(stream = (MIDIHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        return;
+    }
+
+    snd_SetMIDIHandlerVolumePan(stream, vol, pan);
+}
+
+void snd_SetMIDIHandlerVolumePan(MIDIHandlerPtr stream, SInt32 vol,
+                                 SInt32 pan) {
+    SInt32 pan_calc;
+    SpuVolume spu_vol;
+    SInt32 core;
+    SInt32 c_v;
+    VoiceAttributes *walk;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    snd_LockVoiceAllocatorEx(1, 46);
+
+    if (vol < 0) {
+        stream->SH.Current_Vol = -1 * vol;
+    } else if (vol != 0x7FFFFFFF) {
+        stream->SH.Current_Vol = (stream->SH.Sound->Vol * vol) >> 10;
+    }
+
+    if (stream->SH.Current_Vol >= 128) {
+        stream->SH.Current_Vol = 127;
+    }
+
+    if (pan == -1) {
+        stream->SH.Current_Pan = stream->SH.Sound->Pan;
+    } else if (pan != -2) {
+        stream->SH.Current_Pan = pan;
+    }
+
+    walk = gPlayingListHead;
+    while (walk) {
+        if (walk->Owner == stream) {
+            pan_calc = stream->Pan[walk->OwnerData.MIDIData.MidiChannel] +
+                       stream->SH.Current_Pan;
+
+            if (pan_calc >= 360) {
+                pan_calc -= 360;
+            }
+
+            snd_MakeVolumesB(
+                stream->SH.Current_Vol,
+                walk->OwnerData.MIDIData.KeyOnVelocity *
+                    stream->Vol[walk->OwnerData.MIDIData.MidiChannel] / 127,
+                pan_calc, walk->OwnerData.MIDIData.KeyOnProg->Vol,
+                walk->OwnerData.MIDIData.KeyOnProg->Pan, walk->Tone->Vol,
+                walk->Tone->Pan, &walk->Volume);
+
+            if (!(stream->SH.flags & 2)) {
+                spu_vol.left = (UInt16)snd_AdjustVolToGroup(walk->Volume.left,
+                                                            walk->VolGroup) >>
+                               1;
+                spu_vol.right = (UInt16)snd_AdjustVolToGroup(walk->Volume.right,
+                                                             walk->VolGroup) >>
+                                1;
+
+                core = walk->voice / 24;
+                c_v = walk->voice % 24;
+                dis = CpuSuspendIntr(&intr_state);
+                sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL, spu_vol.left);
+                sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR, spu_vol.right);
+                if (!dis) {
+                    CpuResumeIntr(intr_state);
+                }
+            }
+        }
+
+        walk = walk->playlist;
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+void snd_SetMIDISoundPitchModifier(UInt32 handle, SInt16 mod) {
+    MIDIHandlerPtr stream;
+
+    if (!(stream = (MIDIHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        return;
+    }
+
+    snd_SetMIDIHandlerPitchModifier(stream, mod);
+}
+
+void snd_SetMIDIHandlerPitchModifier(MIDIHandlerPtr stream, SInt16 mod) {
+    SInt32 core;
+    SInt32 c_v;
+    SInt32 new_note;
+    SInt32 new_fine;
+    VoiceAttributes *walk;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    snd_LockVoiceAllocatorEx(1, 47);
+    stream->SH.Current_PM = mod;
+    walk = gPlayingListHead;
+    while (walk) {
+        if (walk->Owner == stream) {
+            walk->Current_PM = mod;
+            if (!(stream->SH.flags & 2)) {
+                snd_PitchBendTone(walk->Tone, walk->Current_PB,
+                                  walk->Current_PM, walk->StartNote,
+                                  walk->StartFine, &new_note, &new_fine);
+
+                core = walk->voice / 24;
+                c_v = walk->voice % 24;
+                dis = CpuSuspendIntr(&intr_state);
+                sceSdSetParam((core | SD_VOICE(c_v)) | SD_VP_PITCH,
+                              PS1Note2Pitch(walk->Tone->CenterNote,
+                                            walk->Tone->CenterFine, new_note,
+                                            new_fine));
+                if (!dis) {
+                    CpuResumeIntr(intr_state);
+                }
+            }
+        }
+
+        walk = walk->playlist;
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+void snd_MIDISoundOwnerProc(SInt32 voice, UInt32 owner, SInt32 flag) {
+    MIDIHandlerPtr snd;
+    SInt32 core;
+    SInt32 c_v;
+
+    snd = (MIDIHandlerPtr)owner;
+    core = voice / 24;
+    c_v = voice % 24;
+    snd->SH.Voices.core[core] &= ~(1 << c_v);
+}

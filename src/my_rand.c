@@ -75,7 +75,8 @@ UInt16 snd_RandomUInt16() {
         j = r250_index + 103;
     }
 
-    new_rand = r250_buffer[r250_index] = r250_buffer[r250_index] ^ r250_buffer[j];
+    new_rand = r250_buffer[r250_index] =
+        r250_buffer[r250_index] ^ r250_buffer[j];
 
     if (r250_index >= 249) {
         r250_index = 0;
@@ -91,6 +92,4 @@ static UInt16 myrand() {
     return (seed) >> 16 & 0x7FFF;
 }
 
-static void mysrand(UInt16 newseed) {
-    seed = newseed;
-}
+static void mysrand(UInt16 newseed) { seed = newseed; }

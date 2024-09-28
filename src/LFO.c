@@ -286,9 +286,6 @@ SInt32 snd_LFO_TYPE_SAW(LFOTracker *tracker, int step) {
     return ret_val;
 }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_LFO_TYPE_RAND);
-#else
 SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step) {
     if (step >= 0x400 && tracker->state_hold2 == 1) {
         tracker->state_hold2 = 0;
@@ -296,12 +293,11 @@ SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step) {
     } else if (step < 0x400 && tracker->state_hold2 == 0) {
         tracker->state_hold2 = 1;
         tracker->state_hold1 =
-            -1 * ((snd_RandomUInt16() % 0x8000) * (snd_RandomUInt16() % 2));
+            ((snd_RandomUInt16() % 0x8000) * ((snd_RandomUInt16() % 2) * -1));
     }
 
     return tracker->state_hold1;
 }
-#endif
 
 SInt32 snd_GetLFO(register LFOTracker *tracker, register SInt32 step_mult) {
     SInt32 ret_val, step;
@@ -323,18 +319,13 @@ SInt32 snd_GetLFO(register LFOTracker *tracker, register SInt32 step_mult) {
     return ret_val;
 }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/LFO", snd_InitLFO);
-#else
 void snd_InitLFO(LFOTracker *tracker) {
-    if (tracker->type != 5) {
-        // huh
-    } else {
+    switch (tracker->type) {
+    case 5:
         tracker->state_hold1 =
-            -(snd_RandomUInt16() & 0x7fff) * (snd_RandomUInt16() & 1);
+            (snd_RandomUInt16() % 0x8000) * ((snd_RandomUInt16() % 2) * -1);
         tracker->state_hold2 = 1;
-        if (0) {
-        }
+        break;
     }
 
     snd_CalcLFODepth(tracker);
@@ -346,7 +337,6 @@ void snd_InitLFO(LFOTracker *tracker) {
 
     snd_UnlockMasterTick();
 }
-#endif
 
 void snd_RemoveLFOsForHandler(BlockSoundHandlerPtr handler) {
     SInt32 i;

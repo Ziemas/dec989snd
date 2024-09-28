@@ -14,6 +14,7 @@ extern char *gEEStatusAddr;
 
 // init.c
 extern UInt32 gMicsPerTick;
+extern BOOL gPrefs_ShowMissingSounds;
 extern BOOL gPrefs_Silent;
 
 // intr_code.c

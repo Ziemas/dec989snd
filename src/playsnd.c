@@ -150,23 +150,259 @@ UInt32 snd_PlaySoundEx(SndPlayParamsPtr params) {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_PlaySoundVolPanPMPB);
+UInt32 snd_PlaySoundVolPanPMPB(SoundBankPtr bank, SInt32 sound, SInt32 vol,
+                               SInt32 pan, SInt16 pitch_mod, SInt16 bend) {
+    SoundPtr sound_ptr;
+    UInt32 ret;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_StopSound);
+    if (bank == (SoundBankPtr)-1) {
+        bank = gBlockListHead;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SoundIsStillPlaying);
+    if (!bank) {
+        return 0;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_IsSoundALooper);
+    if (bank->DataID == DATAID_SBLK) {
+        return snd_PlaySFX((SFXBlock2Ptr)bank, sound, vol, pan, pitch_mod,
+                           bend);
+    } else {
+        if (sound >= bank->NumSounds || sound < 0) {
+            return 0;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetSoundVolPan);
+        if (!snd_DEBUG_CheckSolo(bank, sound)) {
+            return 0;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetSoundParams);
+        sound_ptr = &bank->FirstSound[sound];
+        if (!sound_ptr->Bank) {
+            return 0;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_GetSoundOriginalPitch);
+        switch (sound_ptr->Type) {
+        case 1:
+        case 2:
+        case 3:
+            return 0;
+        case 4:
+            return snd_PlayMIDISound(sound_ptr, vol, pan, pitch_mod, bend);
+        case 5:
+            ret = snd_PlayAMESound(sound_ptr, vol, pan, pitch_mod, bend);
+            return ret;
+        default:
+            return 0;
+        }
+    }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_GetSoundCurrentPitch);
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_GetSoundPitchBend);
+void snd_StopSound(UInt32 handle) {
+    GSoundHandlerPtr snd_ptr;
+
+    snd_LockMasterTick(1280);
+    snd_ptr = snd_CheckHandlerStillActive(handle);
+    if (snd_ptr) {
+        snd_StopHandlerPtr(snd_ptr, 1, 0, 0);
+    }
+    snd_UnlockMasterTick();
+}
+
+UInt32 snd_SoundIsStillPlaying(UInt32 handle) {
+    if (!handle) {
+        return 0;
+    }
+
+    if (handle == -1) {
+        return -1;
+    }
+
+    if (snd_CheckHandlerStillActive(handle)) {
+        return handle;
+    } else {
+        return 0;
+    }
+}
+
+SInt32 snd_IsSoundALooper(SoundBankPtr bank, SInt32 sound) {
+    SoundPtr sound_ptr;
+
+    if (!bank) {
+        return 0;
+    }
+
+    if (bank->DataID == DATAID_SBLK) {
+        return snd_DoesSFXLoop((SFXBlock2 *)bank, sound);
+    }
+
+    if (sound >= bank->NumSounds || sound < 0) {
+        return 0;
+    }
+
+    sound_ptr = &bank->FirstSound[sound];
+    if (!sound_ptr->Bank) {
+        return 0;
+    }
+
+    switch (sound_ptr->Type) {
+    case 3:
+        return 1;
+    case 4:
+        if (!((MIDISoundPtr)sound_ptr)->Repeats) {
+            return 1;
+        }
+        return 0;
+    case 5:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+void snd_SetSoundVolPan(UInt32 handle, SInt32 vol, SInt32 pan) {
+    SInt32 type;
+
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1281);
+
+    switch (type) {
+    case 5:
+        snd_SetSFXVolPan(handle, vol, pan, 0);
+        break;
+    case 0:
+        break;
+    case 1:
+        snd_SetMIDISoundVolumePan(handle, vol, pan);
+        break;
+    case 2:
+        snd_SetAMESoundVolumePan(handle, vol, pan);
+        break;
+    case 4:
+        snd_SetVAGStreamVolPan(handle, vol, pan);
+        break;
+    }
+
+    snd_UnlockMasterTick();
+}
+
+UInt32 snd_SetSoundParams(UInt32 handle, UInt32 mask, SInt32 vol, SInt32 pan,
+                          SInt16 pitch_mod, SInt16 bend) {
+    SInt32 p;
+
+    if (!snd_CheckHandlerStillActive(handle)) {
+        return 0;
+    }
+
+    if ((mask & 4) && (mask & 2)) {
+        mask &= ~2;
+    }
+
+    p = pan;
+
+    if (!(mask & 1)) {
+        vol = 0x7FFFFFFF;
+    }
+
+    if (!(mask & 2)) {
+        p = -2;
+    }
+
+    if ((mask & 1) || (mask & 2)) {
+        snd_SetSoundVolPan(handle, vol, p);
+    }
+
+    if (mask & 4) {
+        snd_AutoPan(handle, pan, 0, 30, 4);
+    }
+
+    if (mask & 8) {
+        snd_SetSoundPitchModifier(handle, pitch_mod);
+    }
+
+    if (mask & 0x10) {
+        snd_SetSoundPitchBend(handle, bend);
+    }
+
+    return handle;
+}
+
+SInt32 snd_GetSoundOriginalPitch(SoundBankPtr bank, SInt32 sound) {
+    SoundPtr sound_ptr;
+
+    if (!bank) {
+        return 0;
+    }
+
+    if (bank->DataID == DATAID_SBLK) {
+        return 0x1E00;
+    }
+
+    if (!bank || bank->DataID == DATAID_SBLK || sound >= bank->NumSounds ||
+        sound < 0) {
+        return 0;
+    }
+
+    sound_ptr = &bank->FirstSound[sound];
+    if (!sound_ptr->Bank) {
+        return 0;
+    }
+
+    switch (sound_ptr->Type) {
+    case 1:
+    case 2:
+    case 3:
+        return (sound_ptr->Note * 128) + sound_ptr->Fine;
+    default:
+        return 0;
+    }
+}
+
+SInt32 snd_GetSoundCurrentPitch(UInt32 handle) {
+    SInt32 type;
+    SInt32 ret_val;
+    VAGSoundHandlerPtr hand;
+
+    type = (handle >> 24) & 0x1F;
+    ret_val = 0;
+    snd_LockMasterTick(1282);
+    switch (type) {
+    case 0:
+    case 5:
+        if ((hand = (VAGSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+            ret_val = (hand->Current_Note * 128) + hand->Current_Fine;
+        }
+    }
+    snd_UnlockMasterTick();
+
+    return ret_val;
+}
+
+SInt32 snd_GetSoundPitchBend(UInt32 handle) {
+    SInt32 type;
+    SInt32 ret_val;
+    VAGSoundHandlerPtr hand;
+
+    type = (handle >> 24) & 0x1f;
+    ret_val = 0;
+    snd_LockMasterTick(1283);
+    switch (type) {
+    case 5:
+        if ((hand = (VAGSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+            ret_val = ((BlockSoundHandlerPtr)hand)->App_PB;
+        }
+        break;
+    case 0:
+        if ((hand = (VAGSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+            ret_val = hand->Current_PB;
+        }
+        break;
+    }
+
+    snd_UnlockMasterTick();
+
+    return ret_val;
+}
 
 INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetSoundPitch);
 

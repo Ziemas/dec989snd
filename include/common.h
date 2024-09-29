@@ -140,7 +140,10 @@ typedef struct { // 0x1c
 	/* 0x18 */ void *MIDIBlock;
 } MIDISound;
 
-typedef MIDISound *MIDISoundPtr; 
+typedef MIDISound *MIDISoundPtr;
+
+#define DATAID_SBV2 0x32764253
+#define DATAID_SBLK 0x6B6C4253
 
 struct SoundBank_tag { // 0x34
 	/* 0x00 */ UInt32 DataID;
@@ -1151,5 +1154,43 @@ typedef struct { // 0x4
 	/* 0x0 */ SInt16 min;
 	/* 0x2 */ SInt16 max;
 } VoiceRange;
+
+enum GRAIN_TYPE {
+    GRAIN_NULL = 0x0,
+    GRAIN_TONE = 0x1,
+    GRAIN_TONE2 = 0x9,
+    GRAIN_XREF_ID = 0x2,
+    GRAIN_XREF_NUM = 0x3,
+    GRAIN_LFO_SETTINGS = 0x4,
+    GRAIN_STARTCHILDSOUND = 0x5,
+    GRAIN_STOPCHILDSOUND = 0x6,
+    GRAIN_PLUGIN_MESSAGE = 0x7,
+    GRAIN_BRANCH = 0x8,
+    GRAIN_CONTROL_NULL = 0x14,
+    GRAIN_LOOP_START = 0x15,
+    GRAIN_LOOP_END = 0x16,
+    GRAIN_LOOP_CONTINUE = 0x17,
+    GRAIN_STOP = 0x18,
+    GRAIN_RAND_PLAY = 0x19,
+    GRAIN_RAND_DELAY = 0x1A,
+    GRAIN_RAND_PB = 0x1B,
+    GRAIN_PB = 0x1C,
+    GRAIN_ADD_PB = 0x1D,
+    GRAIN_SET_REGISTER = 0x1E,
+    GRAIN_SET_REGISTER_RAND = 0x1F,
+    GRAIN_INC_REGISTER = 0x20,
+    GRAIN_DEC_REGISTER = 0x21,
+    GRAIN_TEST_REGISTER = 0x22,
+    GRAIN_MARKER = 0x23,
+    GRAIN_GOTO_MARKER = 0x24,
+    GRAIN_GOTO_RANDOM_MARKER = 0x25,
+    GRAIN_WAIT_FOR_ALL_VOICES = 0x26,
+    GRAIN_PLAY_CYCLE = 0x27,
+    GRAIN_ADD_REGISTER = 0x28,
+    GRAIN_KEY_OFF_VOICES = 0x29,
+    GRAIN_KILL_VOICES = 0x2A,
+    GRAIN_ON_STOP_MARKER = 0x2B,
+    GRAIN_COPY_REGISTER = 0x2C,
+};
 
 #endif

@@ -9,9 +9,6 @@ extern SInt32 gThreadPriority_TICK;
 extern SInt32 gEEDMADoneSema;
 extern SInt32 gFileReadMutex;
 
-// loader.c
-extern char *gEEStatusAddr;
-
 // init.c
 extern UInt32 gMicsPerTick;
 extern BOOL gPrefs_ShowMissingSounds;
@@ -27,8 +24,11 @@ extern SInt32 gWaitingDMAComplete;
 
 // loader.c
 extern BOOL gLimit2Meg;
+extern char *gEEStatusAddr;
 extern ExternSndIOPAlloc gAllocProc;
 extern ExternSndIOPFree gFreeProc;
+extern SoundBankPtr gBankListHead;
+extern SFXBlock2Ptr gBlockListHead;
 
 // playsnd.c
 extern SInt32 gGlobalExcite;

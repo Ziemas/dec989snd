@@ -404,40 +404,387 @@ SInt32 snd_GetSoundPitchBend(UInt32 handle) {
     return ret_val;
 }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetSoundPitch);
+void snd_SetSoundPitch(UInt32 handle, SInt32 pitch) {
+    SInt32 type;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetSoundPitchBend);
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1284);
+    switch (type) {
+    case 5:
+        snd_SetSFXPitch(handle, pitch);
+        break;
+    case 0:
+        break;
+    case 1:
+        break;
+    }
+    snd_UnlockMasterTick();
+}
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetSoundPitchModifier);
+void snd_SetSoundPitchBend(UInt32 handle, SInt16 bend) {
+    SInt32 type;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_GetSoundReg);
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1285);
+    switch (type) {
+    case 5:
+        snd_SetSFXPitchbend(handle, bend);
+        break;
+    case 0:
+        break;
+    case 1:
+        break;
+    }
+    snd_UnlockMasterTick();
+}
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetSoundReg);
+void snd_SetSoundPitchModifier(UInt32 handle, SInt16 mod) {
+    SInt32 type;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetAllSoundReg);
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1286);
+    switch (type) {
+    case 5:
+        snd_SetSFXPitchModifier(handle, mod);
+        break;
+    case 0:
+        break;
+    case 1:
+        snd_SetMIDISoundPitchModifier(handle, mod);
+        break;
+    case 2:
+        snd_SetAMESoundPitchModifier(handle, mod);
+        break;
+    case 4:
+        snd_SetVagStreamPitchModifier(handle, mod);
+        break;
+    }
+    snd_UnlockMasterTick();
+}
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_GetSoundPitchModifier);
+SInt8 snd_GetSoundReg(UInt32 handle, SInt32 which) {
+    SInt32 type;
+    SInt8 val;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_PauseSound);
+    type = (handle >> 24) & 0x1F;
+    val = 0;
+    snd_LockMasterTick(1287);
+    switch (type) {
+    case 5:
+        val = snd_GetSFXSoundReg(handle, which);
+        break;
+    case 2:
+        val = snd_GetMIDIRegister(handle, which);
+        break;
+    }
+    snd_UnlockMasterTick();
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_ContinueSound);
+    return val;
+}
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_StopAllSoundsInBank);
+void snd_SetSoundReg(UInt32 handle, SInt32 which, SInt8 val) {
+    SInt32 type;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_SetGlobalExcite);
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1288);
+    switch (type) {
+    case 5:
+        snd_SetSFXSoundReg(handle, which, val);
+        break;
+    case 2:
+        snd_SetMIDIRegister(handle, which, val);
+        break;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_GetGlobalExcite);
+    snd_UnlockMasterTick();
+}
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_FindBankByName);
+void snd_SetAllSoundReg(UInt32 handle, SInt8 *vals) {
+    SInt32 type;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_FindSoundByName);
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1289);
+    switch (type) {
+    case 5:
+        snd_SetAllSFXSoundReg(handle, vals);
+        break;
+    case 2:
+        snd_SetAllMIDIRegister(handle, vals);
+        break;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_CalcSoundNameHash);
+    snd_UnlockMasterTick();
+}
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_CollectTones);
+SInt32 snd_GetSoundPitchModifier(UInt32 handle) {
+    SInt32 type;
+    SInt32 ret_val;
+    VAGSoundHandlerPtr hand;
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_DEBUG_SoloSound);
+    type = (handle >> 24) & 0x1F;
+    ret_val = 0;
+    snd_LockMasterTick(1290);
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_DEBUG_CheckSolo);
+    switch (type) {
+    case 5:
+        if ((hand = snd_CheckHandlerStillActive(handle))) {
+            ret_val = ((BlockSoundHandlerPtr)hand)->App_PM;
+        }
+        break;
+    case 0:
+    case 1:
+    case 2:
+    case 4:
+        if ((hand = snd_CheckHandlerStillActive(handle))) {
+            ret_val = hand->SH.Current_PM;
+        }
+        break;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/playsnd", snd_DEBUG_ClearSolo);
+    snd_UnlockMasterTick();
+
+    return 0;
+}
+
+void snd_PauseSound(UInt32 handle) {
+    SInt32 type;
+    GSoundHandlerPtr snd_ptr;
+
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1291);
+
+    switch (type) {
+    case 0:
+    case 1:
+    case 2:
+    case 5:
+        if ((snd_ptr = snd_CheckHandlerStillActive(handle))) {
+            snd_PauseHandlerPtr(snd_ptr, 1);
+        }
+        break;
+    case 4:
+        snd_PauseVAGStream(handle);
+        break;
+    }
+
+    snd_UnlockMasterTick();
+}
+
+void snd_ContinueSound(UInt32 handle) {
+    SInt32 type;
+    GSoundHandlerPtr snd_ptr;
+
+    type = (handle >> 24) & 0x1F;
+    snd_LockMasterTick(1292);
+
+    switch (type) {
+    case 0:
+    case 1:
+    case 2:
+    case 5:
+        if ((snd_ptr = snd_CheckHandlerStillActive(handle))) {
+            snd_ContinueHandlerPtr(snd_ptr, 1);
+        }
+        break;
+    case 4:
+        snd_ContinueVAGStream(handle);
+        break;
+    }
+
+    snd_UnlockMasterTick();
+}
+
+void snd_StopAllSoundsInBank(SoundBankPtr bank, SInt32 silence) {
+    SInt32 x;
+    SFXBlock2Ptr block;
+
+    if (!bank) {
+        return;
+    }
+
+    snd_LockMasterTick(1293);
+    if (bank->DataID == DATAID_SBLK) {
+        block = (SFXBlock2Ptr)bank;
+        for (x = 0; x < block->NumSounds; x++) {
+            snd_StopAllHandlersForSound(&block->FirstSound[x], silence, 0);
+        }
+    } else {
+        for (x = 0; x < bank->NumSounds; x++) {
+            snd_StopAllHandlersForSound(&bank->FirstSound[x], silence, 0);
+        }
+    }
+    snd_UnlockMasterTick();
+}
+
+void snd_SetGlobalExcite(SInt32 value) {
+    if (value > 127) {
+        value = 127;
+    }
+
+    if (value < 0) {
+        value = 0;
+    }
+
+    gGlobalExcite = value;
+}
+
+SInt32 snd_GetGlobalExcite() { return gGlobalExcite; }
+
+SoundBankPtr snd_FindBankByName(char *name) {
+    SFXBlock2Ptr walk;
+    UInt32 *comp;
+
+    comp = (UInt32 *)name;
+
+    walk = gBlockListHead;
+    while (walk) {
+        if (walk->Flags & 0x100) {
+            if (walk->BlockNames->BlockName[0] == comp[0] &&
+                walk->BlockNames->BlockName[1] == comp[1]) {
+                return walk;
+            }
+        }
+
+        walk = walk->NextBlock;
+    }
+
+    return NULL;
+}
+
+SInt32 snd_FindSoundByName(SFXBlock2Ptr block, char *name,
+                           SFXBlock2Ptr *found_block) {
+    UInt32 *buffer;
+    SInt32 index;
+    SFXNamePtr snd_names;
+    SInt32 count;
+    SFXBlock2Ptr walk;
+
+    count = 0;
+    if (block &&
+        (block->DataID != DATAID_SBLK || (block->Flags & 0x100) == 0)) {
+        return -1;
+    }
+
+    if (!block) {
+        walk = gBlockListHead;
+        while (walk) {
+            index = snd_FindSoundByName(walk, name, found_block);
+            if (index > -1) {
+                *found_block = walk;
+                return index;
+            }
+
+            walk = walk->NextBlock;
+        }
+
+        return -1;
+    }
+
+    buffer = (UInt32 *)name;
+    snd_names = (SFXNamePtr)block->BlockNames->SFXNameTableOffset;
+    index = block->BlockNames->SFXHashOffsets[snd_CalcSoundNameHash(name)];
+    while (snd_names[index].Name[0]) {
+        count++;
+        if (snd_names[index].Name[0] == buffer[0] &&
+            snd_names[index].Name[1] == buffer[1] &&
+            snd_names[index].Name[2] == buffer[2] &&
+            snd_names[index].Name[3] == buffer[3]) {
+            if (found_block) {
+                *found_block = block;
+            }
+            return snd_names[index].Index;
+        }
+
+        index++;
+    }
+
+    return -1;
+}
+
+SInt32 snd_CalcSoundNameHash(char *name) {
+    SInt32 ret;
+
+    ret = *name + name[4] + name[8] + name[12];
+    if (ret < 0) {
+        ret = -1 * ret;
+    }
+
+    ret %= 32;
+
+    return ret;
+}
+
+SInt32 snd_CollectTones(SoundBankPtr bank, SInt32 prog, SInt32 key,
+                        TonePtr *tones) {
+    SInt32 x;
+    SInt32 tones_in_prog;
+    TonePtr tone_list;
+    SInt32 tone_count;
+
+    tone_count = 0;
+    if (prog >= bank->NumProgs) {
+        snd_ShowError(78, 0, 0, 0, 0);
+        return 0;
+    }
+
+    tones_in_prog = bank->FirstProg[prog].NumTones;
+    tone_list = bank->FirstProg[prog].FirstTone;
+
+    for (x = 0; x < tones_in_prog && x < 32; x++) {
+
+        if (key >= tone_list[x].MapLow && key <= tone_list[x].MapHigh) {
+            tones[tone_count] = &tone_list[x];
+            tone_count++;
+        }
+    }
+
+    return tone_count;
+}
+
+void snd_DEBUG_SoloSound(SoundBankPtr bank, SInt32 sound) {
+    SInt32 x;
+
+    if (!bank) {
+        return;
+    }
+
+    for (x = 0; x < 8; x++) {
+        if (!gSoloBank[x]) {
+            gSoloBank[x] = bank;
+            gSoloSound[x] = sound;
+            gNumSoloSounds++;
+            return;
+        }
+    }
+
+    printf("snd_DEBUG_SoloSound: No open solo slots!\n");
+}
+
+SInt32 snd_DEBUG_CheckSolo(SoundBankPtr bank, SInt32 sound) {
+    SInt32 x;
+
+    if (!bank) {
+        return 0;
+    }
+
+    if (!gNumSoloSounds) {
+        return 1;
+    }
+
+    for (x = 0; x < 8; ++x) {
+        if (gSoloBank[x] == bank &&
+            (gSoloSound[x] == sound || gSoloSound[x] == -1))
+            return 1;
+    }
+
+    return 0;
+}
+
+void snd_DEBUG_ClearSolo() {
+    SInt32 x;
+
+    gNumSoloSounds = 0;
+    for (x = 0; x < 8; ++x) {
+        gSoloBank[x] = 0;
+    }
+}

@@ -71,7 +71,7 @@ segments:
         - [0x3ab68, .rodata, blocksnd]
         - [0x3ab98, .rodata, loader]
         - [0x3ac48, .rodata, playsnd]
-        - [0x3acf4, rodata, sndhand]
+        - [0x3acf4, .rodata, sndhand]
         - [0x3ad68, rodata, sram]
         - [0x3ad98, rodata, stick]
         - [0x3ae94, rodata, stream]

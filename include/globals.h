@@ -45,6 +45,8 @@ extern SInt32 gLockMasterTick;
 extern UInt32 gMasterTickOwner[32];
 
 // stream.c
+extern SInt32 gNumVAGStreams;
+extern VAGStreamHandler *gVAGStreamHandler;
 extern VAGBuffer *VAGStreamDMAList;
 extern SInt32 gStartDMASema;
 

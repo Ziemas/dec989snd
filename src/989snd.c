@@ -937,7 +937,7 @@ void snd_CMD_SL_COMMAND_BATCH(SInt8 *msg_data) {
         size = *(SInt16 *)command_buffer_walk;
         command_buffer_walk += 2;
 
-        if ((UInt16)size & 3) {
+        if (size % 4) {
             size = ((UInt16)size + 4) - (size % 4);
         }
 

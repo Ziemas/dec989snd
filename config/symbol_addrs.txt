@@ -1,5 +1,8 @@
 _retonly = 0x3a3b8; // type:func size:0x8
 
+in_48 = 0x3cd68; // size:0x04
+in_func_76 = 0x3cd6c; // size:0x04
+in_func_86 = 0x3cd70; // size:0x04
 
 // function statics
 // UnregisterMIDI

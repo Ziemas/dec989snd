@@ -59,7 +59,7 @@ segments:
         - [0x1d818, c, sndhand]
         - [0x20148, c, sram]
         - [0x21b3c, c, stick]
-        - [0x22304, asm, stream]
+        - [0x22304, c, stream]
         - [0x335b4, asm, valloc]
         - [0x37800, asm, vol]
         - [0x3a240, asm, export_stub]
@@ -74,7 +74,7 @@ segments:
         - [0x3acf4, .rodata, sndhand]
         - [0x3ad68, .rodata, sram]
         - [0x3ad98, .rodata, stick]
-        - [0x3ae94, rodata, stream]
+        - [0x3ae94, .rodata, stream]
         # .data
         - [0x3b018, .data, 989snd]
         - [0x3b200, .data, LFO]
@@ -92,7 +92,7 @@ segments:
         - [0x3cc34, .data, sndhand]
         - [0x3cc3c, .data, sram]
         - [0x3cc44, .data, stick]
-        - [0x3ccd4, data, stream]
+        - [0x3ccd4, .data, stream]
         - [0x3ce14, data, valloc]
         - [0x3ce84, data, vol]
         # .sbss / .bss

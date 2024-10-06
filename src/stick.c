@@ -126,10 +126,6 @@ SInt32 snd_SoundTickHandler() {
     return 0;
 }
 
-UInt32 snd_GetTick() {
-    return sTick;
-}
+UInt32 snd_GetTick() { return sTick; }
 
-void snd_SetTick(UInt32 val) {
-    sTick = val;
-}
+void snd_SetTick(UInt32 val) { sTick = val; }

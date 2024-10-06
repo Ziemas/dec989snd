@@ -15,6 +15,8 @@ extern BOOL gPrefs_ShowMissingSounds;
 extern BOOL gPrefs_Silent;
 
 // intr_code.c
+extern SInt32 gCdBusy;
+extern SInt32 gCdBusyTime;
 extern BOOL gKillTimer;
 extern SInt32 gTransfering;
 extern SpuTransferCallbackProc gTransferDoneCallback;
@@ -51,9 +53,14 @@ extern VAGBuffer *VAGStreamDMAList;
 extern SInt32 gStartDMASema;
 
 // valloc.c
+extern SInt32 gTickAttentionNeeded;
 extern UInt32 gVAllocOwnerID;
+extern SInt32 gVoiceAllocatorInUse;
 extern VoiceAttributes *gPlayingListHead;
 extern VoiceAttributes gChannelStatus[48];
+extern UInt32 gAwaitingKeyOn[2];
 extern UInt32 gAwaitingKeyOff[2];
+extern UInt32 gKeyedOnVoices[2];
+extern UInt32 gKeyedOffVoices[2];
 
 #endif

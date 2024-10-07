@@ -6,6 +6,8 @@
 // 989snd.c
 extern Extern989MonitorInfo *g989Monitor;
 extern SInt32 gThreadPriority_TICK;
+extern SInt32 gThreadPriority_RPC;
+extern SInt32 gThreadPriority_STREAM;
 extern SInt32 gEEDMADoneSema;
 extern SInt32 gFileReadMutex;
 
@@ -21,7 +23,9 @@ extern BOOL gKillTimer;
 extern SInt32 gTransfering;
 extern SpuTransferCallbackProc gTransferDoneCallback;
 extern SInt32 gSPURAMTransSema;
+extern SInt32 gDoneLoadSema;
 extern SInt32 gDMAInUse[2];
+extern SInt32 gDoneDMASema;
 extern SInt32 gWaitingDMAComplete;
 
 // loader.c

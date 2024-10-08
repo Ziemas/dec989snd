@@ -12,6 +12,7 @@ extern SInt32 gEEDMADoneSema;
 extern SInt32 gFileReadMutex;
 
 // init.c
+extern SInt32 gSTickSema;
 extern UInt32 gMicsPerTick;
 extern BOOL gPrefs_ShowMissingSounds;
 extern BOOL gPrefs_Silent;

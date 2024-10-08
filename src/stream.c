@@ -3,6 +3,8 @@
 #include "globals.h"
 #include "intrman.h"
 #include "libcdvd.h"
+#include "libsd.h"
+#include "sifrpc.h"
 #include "stdio.h"
 #include "thread.h"
 #include <string.h>
@@ -62,7 +64,7 @@
 /* bss 8dd0 */ VAGStreamQueEntry gVAGStreamQue[64];
 /* bss 8d90 */ EEVagStreamMonitor vsm;
 
-static int in_48 = 0;
+// static int in_48 = 0;
 static int in_func_76 = 0;
 static int in_func_86 = 0;
 
@@ -659,29 +661,728 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1,
     return handler->SH.OwnerID;
 }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetVAGStreamQueueCount);
+SInt32 snd_GetVAGStreamQueueCount(UInt32 handle) {
+    SInt32 count;
+    VAGStreamHandlerPtr hand;
+    VAGStreamQueEntry *walk;
+    VAGStreamHeader *stream;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_TryPreBufferQueElement);
+    count = 0;
+    snd_LockMasterTick(81);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return count;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_SetupVAGStream);
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    if ((stream->flags & 2) != 0 || (stream->flags & 0x10) != 0) {
+        count++;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StopAllStreams);
+    if (hand->qued_stream) {
+        count++;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_PauseVAGStream);
+    for (walk = hand->que_list; walk; walk = walk->next) {
+        count++;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_PauseAllStreams);
+    snd_UnlockMasterTick();
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_ContinueVAGStream);
+    return count;
+}
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StopVAGStream);
+void snd_TryPreBufferQueElement(VAGStreamHandlerPtr handler,
+                                UInt32 load_flags) {
+    VAGStreamHeader *currstream;
+    VAGStreamHeader *thestream;
+    VAGStreamHeader *thestreamR;
+    SInt32 stereo;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamHandlerIsBusyWithLoad);
+    currstream = NULL;
+    thestream = NULL;
+    thestreamR = NULL;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamHandlerIsBusyWithDMA);
+    if (handler->qued_stream || !handler->que_list) {
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_KillVAGStreamEx);
+    currstream = (VAGStreamHeader *)handler->SH.Sound;
 
+    stereo = (snd_GetNumStreamChannels(currstream) == 2 &&
+              !(currstream->buff[0].flags & 0x100))
+                 ? 1
+                 : 0;
+
+    if (!snd_AllocateStreamResources(&thestream, &thestreamR, stereo,
+                                     currstream->buff[0].flags & 0x100,
+                                     handler->SH.VolGroup)) {
+        return;
+    }
+
+    thestream->flags |= 0x10u;
+    if ((handler->que_list->flags & 2) != 0) {
+        thestream->flags |= 0x100u;
+    }
+    if ((handler->que_list->flags & 4) != 0) {
+        thestream->flags |= 0x400u;
+    }
+
+    snd_SetupVAGStream(handler, thestream, handler->que_list->loc,
+                       handler->que_list->offset, 1, load_flags);
+    thestream->sub_group = handler->que_list->sub_group;
+
+    if ((handler->SH.flags & 0x10) != 0) {
+        thestream->master_volume = handler->que_list->vol;
+        thestream->master_pan = handler->que_list->pan;
+    }
+
+    handler->que_list->flags = 0;
+    handler->que_list = handler->que_list->next;
+
+    if (stereo) {
+        thestreamR->flags |= 0x10u;
+        if ((handler->que_list->flags & 2) != 0) {
+            thestreamR->flags |= 0x100u;
+        }
+        if ((handler->que_list->flags & 4) != 0) {
+            thestreamR->flags |= 0x400u;
+        }
+
+        snd_SetupVAGStream(handler, thestreamR, handler->que_list->loc,
+                           handler->que_list->offset, 1, load_flags);
+        thestreamR->sub_group = handler->que_list->sub_group;
+
+        if ((handler->SH.flags & 0x10) != 0) {
+            thestreamR->master_volume = handler->que_list->vol;
+            thestreamR->master_pan = handler->que_list->pan;
+        }
+
+        handler->que_list->flags = 0;
+        handler->que_list = handler->que_list->next;
+    }
+
+    snd_AddVAGStreamLoadBuffer(thestream->buff);
+    handler->qued_stream = thestream;
+    SignalSema(gStartDataLoadSema);
+}
+
+void snd_SetupVAGStream(VAGStreamHandlerPtr handler, VAGStreamHeader *stream,
+                        SInt32 loc, SInt32 offset, SInt32 part_of_queue,
+                        UInt32 flags) {
+    EEVagStreamMonitor vsm;
+    IOPVagStreamMonitor *vsmp;
+    sceSifReceiveData data_track;
+
+    if (stream->voice > -1) {
+        gChannelStatus[stream->voice].Owner = &handler->SH;
+    }
+
+    if ((flags & 0x4000) != 0 || (flags & 0x8000) != 0) {
+        stream->ee_streammon_loc = loc;
+        if (sceSifGetOtherData(&data_track, (void *)loc, &vsm, 64, 0)) {
+            snd_ShowError(114, 0, 0, 0, 0);
+            loc = -1;
+        } else {
+            loc = (UInt32)vsm.EEStartAddress;
+            stream->ee_BufferSize = vsm.BufferSize;
+            stream->ee_EEStartAddress = vsm.EEStartAddress;
+            stream->ee_NextIOPReadAddress = vsm.NextIOPReadAddress;
+            stream->ee_TotalBytesConsumed = 0;
+        }
+    } else {
+        if ((flags & 0x10000) != 0) {
+            stream->ee_streammon_loc = loc;
+            vsmp = (IOPVagStreamMonitor *)loc;
+            loc = (UInt32)vsmp->IOPStartAddress;
+            stream->ee_BufferSize = vsmp->BufferSize;
+            stream->ee_EEStartAddress = vsmp->IOPStartAddress;
+            stream->ee_NextIOPReadAddress = vsmp->NextIOPReadAddress;
+            stream->ee_TotalBytesConsumed = 0;
+        } else {
+            stream->ee_streammon_loc = 0;
+            stream->stdio_file_offset = 0;
+        }
+    }
+    stream->next_read_offset = loc;
+    stream->file_start_sector = loc;
+    stream->file_start_offset = offset;
+    stream->bytes_remaining = 2048;
+    stream->buff[0].IOPbuff = stream->buff[0].OrigIOPbuff;
+    stream->buff[1].IOPbuff = stream->buff[1].OrigIOPbuff;
+    stream->buff[0].flags = 16;
+    stream->buff[1].flags = 0;
+    stream->buff[0].is_end = 0;
+    stream->buff[1].is_end = 0;
+    stream->PlayingBuffer = 0;
+    stream->LastPosition = 0;
+    stream->ErrorAccumulator = 0;
+    stream->LastBufferChangeTick = 0;
+    stream->pitch = 0;
+    stream->handler = handler;
+    stream->sample_rate = -1;
+    stream->samples_total = 0;
+    stream->bytes_played = 0;
+    stream->sync_list = 0;
+    stream->group = 0;
+    stream->sub_group = 0;
+    stream->flags |= flags;
+    stream->start_error_accumulator = 0;
+
+    if ((handler->SH.flags & 0x10) == 0) {
+        stream->master_volume = handler->SH.Current_Vol;
+        stream->master_pan = handler->SH.Current_Pan;
+    } else {
+        stream->master_volume = 0;
+        stream->master_pan = 0;
+    }
+
+    if ((flags & 0x1000) != 0) {
+        stream->file_handle = loc - 1;
+        stream->next_read_offset = 0;
+        stream->file_start_sector = 0;
+        stream->file_start_offset = 0;
+        stream->stdio_file_offset = offset;
+    }
+
+    if (!part_of_queue) {
+        snd_AddStreamToHandler(handler, stream);
+    } else {
+        snd_AddStreamToHandlerQueue(handler, stream);
+    }
+}
+
+void snd_StopAllStreams() {
+    SInt32 x;
+    SInt32 c;
+    SInt32 cc;
+    BOOL done;
+
+    done = false;
+    cc = 0;
+
+    while (!done && cc < 5) {
+        for (x = 0; x < gNumVAGStreams; ++x) {
+            if (gVAGStreamHandler[x].SH.Sound) {
+                if ((gVAGStreamHandler[x].SH.OwnerID & 0x80000000) == 0) {
+                    gVAGStreamHandler[x].SH.Sound = 0;
+                } else {
+                    snd_StopVAGStream(gVAGStreamHandler[x].SH.OwnerID);
+                }
+            }
+        }
+
+        for (c = 0; !done && c < 480; ++c) {
+            done = 1;
+            for (x = 0; x < gNumVAGStreams && done; x++) {
+                if (gVAGStreamHandler[x].SH.Sound)
+                    done = 0;
+            }
+
+            if (!done) {
+                WaitSema(gSTickSema);
+            }
+        }
+
+        cc++;
+        if (cc == 4 && !done) {
+            sceCdBreak();
+        }
+    }
+
+    if (cc == 3 && !done && !gPrefs_Silent) {
+        printf(
+            "snd_StopAllStreams: ERROR! tried 5 times to stopp all streams!\n");
+    }
+
+    while (!snd_AllStdioFilesClosed()) {
+        DelayThread(33000);
+    }
+
+    if (!gVAGReadBusy && !gDataReadBusy && !VAGStreamLoadList) {
+        if (gCDIdleWaiter) {
+            WakeupThread(gCDIdleWaiter);
+            gCDIdleWaiter = 0;
+        }
+    }
+}
+
+void snd_PauseVAGStream(UInt32 handle) {
+    SInt32 core;
+    SInt32 voice;
+    VAGStreamHeader *stream;
+    VAGStreamHandlerPtr hand;
+    SInt32 intr_state;
+    SInt32 dis;
+    SInt32 x;
+
+    snd_LockMasterTick(82);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    if ((hand->SH.flags & 2) != 0) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    hand->SH.flags |= 2u;
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    dis = CpuSuspendIntr(&intr_state);
+    x = 0;
+    while (stream) {
+        stream->flags |= 0x10u;
+        core = stream->voice / 24;
+        voice = stream->voice % 24;
+        sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLL, 0);
+        sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLR, 0);
+        sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH, 0);
+
+        gNumStreamsPlaying--;
+
+        if (!x && hand->doubling_voice != -1) {
+            core = hand->doubling_voice / 24;
+            voice = hand->doubling_voice % 24;
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLL, 0);
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLR, 0);
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH, 0);
+        }
+
+        stream = stream->sync_list;
+        x++;
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    snd_UnlockMasterTick();
+}
+
+void snd_PauseAllStreams() {
+    SInt32 x;
+
+    for (x = 0; x < gNumVAGStreams; ++x) {
+        if (gVAGStreamHandler[x].SH.Sound) {
+            snd_PauseVAGStream(gVAGStreamHandler[x].SH.OwnerID);
+        }
+    }
+}
+
+void snd_ContinueVAGStream(UInt32 handle) {
+    SInt32 core;
+    SInt32 voice;
+    VAGStreamHeader *stream;
+    VAGStreamHandlerPtr hand;
+    SInt32 state;
+    SInt32 dis;
+    SInt32 x;
+
+    snd_LockMasterTick(83);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    if ((hand->SH.flags & 2) == 0) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    dis = CpuSuspendIntr(&state);
+    hand->SH.flags &= ~2u;
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    x = 0;
+    while (stream) {
+        if ((stream->flags & 4) != 0) {
+            core = stream->voice / 24;
+            voice = stream->voice % 24;
+            sceSdSetParam(
+                (core | SD_VOICE(voice)) | SD_VP_PITCH,
+                snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
+
+            if (!x && hand->doubling_voice != -1) {
+                core = hand->doubling_voice / 24;
+                voice = hand->doubling_voice % 24;
+                sceSdSetParam(
+                    (core | SD_VOICE(voice)) | SD_VP_PITCH,
+                    snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
+            }
+        }
+
+        stream = stream->sync_list;
+        ++x;
+    }
+
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    x = 0;
+    while (stream) {
+        stream->flags &= ~0x10u;
+        if ((stream->flags & 4) != 0) {
+            core = stream->voice / 24;
+            voice = stream->voice % 24;
+            sceSdSetParam(core | SD_VOICE(voice) | SD_VP_VOLL,
+                          (UInt16)snd_AdjustVolToGroup(
+                              gChannelStatus[stream->voice].Volume.left,
+                              gChannelStatus[stream->voice].VolGroup) >>
+                              1);
+
+            sceSdSetParam(core | SD_VOICE(voice) | SD_VP_VOLR,
+                          (UInt16)snd_AdjustVolToGroup(
+                              gChannelStatus[stream->voice].Volume.right,
+                              gChannelStatus[stream->voice].VolGroup) >>
+                              1);
+
+            gNumStreamsPlaying++;
+            if (!x && hand->doubling_voice != -1) {
+                core = hand->doubling_voice / 24;
+                voice = hand->doubling_voice % 24;
+                sceSdSetParam(
+                    core | SD_VOICE(voice) | SD_VP_VOLL,
+                    (UInt16)snd_AdjustVolToGroup(
+                        gChannelStatus[hand->doubling_voice].Volume.left,
+                        gChannelStatus[hand->doubling_voice].VolGroup) >>
+                        1);
+
+                sceSdSetParam(
+                    core | SD_VOICE(voice) | SD_VP_VOLR,
+                    (UInt16)snd_AdjustVolToGroup(
+                        gChannelStatus[hand->doubling_voice].Volume.right,
+                        gChannelStatus[hand->doubling_voice].VolGroup) >>
+                        1);
+            }
+        }
+        stream = stream->sync_list;
+        ++x;
+    }
+
+    if (!dis) {
+        CpuResumeIntr(state);
+    }
+
+    snd_UnlockMasterTick();
+}
+
+void snd_StopVAGStream(UInt32 handle) {
+    VAGStreamHandlerPtr hand;
+
+    snd_LockMasterTick(84);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    snd_SetVAGStreamVolPan(handle, 0, 0);
+    hand->SH.flags |= 4u;
+
+    snd_UnlockMasterTick();
+}
+
+BOOL snd_StreamHandlerIsBusyWithLoad(VAGStreamHandlerPtr hand) {
+    VAGStreamHeader *stream;
+
+    for (stream = (VAGStreamHeader *)hand->SH.Sound; stream;
+         stream = stream->sync_list) {
+        if (gVAGReadBusy == stream->buff || gVAGReadBusy == &stream->buff[1]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+BOOL snd_StreamHandlerIsBusyWithDMA(VAGStreamHandlerPtr hand) {
+    VAGStreamHeader *stream;
+
+    for (stream = (VAGStreamHeader *)hand->SH.Sound; stream;
+         stream = stream->sync_list) {
+        if (gDMABusy[0] == stream->buff || gDMABusy[0] == &stream->buff[1] ||
+            gDMABusy[1] == stream->buff || gDMABusy[1] == &stream->buff[1]) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void snd_KillVAGStreamEx(UInt32 handle, SInt32 from_where) {
+    SInt32 core;
+    SInt32 voice;
+    VAGStreamHeader *master_stream;
+    VAGStreamHeader *stream;
+    VAGStreamHandlerPtr hand;
+    SInt32 dis;
+    SInt32 intr_state;
+    static int in = 0;
+
+    if (in) {
+        return;
+    }
+    in = 1;
+
+    dis = CpuSuspendIntr(&intr_state);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+        in = 0;
+        return;
+    }
+
+    master_stream = stream = (VAGStreamHeader *)hand->SH.Sound;
+    snd_FreeQueChain(&hand->que_list->flags, (stream->flags >> 12) & 1);
+    if (hand->doubling_voice != -1) {
+        core = hand->doubling_voice / 24;
+        voice = hand->doubling_voice % 24;
+        sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLL, 0);
+        sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLR, 0);
+        sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH, 0);
+        snd_KeyOffVoice(hand->doubling_voice);
+        snd_MarkVoicePlaying(hand->doubling_voice);
+        gChannelStatus[hand->doubling_voice].Priority = 0;
+        hand->doubling_voice = -1;
+    }
+
+    while (stream) {
+        if ((stream->flags & 0x1000) != 0 && stream->file_handle != -1) {
+            snd_AddDeferredCloseFile(stream->file_handle, 11);
+            stream->file_handle = -1;
+        }
+
+        stream->flags = 1;
+        snd_RemoveVAGStreamDMABuffer(stream->buff);
+        snd_RemoveVAGStreamDMABuffer(&stream->buff[1]);
+        snd_RemoveVAGStreamLoadBuffer(stream->buff);
+        snd_RemoveVAGStreamLoadBuffer(&stream->buff[1]);
+        if (stream->voice != -1) {
+            core = stream->voice / 24;
+            voice = stream->voice % 24;
+
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLL, 0);
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLR, 0);
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH, 0);
+            snd_KeyOffVoice(stream->voice);
+            snd_MarkVoicePlaying(stream->voice);
+            gChannelStatus[stream->voice].Priority = 0;
+            stream->voice = -1;
+        }
+        gNumStreamsPlaying--;
+        stream = stream->sync_list;
+    }
+
+    if (hand->qued_stream) {
+        for (stream = hand->qued_stream; stream; stream = stream->sync_list) {
+            if ((stream->flags & 0x1000) != 0 && stream->file_handle != -1) {
+                snd_AddDeferredCloseFile(stream->file_handle, 12);
+                stream->file_handle = -1;
+            }
+            stream->flags = 1;
+            snd_RemoveVAGStreamDMABuffer(stream->buff);
+            snd_RemoveVAGStreamDMABuffer(&stream->buff[1]);
+            snd_RemoveVAGStreamLoadBuffer(stream->buff);
+            snd_RemoveVAGStreamLoadBuffer(&stream->buff[1]);
+            if (stream->voice != -1) {
+                core = stream->voice / 24;
+                voice = stream->voice % 24;
+                sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLL, 0);
+                sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_VOLR, 0);
+                sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH, 0);
+                snd_KeyOffVoice(stream->voice);
+                snd_MarkVoicePlaying(stream->voice);
+                gChannelStatus[stream->voice].Priority = 0;
+                stream->voice = -1;
+            }
+        }
+    }
+
+    snd_DeactivateHandler(&hand->SH, 0);
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    SignalSema(gStartDataLoadSema);
+    in = 0;
+}
+
+#ifndef NON_MATCHING
 INCLUDE_ASM("asm/nonmatchings/stream", snd_ProcessVAGStreamTick);
+#else
+void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
+    SInt32 dma_needed;
+    VAGStreamHeader *stream;
+    VAGStreamHeader *walk;
+    SInt32 done;
+    SInt32 voice[48];
+    SInt32 voice_count;
+    SInt32 start_with_voices;
+    SInt32 sync_error;
+    UInt32 load_flags;
+    SInt32 dis;
+    SInt32 intr_state;
+    SInt32 read_sectors;
+    SInt32 played_sectors;
+    UInt32 diff;
+
+    dma_needed = 0;
+    start_with_voices = 0;
+    sync_error = 0;
+    load_flags = 0;
+    if ((hand->SH.flags & 4) != 0) {
+        if (!snd_StreamHandlerIsBusyWithDMA(hand) &&
+            !snd_StreamHandlerIsBusyWithLoad(hand)) {
+            snd_KillVAGStreamEx(hand->SH.OwnerID, 1);
+        }
+        return;
+    }
+
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    load_flags = stream->flags & 0x1F800;
+    walk = stream;
+    done = 0;
+    while (walk && !done) {
+        done = snd_CheckVAGStreamProgress(walk, &dma_needed);
+        walk = walk->sync_list;
+    }
+
+    if (0) {
+        UInt32 hold = 0;
+
+        diff = 0;
+        walk = stream->sync_list;
+
+        snd_ShowError(37, 0, 0, 0, 0);
+        if (!walk) {
+        } else {
+        }
+    }
+
+    if (!sync_error) {
+        stream->ErrorAccumulator = 0;
+    }
+
+    if (done == -1) {
+        if ((stream->flags & 0x400) != 0) {
+            snd_RestartInterleavedStream(hand);
+        } else {
+            BOOL part_of_interleave = 0;
+            walk = stream;
+            part_of_interleave = stream->buff[0].flags & 0x100;
+            voice_count = 0;
+            while (walk) {
+                voice[voice_count] = walk->voice;
+                voice_count++;
+
+                if ((walk->flags & 0x1000) != 0 && walk->file_handle != -1) {
+                    snd_AddDeferredCloseFile(walk->file_handle, 13);
+                    walk->file_handle = -1;
+                }
+                walk->flags = 1;
+
+                if (part_of_interleave) {
+                    snd_KeyOffVoice(walk->voice);
+                    snd_MarkVoicePlaying(walk->voice);
+                    gChannelStatus[walk->voice].Priority = 0;
+                    walk->voice = -1;
+                }
+                walk = walk->sync_list;
+            }
+
+            if (hand->que_list) {
+                snd_TryPreBufferQueElement(hand, load_flags);
+            }
+
+            if (hand->qued_stream) {
+                hand->SH.Sound = (MIDISoundPtr)hand->qued_stream;
+                walk = hand->qued_stream;
+                voice_count = 0;
+                while (walk) {
+                    if (!part_of_interleave) {
+                        walk->voice = voice[voice_count];
+                    }
+                    walk->flags &= ~0x10u;
+                    voice_count++;
+
+                    if ((walk->flags & 0x80) != 0) {
+                        walk->flags &= ~0x80u;
+                        start_with_voices = 1;
+                    }
+
+                    walk = walk->sync_list;
+                }
+
+                if (start_with_voices) {
+                    snd_StartVAGStreamSounding(
+                        (VAGStreamHeader *)hand->SH.Sound, 1);
+                } else {
+                    hand->SH.flags |= 2u;
+                    snd_ContinueVAGStream(hand->SH.OwnerID);
+                }
+
+                hand->qued_stream = 0;
+            } else {
+                dis = CpuSuspendIntr(&intr_state);
+                if (hand->doubling_voice != -1) {
+                    snd_KeyOffVoice(hand->doubling_voice);
+                    snd_MarkVoicePlaying(hand->doubling_voice);
+                    gChannelStatus[hand->doubling_voice].Priority = 0;
+                    hand->doubling_voice = -1;
+                }
+
+                for (walk = stream; walk; walk = walk->sync_list) {
+                    if ((walk->flags & 0x1000) != 0 &&
+                        walk->file_handle != -1) {
+                        if (!dis) {
+                            CpuResumeIntr(intr_state);
+                        }
+
+                        snd_AddDeferredCloseFile(walk->file_handle, 14);
+                        walk->file_handle = -1;
+                        dis = CpuSuspendIntr(&intr_state);
+                    }
+
+                    walk->flags = 1;
+                    if (walk->voice != -1) {
+                        snd_KeyOffVoice(walk->voice);
+                        snd_MarkVoicePlaying(walk->voice);
+                        gChannelStatus[walk->voice].Priority = 0;
+                        walk->voice = -1;
+                    }
+
+                    gNumStreamsPlaying--;
+                }
+
+                if (!dis) {
+                    CpuResumeIntr(intr_state);
+                }
+
+                snd_DeactivateHandler(&hand->SH, 0);
+            }
+        }
+    } else {
+        if (done == -2) {
+            if (!snd_StreamHandlerIsBusyWithDMA(hand) &&
+                !snd_StreamHandlerIsBusyWithLoad(hand)) {
+                snd_KillVAGStreamEx(hand->SH.OwnerID, 1);
+            } else {
+                hand->SH.flags |= 4u;
+            }
+
+            return;
+        } else {
+            if (dma_needed) {
+                SignalSema(gStartDMASema);
+            }
+        }
+    }
+
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    if (hand->pre_buffer_queue) {
+        snd_TryPreBufferQueElement(hand, load_flags);
+    }
+}
+#endif
 
 INCLUDE_ASM("asm/nonmatchings/stream", snd_CheckVAGStreamProgress);
 

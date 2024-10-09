@@ -1206,9 +1206,6 @@ void snd_KillVAGStreamEx(UInt32 handle, SInt32 from_where) {
     in = 0;
 }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/stream", snd_ProcessVAGStreamTick);
-#else
 void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
     SInt32 dma_needed;
     VAGStreamHeader *stream;
@@ -1247,14 +1244,43 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
     }
 
     if (0) {
-        UInt32 hold = 0;
-
+        UInt32 hold;
         diff = 0;
         walk = stream->sync_list;
+        while (walk) {
+            hold = (stream->bytes_played > walk->bytes_played)
+                       ? stream->bytes_played - walk->bytes_played
+                       : walk->bytes_played - stream->bytes_played;
 
-        snd_ShowError(37, 0, 0, 0, 0);
-        if (!walk) {
-        } else {
+            if (hold > diff) {
+                diff = hold;
+            }
+
+            walk = walk->sync_list;
+        }
+
+        if (diff > 0x320) {
+            stream->ErrorAccumulator++;
+            sync_error = 1;
+            if (stream->ErrorAccumulator >= 5) {
+                done = -2;
+                snd_ShowError(0x32, hand->SH.OwnerID, 0, 0, 0);
+            }
+        }
+
+        if (0) {
+            walk = stream;
+            while ((walk) && (!done) && !(walk->buff[0].flags & 0x100)) {
+                read_sectors = walk->next_read_offset - walk->file_start_sector;
+                played_sectors = walk->bytes_played / 0x800;
+                if ((read_sectors - played_sectors) >
+                    (walk->buff_size >> 0xA) + 1) {
+                    done = -2;
+                    snd_ShowError(0x33, hand->SH.OwnerID, 0, 0, 0);
+                }
+
+                walk = walk->sync_list;
+            }
         }
     }
 
@@ -1382,7 +1408,6 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
         snd_TryPreBufferQueElement(hand, load_flags);
     }
 }
-#endif
 
 INCLUDE_ASM("asm/nonmatchings/stream", snd_CheckVAGStreamProgress);
 

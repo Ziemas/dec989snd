@@ -1409,7 +1409,163 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_CheckVAGStreamProgress);
+SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
+    SInt32 core;
+    SInt32 voice;
+    UInt32 addr;
+    UInt32 addr2;
+    UInt32 addr3;
+    UInt32 ends;
+    SInt32 in_buffer;
+    SInt32 done;
+    SInt32 local_dma_needed;
+    SInt32 state;
+    SInt32 dis;
+
+    done = 0;
+    local_dma_needed = 0;
+    if ((stream->flags & 8) != 0 && (stream->flags & 0x10) == 0) {
+        core = stream->voice / 24;
+        voice = stream->voice % 24;
+        dis = CpuSuspendIntr(&state);
+        addr = sceSdGetAddr((core | SD_VOICE(voice)) | SD_VA_NAX);
+        addr2 = sceSdGetAddr((core | SD_VOICE(voice)) | SD_VA_NAX);
+        addr3 = sceSdGetAddr((core | SD_VOICE(voice)) | SD_VA_NAX);
+        if (!dis) {
+            CpuResumeIntr(state);
+        }
+
+        if (addr != addr2 && addr2 != addr3) {
+            dis = CpuSuspendIntr(&state);
+            addr = sceSdGetAddr((core | SD_VOICE(voice)) | SD_VA_NAX);
+            addr2 = sceSdGetAddr((core | SD_VOICE(voice)) | SD_VA_NAX);
+            addr3 = sceSdGetAddr((core | SD_VOICE(voice)) | SD_VA_NAX);
+            if (!dis) {
+                CpuResumeIntr(state);
+            }
+
+            if (addr != addr2 && addr2 != addr3) {
+                addr = stream->LastPosition;
+            } else if (addr2 == addr3) {
+                addr = addr2;
+            }
+        } else if (addr2 == addr3) {
+            addr = addr2;
+        }
+
+        if (stream->buff[0].SPUbuff - 1 < addr &&
+            addr < stream->buff[1].SPUbuff) {
+            in_buffer = 0;
+        } else {
+            if (stream->buff[1].SPUbuff - 1 < addr &&
+                addr < &stream->buff[1].SPUbuff[stream->buff_size >> 1]) {
+                in_buffer = 1;
+            } else {
+                stream->ErrorAccumulator++;
+                if (stream->ErrorAccumulator >= 9) {
+                    snd_ShowError(52, stream->handler->SH.OwnerID, 0, 0, 0);
+                    return -2;
+                }
+
+                if (!stream->bytes_played || !stream->LastPosition) {
+                    addr = stream->buff[0].SPUbuff;
+                    in_buffer = 0;
+                } else {
+                    snd_ShowError(53, stream->handler->SH.OwnerID, (SInt32)addr,
+                                  0, 0);
+                    return -1;
+                }
+            }
+        }
+
+        if ((stream->flags & 0x200) != 0) {
+            dis = CpuSuspendIntr(&state);
+            sceSdSetAddr((core | SD_VOICE(voice)) | SD_VA_LSAX,
+                         (UInt32)stream->buff[1].SPUbuff);
+            if (stream->handler->doubling_voice != -1) {
+                sceSdSetAddr(((stream->handler->doubling_voice / 24) |
+                              SD_VOICE(stream->handler->doubling_voice % 24)) |
+                                 SD_VA_LSAX,
+                             (UInt32)stream->buff[1].SPUbuff);
+            }
+
+            stream->flags &= ~0x200u;
+            if (!dis) {
+                CpuResumeIntr(state);
+            }
+        }
+
+        if ((stream->flags & 0x40) == 0) {
+            if (in_buffer != stream->PlayingBuffer) {
+
+                if (!stream->LastBufferChangeTick ||
+                    snd_GetTick() > stream->LastBufferChangeTick + 10) {
+
+                    if (((stream->buff[0].flags & 0x100) == 0 ||
+                         (stream->buff[0].flags & 0x200) != 0) &&
+                        !snd_AddVAGStreamDMABuffer(
+                            &stream->buff[stream->PlayingBuffer].flags)) {
+                        done = -2;
+                    } else {
+                        local_dma_needed = 1;
+                        stream->PlayingBuffer = in_buffer;
+                        stream->LastBufferChangeTick = snd_GetTick();
+                    }
+                } else {
+                    stream->ErrorAccumulator++;
+                    if (stream->ErrorAccumulator >= 9) {
+                        snd_ShowError(54, stream->handler->SH.OwnerID, 0, 0, 0);
+                        return -2;
+                    }
+                }
+
+            } else {
+                if (0) {
+                    snd_ShowError(55, stream->handler->SH.OwnerID, 0, 0, 0);
+                    done = -2;
+                }
+            }
+
+            stream->LastPosition = (UInt32)addr;
+        } else {
+            if (stream->bytes_played > 0x20) {
+                core = stream->voice / 24;
+                voice = stream->voice % 24;
+                ends = sceSdGetParam((core | SD_VOICE(voice)) | SD_VP_ENVX);
+                addr = sceSdGetAddr((core | SD_VOICE(voice)) | SD_VA_NAX);
+                if (!ends) {
+                    done = -1;
+                }
+            } else {
+                stream->start_error_accumulator++;
+                if (stream->start_error_accumulator > 120) {
+                    printf("989snd: Error starting VAG! Killinig stream "
+                           "(0x%8.8x)\n",
+                           stream);
+                    done = -2;
+                }
+            }
+
+            stream->PlayingBuffer = in_buffer;
+        }
+
+        if (!done) {
+            snd_FixVAGStreamSamplesPlayed(stream, addr);
+        }
+    }
+
+    if ((stream->flags & 2) != 0 && (stream->flags & 4) != 0 &&
+        (stream->flags & 0x10) == 0) {
+        stream->flags &= ~2u;
+        stream->flags |= 8u;
+    }
+
+    if (local_dma_needed) {
+        *dma_needed = 1;
+    }
+
+    return done;
+}
 
 INCLUDE_ASM("asm/nonmatchings/stream", snd_FixVAGStreamSamplesPlayed);
 

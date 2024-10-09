@@ -669,7 +669,7 @@ typedef struct BlockSoundHandler { // 0x124
 
 typedef BlockSoundHandler *BlockSoundHandlerPtr;
 
-typedef struct { // 0x58
+typedef struct VAGStreamHandler { // 0x58
 	/* 0x00 */ GSoundHandler SH;
 	/* 0x34 */ SInt32 num_streams;
 	/* 0x38 */ SInt32 doubling_voice;

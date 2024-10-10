@@ -534,7 +534,7 @@ typedef struct { // 0x2c
 
 typedef VAGBuffer *VAGBufferPtr;
 
-typedef struct { // 0xd4
+typedef struct VAGStreamHeader { // 0xd4
 	/* 0x00 */ UInt32 flags;
 	/* 0x04 */ SInt8 orig_vol;
 	/* 0x05 */ SInt8 group;

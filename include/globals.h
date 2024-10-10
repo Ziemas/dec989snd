@@ -36,6 +36,7 @@ extern ExternSndIOPAlloc gAllocProc;
 extern ExternSndIOPFree gFreeProc;
 extern SoundBankPtr gBankListHead;
 extern SFXBlock2Ptr gBlockListHead;
+extern SInt8 gFileLoadBuffer[2048];
 
 // playsnd.c
 extern SInt32 gGlobalExcite;

@@ -64,10 +64,6 @@
 /* bss 8dd0 */ VAGStreamQueEntry gVAGStreamQue[64];
 /* bss 8d90 */ EEVagStreamMonitor vsm;
 
-// static int in_48 = 0;
-static int in_func_76 = 0;
-static int in_func_86 = 0;
-
 BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size,
                             UInt32 read_mode, BOOL enable_streamsafe_from_ee) {
     SInt32 x;
@@ -1567,31 +1563,507 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
     return done;
 }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_FixVAGStreamSamplesPlayed);
+void snd_FixVAGStreamSamplesPlayed(VAGStreamHeader *stream, UInt32 addr) {
+    SInt32 last_buffer;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetVAGStreamLoc);
+    if ((UInt32)&stream->buff[1].SPUbuff[stream->buff_size >> 1] < addr) {
+        addr = (UInt32)&stream->buff[1].SPUbuff[stream->buff_size >> 1];
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetVAGStreamTimeRemaining);
+    last_buffer =
+        (stream->last_loc > (&stream->buff[0].SPUbuff[0] - 1) &&
+         stream->last_loc < &stream->buff[0].SPUbuff[stream->buff_size >> 1])
+            ? 0
+            : 1;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetVAGStreamTotalTime);
+    if (last_buffer == stream->PlayingBuffer) {
+        stream->bytes_played += addr - stream->last_loc;
+    } else {
+        stream->bytes_played += (UInt32)&stream->buff[last_buffer]
+                                    .SPUbuff[(stream->buff_size >> 1)] -
+                                stream->last_loc;
+        stream->bytes_played +=
+            addr - (UInt32)stream->buff[stream->PlayingBuffer].SPUbuff;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_IsVAGStreamBuffered);
+    stream->last_loc = addr;
+}
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_VAGStreamDataLoadThread);
+UInt32 snd_GetVAGStreamLoc(UInt32 handle) {
+    UInt32 loc;
+    UInt32 seconds;
+    VAGStreamHeader *stream;
+    VAGStreamHandlerPtr hand;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamSafeCdRead);
+    loc = 0;
+    seconds = 0;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamSafeCdBreak);
+    snd_LockMasterTick(85);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return seconds;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamSafeCdSearchFile);
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    if (stream->sample_rate == -1) {
+        snd_UnlockMasterTick();
+        return seconds;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamSafeCdReadEEm);
+    loc = 28 * (stream->bytes_played >> 4);
+    if ((stream->bytes_played & 0xF) >= 5) {
+        loc += 2 * ((stream->bytes_played & 0xF) - 4);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamSafeCdSync);
+    seconds = (loc / stream->sample_rate);
+    loc = loc - (seconds * stream->sample_rate);
+    loc = loc << 10;
+    seconds = (seconds << 10) + (loc / stream->sample_rate);
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamSafeCdGetError);
+    snd_UnlockMasterTick();
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_KickDataRead);
+    return seconds;
+}
+
+UInt32 snd_GetVAGStreamTimeRemaining(UInt32 handle) {
+    VAGStreamHeader *stream;
+    VAGStreamHandlerPtr hand;
+    UInt32 current_pos;
+    UInt32 total_time;
+
+    snd_LockMasterTick(86);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return 0;
+    }
+
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    if (stream->flags & 0x400) {
+        snd_UnlockMasterTick();
+        return 0;
+    }
+
+    snd_UnlockMasterTick();
+    current_pos = snd_GetVAGStreamLoc(handle);
+    total_time = snd_GetVAGStreamTotalTime(handle);
+
+    return total_time - current_pos;
+}
+
+UInt32 snd_GetVAGStreamTotalTime(UInt32 handle) {
+    VAGStreamHeader *stream;
+    VAGStreamHandlerPtr hand;
+    UInt32 seconds;
+    UInt32 samples;
+
+    seconds = 0;
+
+    snd_LockMasterTick(87);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return seconds;
+    }
+
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    if (stream->sample_rate == -1) {
+        snd_UnlockMasterTick();
+        return seconds;
+    }
+
+    samples = stream->samples_total;
+    seconds = samples / stream->sample_rate;
+    samples = samples % stream->sample_rate;
+    seconds = (seconds << 10) + ((samples << 10) / stream->sample_rate);
+
+    snd_UnlockMasterTick();
+
+    return seconds;
+}
+
+SInt32 snd_IsVAGStreamBuffered(UInt32 handle) {
+    VAGStreamHandlerPtr hand;
+
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        return -1;
+    }
+
+    if ((hand->SH.flags & 8) == 0) {
+        return 0;
+    }
+
+    return 1;
+}
+
+void snd_VAGStreamDataLoadThread() {
+    SInt32 intr_state;
+    SInt32 dis;
+    SInt32 ws_ret;
+
+    ws_ret = 0;
+
+    while (1) {
+        if (!VAGStreamLoadList && !gSSNeedSectors || gVAGReadBusy ||
+            gDataReadBusy) {
+            ws_ret = WaitSema(gStartDataLoadSema);
+        }
+
+        if (ws_ret) {
+            snd_ShowError(56, ws_ret, 0, 0, 0);
+        }
+
+        if (gBreakDataRead && !gDataReadBusy) {
+            snd_SignalDataReadDone();
+        }
+
+        dis = CpuSuspendIntr(&intr_state);
+        if (!gVAGReadBusy && !gDataReadBusy) {
+            if (VAGStreamLoadList) {
+                while (!gVAGReadBusy && VAGStreamLoadList) {
+                    gVAGReadBusy = VAGStreamLoadList;
+                    VAGStreamLoadList = VAGStreamLoadList->list;
+                    if (!VAGStreamLoadList) {
+                        VAGStreamLoadListTail = NULL;
+                    }
+
+                    if (gVAGReadBusy &&
+                        (gVAGReadBusy->owner->handler->SH.flags & 4) != 0) {
+                        gVAGReadBusy = NULL;
+                    }
+                }
+
+                if (gVAGReadBusy && (gVAGReadBusy->owner->flags & 0x20) == 0 &&
+                    (gVAGReadBusy->owner->flags & 1) == 0) {
+                    if (!dis) {
+                        CpuResumeIntr(intr_state);
+                    }
+
+                    snd_KickVAGRead(0);
+                    dis = CpuSuspendIntr(&intr_state);
+                } else {
+                    gVAGReadBusy = 0;
+                }
+            } else if (gSSNeedSectors) {
+                gDataReadBusy = 1;
+                if (!dis) {
+                    CpuResumeIntr(intr_state);
+                }
+
+                snd_KickDataRead();
+                dis = CpuSuspendIntr(&intr_state);
+            } else if (gSearchFileName) {
+                if (!dis) {
+                    CpuResumeIntr(intr_state);
+                }
+
+                gSearchFileResult =
+                    sceCdSearchFile(gSearchFileParams, gSearchFileName);
+                gSearchFileName = 0;
+                gSearchFileParams = 0;
+                SignalSema(gSearchFileSema);
+                dis = CpuSuspendIntr(&intr_state);
+            }
+        }
+
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+
+        if (!gVAGReadBusy && !gDataReadBusy && !VAGStreamLoadList) {
+            if (gCDIdleWaiter) {
+                WakeupThread(gCDIdleWaiter);
+                gCDIdleWaiter = 0;
+            }
+        }
+    }
+}
+
+SInt32 snd_StreamSafeCdRead(UInt32 lbn, UInt32 sectors, void *buf) {
+    SInt32 intr_state;
+    SInt32 dis;
+    sceCdRMode mode;
+    static SInt32 in_func = 0;
+
+    in_func++;
+    if (in_func >= 2) {
+        in_func--;
+        return 0;
+    }
+
+    if (gShuttingDownStreaming) {
+        gLastDATAReadError = 19;
+        in_func--;
+        return 0;
+    }
+
+    if (!VAGStreamList) {
+        mode.trycount = 100;
+        mode.spindlctrl = gCdSpinMode;
+        mode.datapattern = 0;
+        in_func--;
+        return sceCdRead(lbn, sectors, buf, &mode);
+    }
+
+    if (snd_StreamSafeCdSync(17) == 1) {
+        gLastDATAReadError = 19;
+        in_func--;
+        return 0;
+    }
+
+    dis = CpuSuspendIntr(&intr_state);
+    gReadWaitThread = -1;
+    gCurrentReadBuffer = buf;
+    gSSReadLoc = lbn;
+    gReadIsEE = 0;
+    gSSNeedSectors = sectors;
+    gBreakDataRead = 0;
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    SignalSema(gStartDataLoadSema);
+    in_func--;
+
+    return 1;
+}
+
+SInt32 snd_StreamSafeCdBreak() {
+    if (!VAGStreamList) {
+        return sceCdBreak();
+    }
+
+    if (!gSSNeedSectors) {
+        return 1;
+    }
+
+    gBreakDataRead = 1;
+    return 1;
+}
+
+SInt32 snd_StreamSafeCdSearchFile(sceCdlFILE *fp, char *name) {
+    SInt32 dis;
+    SInt32 intr_state;
+
+    if (gShuttingDownStreaming) {
+        gLastDATAReadError = 19;
+        return 0;
+    }
+
+    if (!VAGStreamList) {
+        snd_ShowError(57, 0, 0, 0, 0);
+        snd_SetCDSifReg(0, -1);
+        gLastDATAReadError = -1;
+        return 0;
+    }
+
+    if (!gMasterReadBuffer) {
+        snd_ShowError(58, 0, 0, 0, 0);
+        snd_SetCDSifReg(0, -1);
+        gLastDATAReadError = -1;
+        return 0;
+    }
+
+    if (snd_StreamSafeCdSync(17) == 1) {
+        snd_ShowError(59, 0, 0, 0, 0);
+        snd_SetCDSifReg(1, 19);
+        gLastDATAReadError = 19;
+        return 0;
+    }
+
+    dis = CpuSuspendIntr(&intr_state);
+    gSearchFileName = name;
+    gSearchFileParams = fp;
+    gSearchFileResult = 0;
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    SignalSema(gStartDataLoadSema);
+    WaitSema(gSearchFileSema);
+    return gSearchFileResult;
+}
+
+SInt32 snd_StreamSafeCdReadEEm(UInt32 lbn, UInt32 sectors, void *buf) {
+    SInt32 intr_state;
+    SInt32 dis;
+    static SInt32 in_func = 0;
+
+    in_func++;
+    if (in_func >= 2) {
+        in_func--;
+        return 0;
+    }
+
+    if (gShuttingDownStreaming) {
+        gLastDATAReadError = 19;
+        in_func--;
+        return 0;
+    }
+
+    if (!VAGStreamList) {
+        snd_ShowError(57, 0, 0, 0, 0);
+        snd_SetCDSifReg(0, -1);
+        gLastDATAReadError = -1;
+        in_func--;
+        return 0;
+    }
+
+    if (!gMasterReadBuffer) {
+        snd_ShowError(58, 0, 0, 0, 0);
+        snd_SetCDSifReg(0, -1);
+        gLastDATAReadError = -1;
+        in_func--;
+        return 0;
+    }
+
+    if (snd_StreamSafeCdSync(17) == 1) {
+        snd_ShowError(59, 0, 0, 0, 0);
+        snd_SetCDSifReg(1, 19);
+        gLastDATAReadError = 19;
+        in_func--;
+        return 0;
+    }
+
+    if (!sectors) {
+        snd_ShowError(94, 0, 0, 0, 0);
+        snd_SetCDSifReg(0, 34);
+        gLastDATAReadError = 34;
+        in_func--;
+        return 0;
+    }
+
+    dis = CpuSuspendIntr(&intr_state);
+    gReadWaitThread = -1;
+    gCurrentReadBuffer = buf;
+    gSSReadLoc = lbn;
+    gReadIsEE = 1;
+    gSSNeedSectors = sectors;
+    gBreakDataRead = 0;
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    SignalSema(gStartDataLoadSema);
+    in_func--;
+
+    return 1;
+}
+
+SInt32 snd_StreamSafeCdSync(SInt32 mode) {
+    if (!VAGStreamList) {
+        return sceCdSync(mode);
+    }
+
+    if (!gSSNeedSectors && !gDataReadBusy) {
+        return 0;
+    }
+
+    if (mode == 1 || mode == 17) {
+        return 1;
+    }
+
+    if (gReadWaitThread != -1 && (!mode || mode == 16)) {
+        snd_ShowError(60, 0, 0, 0, 0);
+        return 1;
+    }
+
+    while (gSSNeedSectors || gDataReadBusy) {
+        gReadWaitThread = GetThreadId();
+        SleepThread();
+        gReadWaitThread = -1;
+    }
+
+    return 0;
+}
+
+SInt32 snd_StreamSafeCdGetError() {
+    if (!VAGStreamList) {
+        return sceCdGetError();
+    }
+
+    return gLastDATAReadError;
+}
+
+void snd_KickDataRead() {
+    sceCdRMode mode;
+    SInt32 ret_code;
+
+    gSSReadSectors = gSSNeedSectors;
+    if (gHalfBufferSize / 2048 < gSSReadSectors) {
+        gSSReadSectors = gHalfBufferSize / 2048;
+    }
+
+    gMasterReadBufferFirstSector = gSSReadLoc;
+    gMasterReadBufferLastSector = gSSReadLoc + (gSSReadSectors - 1);
+    sceCdSync(16);
+    sceCdCallback(snd_DoneVAGReadCB);
+    mode.trycount = 50;
+    mode.spindlctrl = gCdSpinMode;
+    mode.datapattern = 0;
+
+    if (!gReadIsEE) {
+        gLastReadSector = gSSReadLoc;
+        gLastReadAmount = gSSReadSectors;
+        gLastReadIOPLoc = (UInt32)gCurrentReadBuffer;
+        if (gCurrentReadBuffer == gFileLoadBuffer && gSSReadSectors >= 2) {
+            gLastDATAReadError = -1;
+            snd_ShowError(102, gSSReadSectors, 0, 0, 0);
+            gDataReadBusy = 0;
+            gSSNeedSectors = 0;
+            if (gReadWaitThread != -1) {
+                SInt32 th_id = gReadWaitThread;
+                gReadWaitThread = -1;
+                WakeupThread(th_id);
+            }
+
+            return;
+        }
+
+        gCdBusy = 2;
+        gCdBusyTime = 0;
+        ret_code =
+            sceCdRead(gSSReadLoc, gSSReadSectors, gCurrentReadBuffer, &mode);
+    } else {
+        gLastReadSector = gSSReadLoc;
+        gLastReadAmount = gSSReadSectors;
+        gLastReadIOPLoc = (UInt32)gMasterReadBuffer;
+        gCdBusy = 2;
+        gCdBusyTime = 0;
+        ret_code =
+            sceCdRead(gSSReadLoc, gSSReadSectors, gMasterReadBuffer, &mode);
+    }
+
+    if (!ret_code) {
+        gCdBusy = 0;
+        gLastDATAReadError = sceCdGetError();
+        if (!gLastDATAReadError) {
+            gLastDATAReadError = -1;
+            if (!gPrefs_Silent) {
+                printf("snd_KickDataRead: sceCdRead returned 0 but "
+                       "sceCdGetError returned SCECdErNo!\n");
+            }
+        }
+
+        if (!gReadIsEE) {
+            snd_ShowError(61, gLastDATAReadError, gSSReadLoc, gSSReadSectors,
+                          (SInt32)gCurrentReadBuffer);
+        } else {
+            snd_ShowError(61, gLastDATAReadError, gSSReadLoc,
+                          gMasterReadBufferSize, (SInt32)gMasterReadBuffer);
+        }
+
+        gDataReadBusy = 0;
+        gSSNeedSectors = 0;
+        if (gReadWaitThread != -1) {
+            SInt32 th_id = gReadWaitThread;
+            gReadWaitThread = -1;
+            WakeupThread(th_id);
+        }
+
+        if (gReadIsEE) {
+            snd_SetCDSifReg(0, gLastDATAReadError);
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/stream", snd_KickVAGRead);
 

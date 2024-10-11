@@ -7,6 +7,7 @@
 #include "sifrpc.h"
 #include "stdio.h"
 #include "thread.h"
+#include "sif.h"
 #include <string.h>
 
 /* data 1cbc */ StreamChannelRange gStreamChannelRange[16] = {
@@ -2065,11 +2066,198 @@ void snd_KickDataRead() {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_KickVAGRead);
+void snd_KickVAGRead(SInt32 offset) {
+    SInt32 readbytes;
+    UInt32 readsectors;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetStreamDataFromIOPMemory);
+    if (!gVAGReadBusy) {
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetStreamDataFromEEMemory);
+    if ((gVAGReadBusy->owner->handler->SH.flags & 4) != 0) {
+        gVAGReadBusy = 0;
+        return;
+    }
+
+    if ((gVAGReadBusy->flags & 0x10) != 0) {
+        if (gVAGReadBusy->owner->file_start_offset > 0x7D0) {
+            readbytes = 4096;
+            readsectors = 2;
+        } else {
+            readbytes = 2048;
+            readsectors = 1;
+        }
+    } else {
+        readbytes = ((gVAGReadBusy->owner->buff_size >> 1) - offset);
+        readbytes = readbytes - (readbytes % 2048);
+
+        if (readbytes >= gVAGReadBusy->owner->bytes_remaining) {
+            if ((gVAGReadBusy->flags & 0x100) == 0) {
+                readbytes = gVAGReadBusy->owner->bytes_remaining;
+            }
+
+            gVAGReadBusy->bytes = gVAGReadBusy->owner->bytes_remaining + offset;
+            gVAGReadBusy->owner->bytes_remaining = 0;
+            gVAGReadBusy->owner->flags |= 0x20u;
+            gVAGReadBusy->is_end = 1;
+        } else {
+            gVAGReadBusy->is_end = 0;
+            gVAGReadBusy->bytes = readbytes + offset;
+            gVAGReadBusy->owner->bytes_remaining -= readbytes;
+        }
+
+        if ((gVAGReadBusy->flags & 0x100) != 0) {
+            readsectors = ((gVAGReadBusy->owner->buff_size >> 1) *
+                               gVAGReadBusy->owner->handler->num_streams +
+                           2047) >>
+                          11;
+        } else {
+            readsectors = (readbytes + 2047) / 2048;
+        }
+    }
+
+    if ((gVAGReadBusy->owner->flags & 0x800) != 0) {
+        snd_GetStreamDataFromIOPMemory(offset, readbytes, readsectors);
+    } else if ((gVAGReadBusy->owner->flags & 0x2000) != 0) {
+        snd_GetStreamDataFromEEMemory(offset, readbytes, readsectors);
+    } else if ((gVAGReadBusy->owner->flags & 0x1C000) != 0) {
+        snd_GetStreamDataFromMemoryStream(offset, readbytes, readsectors,
+                                          gVAGReadBusy->owner->flags);
+    } else if ((gVAGReadBusy->owner->flags & 0x1000) != 0) {
+        snd_GetStreamDataFromStdio(offset, readbytes, readsectors);
+    } else {
+        snd_GetStreamDataFromCD(offset, readbytes, readsectors);
+    }
+}
+
+// TODO, verify variable names
+SInt32 snd_GetStreamDataFromIOPMemory(SInt32 offset, SInt32 readbytes,
+                                      UInt32 readsectors) {
+    SInt32 ret_code;
+
+    ret_code = 0;
+
+    if ((gVAGReadBusy->owner->flags & 0x400) != 0 &&
+        (gVAGReadBusy->flags & 0x100) == 0) {
+        char *src = (char *)(gVAGReadBusy->owner->file_start_sector +
+                             ((gVAGReadBusy->owner->next_read_offset -
+                               gVAGReadBusy->owner->file_start_sector) *
+                              2048));
+
+        memcpy(&gVAGReadBusy->IOPbuff[offset], src, readsectors * 2048);
+    } else if ((gVAGReadBusy->flags & 0x100) == 0) {
+        gVAGReadBusy->IOPbuff =
+            (SInt8 *)(gVAGReadBusy->owner->file_start_sector +
+                      ((gVAGReadBusy->owner->next_read_offset -
+                        gVAGReadBusy->owner->file_start_sector) *
+                       2048));
+        if ((gVAGReadBusy->flags & 0x10) == 0) {
+            int ii;
+            int back;
+
+            back = gVAGReadBusy->bytes;
+            for (ii = 0; ii < 5 && back >= 16; ++ii) {
+                memcpy(&gVAGReadBusy->OrigIOPbuff[16 * ii],
+                       &gVAGReadBusy->IOPbuff[16 * ii], 0x10u);
+                back -= 16;
+            }
+
+            if (gVAGReadBusy->bytes >= 0x21) {
+                memcpy(&gVAGReadBusy->OrigIOPbuff[gVAGReadBusy->bytes] - 32,
+                       &gVAGReadBusy->IOPbuff[gVAGReadBusy->bytes] - 32, 0x20u);
+            }
+        }
+    } else {
+        VAGStreamHeader *walk;
+        VAGStreamHeader *master;
+        int i;
+        int ii;
+        int back;
+        u_int c;
+
+        master = walk = gVAGReadBusy->owner;
+        i = gVAGReadBusy != walk->buff;
+        c = 0;
+        while (walk) {
+            if (walk == master) {
+                walk->buff[i].IOPbuff = (SInt8 *)(master->file_start_sector +
+                                                  ((master->next_read_offset -
+                                                    master->file_start_sector) *
+                                                   2048));
+            } else {
+                walk->buff[i].IOPbuff = &master->buff[i].IOPbuff[c];
+            }
+
+            if ((gVAGReadBusy->flags & 0x10) == 0) {
+                back = gVAGReadBusy->bytes;
+                for (ii = 0; ii < 5 && back >= 16; ++ii) {
+                    memcpy(&walk->buff[i].OrigIOPbuff[16 * ii],
+                           &walk->buff[i].IOPbuff[16 * ii], 0x10u);
+                    back -= 16;
+                }
+
+                if (gVAGReadBusy->bytes >= 0x21) {
+                    memcpy(&walk->buff[i].OrigIOPbuff[gVAGReadBusy->bytes] - 32,
+                           &walk->buff[i].IOPbuff[gVAGReadBusy->bytes] - 32,
+                           0x20u);
+                }
+            }
+
+            c += walk->buff_size >> 1;
+            walk = walk->sync_list;
+        }
+    }
+
+    gLastVAGReadError = 0;
+    ret_code = 1;
+    if ((gVAGReadBusy->flags & 0x10) == 0) {
+        gVAGReadBusy->owner->next_read_offset += readsectors;
+    }
+
+    SignalSema(gDoneLoadSema);
+
+    return ret_code;
+}
+
+// INCLUDE_ASM("asm/nonmatchings/stream", snd_GetStreamDataFromEEMemory);
+SInt32 snd_GetStreamDataFromEEMemory(SInt32 offset, SInt32 readbytes,
+                                     UInt32 readsectors) {
+    sceSifReceiveData data_track;
+    char *ee_src;
+    SInt32 ret_code;
+
+    ret_code = 0;
+    ee_src = (char *)(gVAGReadBusy->owner->file_start_sector +
+                      ((gVAGReadBusy->owner->next_read_offset -
+                        gVAGReadBusy->owner->file_start_sector) *
+                       2048));
+
+    if ((gVAGReadBusy->flags & 0x100) != 0) {
+        ret_code = sceSifGetOtherData(&data_track, ee_src,
+                                      &gVAGReadBusy->IOPbuff[offset],
+                                      readsectors * 2048, 0);
+    } else {
+        ret_code = sceSifGetOtherData(
+            &data_track, ee_src, &gVAGReadBusy->IOPbuff[offset], readbytes, 0);
+    }
+
+    if (ret_code < 0) {
+        gLastVAGReadError = -1;
+        snd_ShowError(110, 0, 0, 0, 0);
+        gVAGReadBusy->owner->handler->SH.flags |= 4u;
+        gVAGReadBusy = 0;
+    } else {
+        gLastVAGReadError = 0;
+        ret_code = 1;
+        if ((gVAGReadBusy->flags & 0x10) == 0) {
+            gVAGReadBusy->owner->next_read_offset += readsectors;
+        }
+
+        SignalSema(gDoneLoadSema);
+    }
+
+    return ret_code;
+}
 
 INCLUDE_ASM("asm/nonmatchings/stream", snd_GetStreamDataFromMemoryStream);
 

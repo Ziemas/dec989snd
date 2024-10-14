@@ -65,8 +65,7 @@
 /* bss 8dd0 */ VAGStreamQueEntry gVAGStreamQue[64];
 /* bss 8d90 */ EEVagStreamMonitor vsm;
 
-BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size,
-                            UInt32 read_mode, BOOL enable_streamsafe_from_ee) {
+BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size, UInt32 read_mode, BOOL enable_streamsafe_from_ee) {
     SInt32 x;
     SInt32 y;
     VAGStreamHeader *header;
@@ -158,8 +157,7 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size,
     gDoneLoadSema = CreateSema(&sema);
     gSearchFileSema = CreateSema(&sema);
     gDeferredFileCloseSema = CreateSema(&sema);
-    gVAGStreamHandler =
-        gAllocProc(sizeof(*gVAGStreamHandler) * num_channels, 4, 0);
+    gVAGStreamHandler = gAllocProc(sizeof(*gVAGStreamHandler) * num_channels, 4, 0);
     if (!gVAGStreamHandler) {
         snd_ShowError(42, num_channels, 88, 0, 0);
         snd_FreeVAGStreamResources();
@@ -170,8 +168,7 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size,
     for (x = 0; x < num_channels; x++) {
         gVAGStreamHandler[x].SH.OwnerID = 1;
         gVAGStreamHandler[x].SH.OwnerID |= 0x4000000 | (x << 16);
-        gVAGStreamHandler[x].SH.Voices.core[0] =
-            gVAGStreamHandler[x].SH.Voices.core[1] = 0;
+        gVAGStreamHandler[x].SH.Voices.core[0] = gVAGStreamHandler[x].SH.Voices.core[1] = 0;
         gVAGStreamHandler[x].doubling_voice = -1;
         gVAGStreamHandler[x].pre_buffer_queue = 1;
         for (y = 0; y < 16; y++) {
@@ -219,13 +216,11 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size,
         header->flags = 1;
         header->buff_size = buffer_size;
         header->buff[0].IOPbuff = (iop_buffer + buffer_size / 2 * x);
-        header->buff[1].IOPbuff =
-            (buffer_size / 2 * num_channels + iop_buffer + buffer_size / 2 * x);
+        header->buff[1].IOPbuff = (buffer_size / 2 * num_channels + iop_buffer + buffer_size / 2 * x);
         header->buff[0].OrigIOPbuff = header->buff[0].IOPbuff;
         header->buff[1].OrigIOPbuff = header->buff[1].IOPbuff;
         header->buff[0].SPUbuff = (SInt8 *)(spu_buffer + buffer_size / 2 * x);
-        header->buff[1].SPUbuff = (SInt8 *)(buffer_size / 2 * num_channels +
-                                            spu_buffer + buffer_size / 2 * x);
+        header->buff[1].SPUbuff = (SInt8 *)(buffer_size / 2 * num_channels + spu_buffer + buffer_size / 2 * x);
         header->buff[0].owner = header;
         header->buff[1].owner = header;
         *list = header;
@@ -266,8 +261,7 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size,
     return 1;
 }
 
-void snd_SetVAGStreamChannelRange(SInt32 vol_group, SInt32 ch_min,
-                                  SInt32 ch_max) {
+void snd_SetVAGStreamChannelRange(SInt32 vol_group, SInt32 ch_min, SInt32 ch_max) {
     if (vol_group >= 16) {
         return;
     }
@@ -276,8 +270,7 @@ void snd_SetVAGStreamChannelRange(SInt32 vol_group, SInt32 ch_min,
     gStreamChannelRange[vol_group].max = ch_max;
 }
 
-SInt32 snd_AllocateStreamResources(VAGStreamHeader **stream1,
-                                   VAGStreamHeader **stream2, SInt32 stereo,
+SInt32 snd_AllocateStreamResources(VAGStreamHeader **stream1, VAGStreamHeader **stream2, SInt32 stereo,
                                    SInt32 get_voices, SInt32 vol_group) {
     *stream1 = snd_GetFreeVAGStream(vol_group);
     if (!*stream1) {
@@ -336,10 +329,8 @@ SInt32 snd_AllocateStreamResources(VAGStreamHeader **stream1,
     return 1;
 }
 
-UInt32 snd_PlayVAGStreamByNameEx(char *name1, char *name2, UInt32 offset1,
-                                 UInt32 offset2, SInt32 vol, SInt32 pan,
-                                 SInt32 vol_group, UInt32 queue,
-                                 SInt32 sub_group, UInt32 flags) {
+UInt32 snd_PlayVAGStreamByNameEx(char *name1, char *name2, UInt32 offset1, UInt32 offset2, SInt32 vol, SInt32 pan,
+                                 SInt32 vol_group, UInt32 queue, SInt32 sub_group, UInt32 flags) {
     SInt32 fh1;
     SInt32 fh2;
 
@@ -363,14 +354,11 @@ UInt32 snd_PlayVAGStreamByNameEx(char *name1, char *name2, UInt32 offset1,
 
     flags |= 0x1000;
 
-    return snd_PlayVAGStreamByLocEx(fh1, fh2, offset1, offset2, vol, pan,
-                                    vol_group, queue, sub_group, flags);
+    return snd_PlayVAGStreamByLocEx(fh1, fh2, offset1, offset2, vol, pan, vol_group, queue, sub_group, flags);
 }
 
-UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1,
-                                SInt32 offset2, SInt32 vol, SInt32 pan,
-                                SInt32 vol_group, UInt32 queue,
-                                SInt32 sub_group, UInt32 flags) {
+UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32 offset2, SInt32 vol, SInt32 pan,
+                                SInt32 vol_group, UInt32 queue, SInt32 sub_group, UInt32 flags) {
     VAGStreamHandlerPtr handler;
     VAGStreamHeader *thestream;
     VAGStreamHeader *thestreamR;
@@ -416,9 +404,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1,
                 loc2--;
             }
 
-            return snd_PlayVAGStreamByLocEx(loc1, loc2, offset1, offset2, vol,
-                                            pan, vol_group, 0, sub_group,
-                                            flags);
+            return snd_PlayVAGStreamByLocEx(loc1, loc2, offset1, offset2, vol, pan, vol_group, 0, sub_group, flags);
         }
 
         if (flags & 8) {
@@ -525,8 +511,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1,
         return 1;
     }
 
-    if (!snd_AllocateStreamResources(&thestream, &thestreamR, loc2 != 0, 1,
-                                     vol_group)) {
+    if (!snd_AllocateStreamResources(&thestream, &thestreamR, loc2 != 0, 1, vol_group)) {
         snd_UnlockMasterTick();
         if (flags & 0x1000) {
             if (loc1) {
@@ -632,8 +617,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1,
 
     thestream->sub_group = sub_group;
     if (loc2) {
-        snd_SetupVAGStream(handler, thestreamR, loc2, offset2, 0,
-                           flags & 0x1f800);
+        snd_SetupVAGStream(handler, thestreamR, loc2, offset2, 0, flags & 0x1f800);
         if ((flags & 1) != 0) {
             thestreamR->flags |= 0x10u;
         }
@@ -689,8 +673,7 @@ SInt32 snd_GetVAGStreamQueueCount(UInt32 handle) {
     return count;
 }
 
-void snd_TryPreBufferQueElement(VAGStreamHandlerPtr handler,
-                                UInt32 load_flags) {
+void snd_TryPreBufferQueElement(VAGStreamHandlerPtr handler, UInt32 load_flags) {
     VAGStreamHeader *currstream;
     VAGStreamHeader *thestream;
     VAGStreamHeader *thestreamR;
@@ -706,13 +689,9 @@ void snd_TryPreBufferQueElement(VAGStreamHandlerPtr handler,
 
     currstream = (VAGStreamHeader *)handler->SH.Sound;
 
-    stereo = (snd_GetNumStreamChannels(currstream) == 2 &&
-              !(currstream->buff[0].flags & 0x100))
-                 ? 1
-                 : 0;
+    stereo = (snd_GetNumStreamChannels(currstream) == 2 && !(currstream->buff[0].flags & 0x100)) ? 1 : 0;
 
-    if (!snd_AllocateStreamResources(&thestream, &thestreamR, stereo,
-                                     currstream->buff[0].flags & 0x100,
+    if (!snd_AllocateStreamResources(&thestream, &thestreamR, stereo, currstream->buff[0].flags & 0x100,
                                      handler->SH.VolGroup)) {
         return;
     }
@@ -725,8 +704,7 @@ void snd_TryPreBufferQueElement(VAGStreamHandlerPtr handler,
         thestream->flags |= 0x400u;
     }
 
-    snd_SetupVAGStream(handler, thestream, handler->que_list->loc,
-                       handler->que_list->offset, 1, load_flags);
+    snd_SetupVAGStream(handler, thestream, handler->que_list->loc, handler->que_list->offset, 1, load_flags);
     thestream->sub_group = handler->que_list->sub_group;
 
     if ((handler->SH.flags & 0x10) != 0) {
@@ -746,8 +724,7 @@ void snd_TryPreBufferQueElement(VAGStreamHandlerPtr handler,
             thestreamR->flags |= 0x400u;
         }
 
-        snd_SetupVAGStream(handler, thestreamR, handler->que_list->loc,
-                           handler->que_list->offset, 1, load_flags);
+        snd_SetupVAGStream(handler, thestreamR, handler->que_list->loc, handler->que_list->offset, 1, load_flags);
         thestreamR->sub_group = handler->que_list->sub_group;
 
         if ((handler->SH.flags & 0x10) != 0) {
@@ -764,9 +741,8 @@ void snd_TryPreBufferQueElement(VAGStreamHandlerPtr handler,
     SignalSema(gStartDataLoadSema);
 }
 
-void snd_SetupVAGStream(VAGStreamHandlerPtr handler, VAGStreamHeader *stream,
-                        SInt32 loc, SInt32 offset, SInt32 part_of_queue,
-                        UInt32 flags) {
+void snd_SetupVAGStream(VAGStreamHandlerPtr handler, VAGStreamHeader *stream, SInt32 loc, SInt32 offset,
+                        SInt32 part_of_queue, UInt32 flags) {
     EEVagStreamMonitor vsm;
     IOPVagStreamMonitor *vsmp;
     sceSifReceiveData data_track;
@@ -888,8 +864,7 @@ void snd_StopAllStreams() {
     }
 
     if (cc == 3 && !done && !gPrefs_Silent) {
-        printf(
-            "snd_StopAllStreams: ERROR! tried 5 times to stopp all streams!\n");
+        printf("snd_StopAllStreams: ERROR! tried 5 times to stopp all streams!\n");
     }
 
     while (!snd_AllStdioFilesClosed()) {
@@ -995,16 +970,14 @@ void snd_ContinueVAGStream(UInt32 handle) {
         if ((stream->flags & 4) != 0) {
             core = stream->voice / 24;
             voice = stream->voice % 24;
-            sceSdSetParam(
-                (core | SD_VOICE(voice)) | SD_VP_PITCH,
-                snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH,
+                          snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
 
             if (!x && hand->doubling_voice != -1) {
                 core = hand->doubling_voice / 24;
                 voice = hand->doubling_voice % 24;
-                sceSdSetParam(
-                    (core | SD_VOICE(voice)) | SD_VP_PITCH,
-                    snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
+                sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH,
+                              snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
             }
         }
 
@@ -1020,34 +993,28 @@ void snd_ContinueVAGStream(UInt32 handle) {
             core = stream->voice / 24;
             voice = stream->voice % 24;
             sceSdSetParam(core | SD_VOICE(voice) | SD_VP_VOLL,
-                          (UInt16)snd_AdjustVolToGroup(
-                              gChannelStatus[stream->voice].Volume.left,
-                              gChannelStatus[stream->voice].VolGroup) >>
+                          (UInt16)snd_AdjustVolToGroup(gChannelStatus[stream->voice].Volume.left,
+                                                       gChannelStatus[stream->voice].VolGroup) >>
                               1);
 
             sceSdSetParam(core | SD_VOICE(voice) | SD_VP_VOLR,
-                          (UInt16)snd_AdjustVolToGroup(
-                              gChannelStatus[stream->voice].Volume.right,
-                              gChannelStatus[stream->voice].VolGroup) >>
+                          (UInt16)snd_AdjustVolToGroup(gChannelStatus[stream->voice].Volume.right,
+                                                       gChannelStatus[stream->voice].VolGroup) >>
                               1);
 
             gNumStreamsPlaying++;
             if (!x && hand->doubling_voice != -1) {
                 core = hand->doubling_voice / 24;
                 voice = hand->doubling_voice % 24;
-                sceSdSetParam(
-                    core | SD_VOICE(voice) | SD_VP_VOLL,
-                    (UInt16)snd_AdjustVolToGroup(
-                        gChannelStatus[hand->doubling_voice].Volume.left,
-                        gChannelStatus[hand->doubling_voice].VolGroup) >>
-                        1);
+                sceSdSetParam(core | SD_VOICE(voice) | SD_VP_VOLL,
+                              (UInt16)snd_AdjustVolToGroup(gChannelStatus[hand->doubling_voice].Volume.left,
+                                                           gChannelStatus[hand->doubling_voice].VolGroup) >>
+                                  1);
 
-                sceSdSetParam(
-                    core | SD_VOICE(voice) | SD_VP_VOLR,
-                    (UInt16)snd_AdjustVolToGroup(
-                        gChannelStatus[hand->doubling_voice].Volume.right,
-                        gChannelStatus[hand->doubling_voice].VolGroup) >>
-                        1);
+                sceSdSetParam(core | SD_VOICE(voice) | SD_VP_VOLR,
+                              (UInt16)snd_AdjustVolToGroup(gChannelStatus[hand->doubling_voice].Volume.right,
+                                                           gChannelStatus[hand->doubling_voice].VolGroup) >>
+                                  1);
             }
         }
         stream = stream->sync_list;
@@ -1079,8 +1046,7 @@ void snd_StopVAGStream(UInt32 handle) {
 BOOL snd_StreamHandlerIsBusyWithLoad(VAGStreamHandlerPtr hand) {
     VAGStreamHeader *stream;
 
-    for (stream = (VAGStreamHeader *)hand->SH.Sound; stream;
-         stream = stream->sync_list) {
+    for (stream = (VAGStreamHeader *)hand->SH.Sound; stream; stream = stream->sync_list) {
         if (gVAGReadBusy == stream->buff || gVAGReadBusy == &stream->buff[1]) {
             return true;
         }
@@ -1092,10 +1058,9 @@ BOOL snd_StreamHandlerIsBusyWithLoad(VAGStreamHandlerPtr hand) {
 BOOL snd_StreamHandlerIsBusyWithDMA(VAGStreamHandlerPtr hand) {
     VAGStreamHeader *stream;
 
-    for (stream = (VAGStreamHeader *)hand->SH.Sound; stream;
-         stream = stream->sync_list) {
-        if (gDMABusy[0] == stream->buff || gDMABusy[0] == &stream->buff[1] ||
-            gDMABusy[1] == stream->buff || gDMABusy[1] == &stream->buff[1]) {
+    for (stream = (VAGStreamHeader *)hand->SH.Sound; stream; stream = stream->sync_list) {
+        if (gDMABusy[0] == stream->buff || gDMABusy[0] == &stream->buff[1] || gDMABusy[1] == stream->buff ||
+            gDMABusy[1] == &stream->buff[1]) {
             return true;
         }
     }
@@ -1224,8 +1189,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
     sync_error = 0;
     load_flags = 0;
     if ((hand->SH.flags & 4) != 0) {
-        if (!snd_StreamHandlerIsBusyWithDMA(hand) &&
-            !snd_StreamHandlerIsBusyWithLoad(hand)) {
+        if (!snd_StreamHandlerIsBusyWithDMA(hand) && !snd_StreamHandlerIsBusyWithLoad(hand)) {
             snd_KillVAGStreamEx(hand->SH.OwnerID, 1);
         }
         return;
@@ -1245,9 +1209,8 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
         diff = 0;
         walk = stream->sync_list;
         while (walk) {
-            hold = (stream->bytes_played > walk->bytes_played)
-                       ? stream->bytes_played - walk->bytes_played
-                       : walk->bytes_played - stream->bytes_played;
+            hold = (stream->bytes_played > walk->bytes_played) ? stream->bytes_played - walk->bytes_played
+                                                               : walk->bytes_played - stream->bytes_played;
 
             if (hold > diff) {
                 diff = hold;
@@ -1270,8 +1233,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
             while ((walk) && (!done) && !(walk->buff[0].flags & 0x100)) {
                 read_sectors = walk->next_read_offset - walk->file_start_sector;
                 played_sectors = walk->bytes_played / 0x800;
-                if ((read_sectors - played_sectors) >
-                    (walk->buff_size >> 0xA) + 1) {
+                if ((read_sectors - played_sectors) > (walk->buff_size >> 0xA) + 1) {
                     done = -2;
                     snd_ShowError(0x33, hand->SH.OwnerID, 0, 0, 0);
                 }
@@ -1336,8 +1298,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
                 }
 
                 if (start_with_voices) {
-                    snd_StartVAGStreamSounding(
-                        (VAGStreamHeader *)hand->SH.Sound, 1);
+                    snd_StartVAGStreamSounding((VAGStreamHeader *)hand->SH.Sound, 1);
                 } else {
                     hand->SH.flags |= 2u;
                     snd_ContinueVAGStream(hand->SH.OwnerID);
@@ -1354,8 +1315,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
                 }
 
                 for (walk = stream; walk; walk = walk->sync_list) {
-                    if ((walk->flags & 0x1000) != 0 &&
-                        walk->file_handle != -1) {
+                    if ((walk->flags & 0x1000) != 0 && walk->file_handle != -1) {
                         if (!dis) {
                             CpuResumeIntr(intr_state);
                         }
@@ -1385,8 +1345,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
         }
     } else {
         if (done == -2) {
-            if (!snd_StreamHandlerIsBusyWithDMA(hand) &&
-                !snd_StreamHandlerIsBusyWithLoad(hand)) {
+            if (!snd_StreamHandlerIsBusyWithDMA(hand) && !snd_StreamHandlerIsBusyWithLoad(hand)) {
                 snd_KillVAGStreamEx(hand->SH.OwnerID, 1);
             } else {
                 hand->SH.flags |= 4u;
@@ -1450,12 +1409,10 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
             addr = addr2;
         }
 
-        if (stream->buff[0].SPUbuff - 1 < addr &&
-            addr < stream->buff[1].SPUbuff) {
+        if (stream->buff[0].SPUbuff - 1 < addr && addr < stream->buff[1].SPUbuff) {
             in_buffer = 0;
         } else {
-            if (stream->buff[1].SPUbuff - 1 < addr &&
-                addr < &stream->buff[1].SPUbuff[stream->buff_size >> 1]) {
+            if (stream->buff[1].SPUbuff - 1 < addr && addr < &stream->buff[1].SPUbuff[stream->buff_size >> 1]) {
                 in_buffer = 1;
             } else {
                 stream->ErrorAccumulator++;
@@ -1468,8 +1425,7 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
                     addr = stream->buff[0].SPUbuff;
                     in_buffer = 0;
                 } else {
-                    snd_ShowError(53, stream->handler->SH.OwnerID, (SInt32)addr,
-                                  0, 0);
+                    snd_ShowError(53, stream->handler->SH.OwnerID, (SInt32)addr, 0, 0);
                     return -1;
                 }
             }
@@ -1477,11 +1433,9 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
 
         if ((stream->flags & 0x200) != 0) {
             dis = CpuSuspendIntr(&state);
-            sceSdSetAddr((core | SD_VOICE(voice)) | SD_VA_LSAX,
-                         (UInt32)stream->buff[1].SPUbuff);
+            sceSdSetAddr((core | SD_VOICE(voice)) | SD_VA_LSAX, (UInt32)stream->buff[1].SPUbuff);
             if (stream->handler->doubling_voice != -1) {
-                sceSdSetAddr(((stream->handler->doubling_voice / 24) |
-                              SD_VOICE(stream->handler->doubling_voice % 24)) |
+                sceSdSetAddr(((stream->handler->doubling_voice / 24) | SD_VOICE(stream->handler->doubling_voice % 24)) |
                                  SD_VA_LSAX,
                              (UInt32)stream->buff[1].SPUbuff);
             }
@@ -1495,13 +1449,10 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
         if ((stream->flags & 0x40) == 0) {
             if (in_buffer != stream->PlayingBuffer) {
 
-                if (!stream->LastBufferChangeTick ||
-                    snd_GetTick() > stream->LastBufferChangeTick + 10) {
+                if (!stream->LastBufferChangeTick || snd_GetTick() > stream->LastBufferChangeTick + 10) {
 
-                    if (((stream->buff[0].flags & 0x100) == 0 ||
-                         (stream->buff[0].flags & 0x200) != 0) &&
-                        !snd_AddVAGStreamDMABuffer(
-                            &stream->buff[stream->PlayingBuffer].flags)) {
+                    if (((stream->buff[0].flags & 0x100) == 0 || (stream->buff[0].flags & 0x200) != 0) &&
+                        !snd_AddVAGStreamDMABuffer(&stream->buff[stream->PlayingBuffer].flags)) {
                         done = -2;
                     } else {
                         local_dma_needed = 1;
@@ -1551,8 +1502,7 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
         }
     }
 
-    if ((stream->flags & 2) != 0 && (stream->flags & 4) != 0 &&
-        (stream->flags & 0x10) == 0) {
+    if ((stream->flags & 2) != 0 && (stream->flags & 4) != 0 && (stream->flags & 0x10) == 0) {
         stream->flags &= ~2u;
         stream->flags |= 8u;
     }
@@ -1571,20 +1521,16 @@ void snd_FixVAGStreamSamplesPlayed(VAGStreamHeader *stream, UInt32 addr) {
         addr = (UInt32)&stream->buff[1].SPUbuff[stream->buff_size >> 1];
     }
 
-    last_buffer =
-        (stream->last_loc > (&stream->buff[0].SPUbuff[0] - 1) &&
-         stream->last_loc < &stream->buff[0].SPUbuff[stream->buff_size >> 1])
-            ? 0
-            : 1;
+    last_buffer = (stream->last_loc > (&stream->buff[0].SPUbuff[0] - 1) &&
+                   stream->last_loc < &stream->buff[0].SPUbuff[stream->buff_size >> 1])
+                      ? 0
+                      : 1;
 
     if (last_buffer == stream->PlayingBuffer) {
         stream->bytes_played += addr - stream->last_loc;
     } else {
-        stream->bytes_played += (UInt32)&stream->buff[last_buffer]
-                                    .SPUbuff[(stream->buff_size >> 1)] -
-                                stream->last_loc;
-        stream->bytes_played +=
-            addr - (UInt32)stream->buff[stream->PlayingBuffer].SPUbuff;
+        stream->bytes_played += (UInt32)&stream->buff[last_buffer].SPUbuff[(stream->buff_size >> 1)] - stream->last_loc;
+        stream->bytes_played += addr - (UInt32)stream->buff[stream->PlayingBuffer].SPUbuff;
     }
 
     stream->last_loc = addr;
@@ -1703,8 +1649,7 @@ void snd_VAGStreamDataLoadThread() {
     ws_ret = 0;
 
     while (1) {
-        if (!VAGStreamLoadList && !gSSNeedSectors || gVAGReadBusy ||
-            gDataReadBusy) {
+        if (!VAGStreamLoadList && !gSSNeedSectors || gVAGReadBusy || gDataReadBusy) {
             ws_ret = WaitSema(gStartDataLoadSema);
         }
 
@@ -1726,14 +1671,12 @@ void snd_VAGStreamDataLoadThread() {
                         VAGStreamLoadListTail = NULL;
                     }
 
-                    if (gVAGReadBusy &&
-                        (gVAGReadBusy->owner->handler->SH.flags & 4) != 0) {
+                    if (gVAGReadBusy && (gVAGReadBusy->owner->handler->SH.flags & 4) != 0) {
                         gVAGReadBusy = NULL;
                     }
                 }
 
-                if (gVAGReadBusy && (gVAGReadBusy->owner->flags & 0x20) == 0 &&
-                    (gVAGReadBusy->owner->flags & 1) == 0) {
+                if (gVAGReadBusy && (gVAGReadBusy->owner->flags & 0x20) == 0 && (gVAGReadBusy->owner->flags & 1) == 0) {
                     if (!dis) {
                         CpuResumeIntr(intr_state);
                     }
@@ -1756,8 +1699,7 @@ void snd_VAGStreamDataLoadThread() {
                     CpuResumeIntr(intr_state);
                 }
 
-                gSearchFileResult =
-                    sceCdSearchFile(gSearchFileParams, gSearchFileName);
+                gSearchFileResult = sceCdSearchFile(gSearchFileParams, gSearchFileName);
                 gSearchFileName = 0;
                 gSearchFileParams = 0;
                 SignalSema(gSearchFileSema);
@@ -2021,16 +1963,14 @@ void snd_KickDataRead() {
 
         gCdBusy = 2;
         gCdBusyTime = 0;
-        ret_code =
-            sceCdRead(gSSReadLoc, gSSReadSectors, gCurrentReadBuffer, &mode);
+        ret_code = sceCdRead(gSSReadLoc, gSSReadSectors, gCurrentReadBuffer, &mode);
     } else {
         gLastReadSector = gSSReadLoc;
         gLastReadAmount = gSSReadSectors;
         gLastReadIOPLoc = (UInt32)gMasterReadBuffer;
         gCdBusy = 2;
         gCdBusyTime = 0;
-        ret_code =
-            sceCdRead(gSSReadLoc, gSSReadSectors, gMasterReadBuffer, &mode);
+        ret_code = sceCdRead(gSSReadLoc, gSSReadSectors, gMasterReadBuffer, &mode);
     }
 
     if (!ret_code) {
@@ -2045,11 +1985,9 @@ void snd_KickDataRead() {
         }
 
         if (!gReadIsEE) {
-            snd_ShowError(61, gLastDATAReadError, gSSReadLoc, gSSReadSectors,
-                          (SInt32)gCurrentReadBuffer);
+            snd_ShowError(61, gLastDATAReadError, gSSReadLoc, gSSReadSectors, (SInt32)gCurrentReadBuffer);
         } else {
-            snd_ShowError(61, gLastDATAReadError, gSSReadLoc,
-                          gMasterReadBufferSize, (SInt32)gMasterReadBuffer);
+            snd_ShowError(61, gLastDATAReadError, gSSReadLoc, gMasterReadBufferSize, (SInt32)gMasterReadBuffer);
         }
 
         gDataReadBusy = 0;
@@ -2107,10 +2045,8 @@ void snd_KickVAGRead(SInt32 offset) {
         }
 
         if ((gVAGReadBusy->flags & 0x100) != 0) {
-            readsectors = ((gVAGReadBusy->owner->buff_size >> 1) *
-                               gVAGReadBusy->owner->handler->num_streams +
-                           2047) >>
-                          11;
+            readsectors =
+                ((gVAGReadBusy->owner->buff_size >> 1) * gVAGReadBusy->owner->handler->num_streams + 2047) >> 11;
         } else {
             readsectors = (readbytes + 2047) / 2048;
         }
@@ -2121,8 +2057,7 @@ void snd_KickVAGRead(SInt32 offset) {
     } else if ((gVAGReadBusy->owner->flags & 0x2000) != 0) {
         snd_GetStreamDataFromEEMemory(offset, readbytes, readsectors);
     } else if ((gVAGReadBusy->owner->flags & 0x1C000) != 0) {
-        snd_GetStreamDataFromMemoryStream(offset, readbytes, readsectors,
-                                          gVAGReadBusy->owner->flags);
+        snd_GetStreamDataFromMemoryStream(offset, readbytes, readsectors, gVAGReadBusy->owner->flags);
     } else if ((gVAGReadBusy->owner->flags & 0x1000) != 0) {
         snd_GetStreamDataFromStdio(offset, readbytes, readsectors);
     } else {
@@ -2131,34 +2066,27 @@ void snd_KickVAGRead(SInt32 offset) {
 }
 
 // TODO, verify variable names
-SInt32 snd_GetStreamDataFromIOPMemory(SInt32 offset, SInt32 readbytes,
-                                      UInt32 readsectors) {
+SInt32 snd_GetStreamDataFromIOPMemory(SInt32 offset, SInt32 readbytes, UInt32 readsectors) {
     SInt32 ret_code;
 
     ret_code = 0;
 
-    if ((gVAGReadBusy->owner->flags & 0x400) != 0 &&
-        (gVAGReadBusy->flags & 0x100) == 0) {
+    if ((gVAGReadBusy->owner->flags & 0x400) != 0 && (gVAGReadBusy->flags & 0x100) == 0) {
         char *src = (char *)(gVAGReadBusy->owner->file_start_sector +
-                             ((gVAGReadBusy->owner->next_read_offset -
-                               gVAGReadBusy->owner->file_start_sector) *
-                              2048));
+                             ((gVAGReadBusy->owner->next_read_offset - gVAGReadBusy->owner->file_start_sector) * 2048));
 
         memcpy(&gVAGReadBusy->IOPbuff[offset], src, readsectors * 2048);
     } else if ((gVAGReadBusy->flags & 0x100) == 0) {
         gVAGReadBusy->IOPbuff =
             (SInt8 *)(gVAGReadBusy->owner->file_start_sector +
-                      ((gVAGReadBusy->owner->next_read_offset -
-                        gVAGReadBusy->owner->file_start_sector) *
-                       2048));
+                      ((gVAGReadBusy->owner->next_read_offset - gVAGReadBusy->owner->file_start_sector) * 2048));
         if ((gVAGReadBusy->flags & 0x10) == 0) {
             int ii;
             int back;
 
             back = gVAGReadBusy->bytes;
             for (ii = 0; ii < 5 && back >= 16; ++ii) {
-                memcpy(&gVAGReadBusy->OrigIOPbuff[16 * ii],
-                       &gVAGReadBusy->IOPbuff[16 * ii], 0x10u);
+                memcpy(&gVAGReadBusy->OrigIOPbuff[16 * ii], &gVAGReadBusy->IOPbuff[16 * ii], 0x10u);
                 back -= 16;
             }
 
@@ -2181,9 +2109,7 @@ SInt32 snd_GetStreamDataFromIOPMemory(SInt32 offset, SInt32 readbytes,
         while (walk) {
             if (walk == master) {
                 walk->buff[i].IOPbuff = (SInt8 *)(master->file_start_sector +
-                                                  ((master->next_read_offset -
-                                                    master->file_start_sector) *
-                                                   2048));
+                                                  ((master->next_read_offset - master->file_start_sector) * 2048));
             } else {
                 walk->buff[i].IOPbuff = &master->buff[i].IOPbuff[c];
             }
@@ -2191,15 +2117,13 @@ SInt32 snd_GetStreamDataFromIOPMemory(SInt32 offset, SInt32 readbytes,
             if ((gVAGReadBusy->flags & 0x10) == 0) {
                 back = gVAGReadBusy->bytes;
                 for (ii = 0; ii < 5 && back >= 16; ++ii) {
-                    memcpy(&walk->buff[i].OrigIOPbuff[16 * ii],
-                           &walk->buff[i].IOPbuff[16 * ii], 0x10u);
+                    memcpy(&walk->buff[i].OrigIOPbuff[16 * ii], &walk->buff[i].IOPbuff[16 * ii], 0x10u);
                     back -= 16;
                 }
 
                 if (gVAGReadBusy->bytes >= 0x21) {
                     memcpy(&walk->buff[i].OrigIOPbuff[gVAGReadBusy->bytes] - 32,
-                           &walk->buff[i].IOPbuff[gVAGReadBusy->bytes] - 32,
-                           0x20u);
+                           &walk->buff[i].IOPbuff[gVAGReadBusy->bytes] - 32, 0x20u);
                 }
             }
 
@@ -2219,25 +2143,19 @@ SInt32 snd_GetStreamDataFromIOPMemory(SInt32 offset, SInt32 readbytes,
     return ret_code;
 }
 
-SInt32 snd_GetStreamDataFromEEMemory(SInt32 offset, SInt32 readbytes,
-                                     UInt32 readsectors) {
+SInt32 snd_GetStreamDataFromEEMemory(SInt32 offset, SInt32 readbytes, UInt32 readsectors) {
     sceSifReceiveData data_track;
     char *ee_src;
     SInt32 ret_code;
 
     ret_code = 0;
     ee_src = (char *)(gVAGReadBusy->owner->file_start_sector +
-                      ((gVAGReadBusy->owner->next_read_offset -
-                        gVAGReadBusy->owner->file_start_sector) *
-                       2048));
+                      ((gVAGReadBusy->owner->next_read_offset - gVAGReadBusy->owner->file_start_sector) * 2048));
 
     if ((gVAGReadBusy->flags & 0x100) != 0) {
-        ret_code = sceSifGetOtherData(&data_track, ee_src,
-                                      &gVAGReadBusy->IOPbuff[offset],
-                                      readsectors * 2048, 0);
+        ret_code = sceSifGetOtherData(&data_track, ee_src, &gVAGReadBusy->IOPbuff[offset], readsectors * 2048, 0);
     } else {
-        ret_code = sceSifGetOtherData(
-            &data_track, ee_src, &gVAGReadBusy->IOPbuff[offset], readbytes, 0);
+        ret_code = sceSifGetOtherData(&data_track, ee_src, &gVAGReadBusy->IOPbuff[offset], readbytes, 0);
     }
 
     if (ret_code < 0) {
@@ -2258,8 +2176,7 @@ SInt32 snd_GetStreamDataFromEEMemory(SInt32 offset, SInt32 readbytes,
     return ret_code;
 }
 
-SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes,
-                                         UInt32 readsectors, UInt32 flags) {
+SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes, UInt32 readsectors, UInt32 flags) {
     sceSifReceiveData data_track;
     SInt32 ret_code;
     SInt32 did;
@@ -2292,28 +2209,20 @@ SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes,
 
     while (data_needed && ret_code > -1) {
         read_bytes = data_needed;
-        if (&gVAGReadBusy->owner
-                    ->ee_EEStartAddress[gVAGReadBusy->owner->ee_BufferSize] -
-                (char *)read_loc <
+        if (&gVAGReadBusy->owner->ee_EEStartAddress[gVAGReadBusy->owner->ee_BufferSize] - (char *)read_loc <
             read_bytes) {
-            read_bytes =
-                &gVAGReadBusy->owner
-                     ->ee_EEStartAddress[gVAGReadBusy->owner->ee_BufferSize] -
-                (char *)read_loc;
+            read_bytes = &gVAGReadBusy->owner->ee_EEStartAddress[gVAGReadBusy->owner->ee_BufferSize] - (char *)read_loc;
         }
 
         if ((flags & 0x4000) != 0) {
-            ret_code = sceSifGetOtherData(&data_track, read_loc, iop_loc,
-                                          read_bytes, 0);
+            ret_code = sceSifGetOtherData(&data_track, read_loc, iop_loc, read_bytes, 0);
         } else {
             memcpy(iop_loc, read_loc, read_bytes);
             ret_code = 0;
         }
 
         read_loc = (char *)read_loc + read_bytes;
-        if (read_loc ==
-            &gVAGReadBusy->owner
-                 ->ee_EEStartAddress[gVAGReadBusy->owner->ee_BufferSize]) {
+        if (read_loc == &gVAGReadBusy->owner->ee_EEStartAddress[gVAGReadBusy->owner->ee_BufferSize]) {
             read_loc = gVAGReadBusy->owner->ee_EEStartAddress;
         }
 
@@ -2334,17 +2243,14 @@ SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes,
             if ((flags & 0xC000) != 0) {
                 vsm.BufferSize = gVAGReadBusy->owner->ee_BufferSize;
                 vsm.EEStartAddress = gVAGReadBusy->owner->ee_EEStartAddress;
-                vsm.NextIOPReadAddress =
-                    gVAGReadBusy->owner->ee_NextIOPReadAddress;
-                vsm.TotalBytesConsumed =
-                    gVAGReadBusy->owner->ee_TotalBytesConsumed;
+                vsm.NextIOPReadAddress = gVAGReadBusy->owner->ee_NextIOPReadAddress;
+                vsm.TotalBytesConsumed = gVAGReadBusy->owner->ee_TotalBytesConsumed;
                 transData.data = (unsigned int)&vsm;
                 transData.addr = gVAGReadBusy->owner->ee_streammon_loc;
                 transData.size = 64;
                 transData.mode = 0;
                 dis = CpuSuspendIntr(&intr_state);
-                did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone,
-                                       &gEEDMADoneSema);
+                did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone, &gEEDMADoneSema);
                 if (!dis) {
                     CpuResumeIntr(intr_state);
                 }
@@ -2356,19 +2262,13 @@ SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes,
 
             else if ((flags & 0x10000) != 0) {
                 IOPVagStreamMonitor *vsmp;
-                vsmp = (IOPVagStreamMonitor *)
-                           gVAGReadBusy->owner->ee_streammon_loc;
-                vsmp->NextIOPReadAddress =
-                    gVAGReadBusy->owner->ee_NextIOPReadAddress;
-                vsmp->TotalBytesConsumed =
-                    gVAGReadBusy->owner->ee_TotalBytesConsumed;
+                vsmp = (IOPVagStreamMonitor *)gVAGReadBusy->owner->ee_streammon_loc;
+                vsmp->NextIOPReadAddress = gVAGReadBusy->owner->ee_NextIOPReadAddress;
+                vsmp->TotalBytesConsumed = gVAGReadBusy->owner->ee_TotalBytesConsumed;
             } else {
-                vsmp =
-                    (EEVagStreamMonitor *)gVAGReadBusy->owner->ee_streammon_loc;
-                vsmp->NextIOPReadAddress =
-                    gVAGReadBusy->owner->ee_NextIOPReadAddress;
-                vsmp->TotalBytesConsumed =
-                    gVAGReadBusy->owner->ee_TotalBytesConsumed;
+                vsmp = (EEVagStreamMonitor *)gVAGReadBusy->owner->ee_streammon_loc;
+                vsmp->NextIOPReadAddress = gVAGReadBusy->owner->ee_NextIOPReadAddress;
+                vsmp->TotalBytesConsumed = gVAGReadBusy->owner->ee_TotalBytesConsumed;
             }
         }
 
@@ -2385,27 +2285,22 @@ SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes,
 }
 
 // INCLUDE_ASM("asm/nonmatchings/stream", snd_GetStreamDataFromStdio);
-SInt32 snd_GetStreamDataFromStdio(SInt32 offset, SInt32 readbytes,
-                                  UInt32 readsectors) {
+SInt32 snd_GetStreamDataFromStdio(SInt32 offset, SInt32 readbytes, UInt32 readsectors) {
     SInt32 ret_code;
     SInt32 stdio_error;
 
     stdio_error = 0;
     lseek(gVAGReadBusy->owner->file_handle,
-          (gVAGReadBusy->owner->next_read_offset * 2048) +
-              gVAGReadBusy->owner->stdio_file_offset,
-          0);
+          (gVAGReadBusy->owner->next_read_offset * 2048) + gVAGReadBusy->owner->stdio_file_offset, 0);
 
     if ((gVAGReadBusy->flags & 0x100) != 0) {
-        ret_code = read(gVAGReadBusy->owner->file_handle,
-                        &gVAGReadBusy->IOPbuff[offset], readsectors * 2048);
+        ret_code = read(gVAGReadBusy->owner->file_handle, &gVAGReadBusy->IOPbuff[offset], readsectors * 2048);
         if (ret_code != readsectors * 2048) {
             stdio_error = ret_code;
             ret_code = 0;
         }
     } else {
-        ret_code = read(gVAGReadBusy->owner->file_handle,
-                        &gVAGReadBusy->IOPbuff[offset], readbytes);
+        ret_code = read(gVAGReadBusy->owner->file_handle, &gVAGReadBusy->IOPbuff[offset], readbytes);
         if (ret_code != readbytes) {
             stdio_error = ret_code;
             ret_code = 0;
@@ -2430,8 +2325,7 @@ SInt32 snd_GetStreamDataFromStdio(SInt32 offset, SInt32 readbytes,
     return ret_code;
 }
 
-SInt32 snd_GetStreamDataFromCD(SInt32 offset, SInt32 readbytes,
-                               UInt32 readsectors) {
+SInt32 snd_GetStreamDataFromCD(SInt32 offset, SInt32 readbytes, UInt32 readsectors) {
     SInt32 ret_code;
     sceCdRMode mode;
 
@@ -2447,8 +2341,7 @@ SInt32 snd_GetStreamDataFromCD(SInt32 offset, SInt32 readbytes,
     gLastReadIOPLoc = (SInt32)gVAGReadBusy->IOPbuff;
     gCdBusy = 1;
     gCdBusyTime = 0;
-    ret_code = sceCdRead(gVAGReadBusy->owner->next_read_offset, readsectors,
-                         &gVAGReadBusy->IOPbuff[offset], &mode);
+    ret_code = sceCdRead(gVAGReadBusy->owner->next_read_offset, readsectors, &gVAGReadBusy->IOPbuff[offset], &mode);
     if (ret_code == 0) {
         gCdBusy = 0;
         gLastVAGReadError = sceCdGetError();
@@ -2457,8 +2350,7 @@ SInt32 snd_GetStreamDataFromCD(SInt32 offset, SInt32 readbytes,
         }
 
         gVAGReadBusy->owner->handler->SH.flags |= 4u;
-        snd_ShowError(62, gLastVAGReadError,
-                      gVAGReadBusy->owner->next_read_offset, readsectors,
+        snd_ShowError(62, gLastVAGReadError, gVAGReadBusy->owner->next_read_offset, readsectors,
                       (SInt32)gVAGReadBusy->IOPbuff);
         gVAGReadBusy = 0;
     } else {
@@ -2483,24 +2375,6 @@ void snd_VAGStreamLoadDoneThread() {
     VAGStreamHandlerPtr hand;
     VAGStreamHeader *stream;
     SInt32 ws_ret;
-    SInt32 did;
-    sceSifDmaData transData;
-    UInt32 sr;
-    UInt32 size;
-    SCEIVAGHeader *vfh;
-    VAGStreamHeader *new_master;
-    VPKFileHeadPtr vpk;
-    UInt32 original_stream_flags;
-    BOOL queued_stream;
-    BOOL free_orig_stream;
-    VAGStreamHeader *list_hold;
-    UInt32 overage;
-    SInt32 core;
-    SInt32 c_v;
-    char *start_addr;
-    SInt32 space_left;
-    // UInt32 overage;
-    VAGBuffer *next_buff;
 
     do_dma = 0;
     dead = 0;
@@ -2531,27 +2405,27 @@ void snd_VAGStreamLoadDoneThread() {
                 }
 
                 if (gLastVAGReadError) {
-                    snd_ShowError(64, gLastVAGReadError, gLastReadSector,
-                                  gLastReadAmount, gLastReadIOPLoc);
+                    snd_ShowError(64, gLastVAGReadError, gLastReadSector, gLastReadAmount, gLastReadIOPLoc);
                 }
             }
 
             if (gDataReadBusy) {
                 if (gLastDATAReadError) {
-                    snd_ShowError(65, gLastDATAReadError, gLastReadSector,
-                                  gLastReadAmount, gLastReadIOPLoc);
+                    snd_ShowError(65, gLastDATAReadError, gLastReadSector, gLastReadAmount, gLastReadIOPLoc);
                     gSSNeedSectors = 0;
                 } else if (gBreakDataRead) {
                     gSSNeedSectors = 0;
                 } else if (gDataReadBusy != -1) {
                     if (gReadIsEE && gSSNeedSectors) {
+                        SInt32 did;
+                        sceSifDmaData transData;
+
                         transData.data = (unsigned int)gMasterReadBuffer;
                         transData.addr = (unsigned int)gCurrentReadBuffer;
                         transData.size = gSSReadSectors * 2048;
                         transData.mode = 0;
                         dis = CpuSuspendIntr(&intr_state);
-                        did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone,
-                                               &gEEDMADoneSema);
+                        did = sceSifSetDmaIntr(&transData, 1, snd_EEDMADone, &gEEDMADoneSema);
                         if (!dis) {
                             CpuResumeIntr(intr_state);
                         }
@@ -2574,8 +2448,7 @@ void snd_VAGStreamLoadDoneThread() {
 
                     if (gSSNeedSectors) {
                         gSSReadLoc += gSSReadSectors;
-                        gCurrentReadBuffer =
-                            (char *)gCurrentReadBuffer + 2048 * gSSReadSectors;
+                        gCurrentReadBuffer = (char *)gCurrentReadBuffer + 2048 * gSSReadSectors;
                     }
                 }
 
@@ -2590,71 +2463,61 @@ void snd_VAGStreamLoadDoneThread() {
             } else if (gVAGReadBusy) {
                 hand = gVAGReadBusy->owner->handler;
                 stream = gVAGReadBusy->owner;
-                if ((stream->flags & 1) != 0 ||
-                    (stream->handler->SH.flags & 4) != 0) {
+                if ((stream->flags & 1) != 0 || (stream->handler->SH.flags & 4) != 0) {
                     gVAGReadBusy = 0;
                     stream->handler->SH.flags |= 4u;
                 } else if (gLastVAGReadError) {
                     gVAGReadBusy = 0;
                     stream->handler->SH.flags |= 4u;
                 } else if ((gVAGReadBusy->flags & 0x10) != 0) {
-                    vfh = (SCEIVAGHeader *)&gVAGReadBusy
-                              ->IOPbuff[stream->file_start_offset];
+                    UInt32 sr;
+                    UInt32 size;
+                    SCEIVAGHeader *vfh;
+
+                    vfh = (SCEIVAGHeader *)&gVAGReadBusy->IOPbuff[stream->file_start_offset];
                     if (vfh->ID == 0x70474156 || vfh->ID == 0x56414770) {
                         sr = vfh->SampleRate;
                         if (vfh->ID == 0x70474156) {
-                            sr = (sr >> 24) | ((unsigned int)sr >> 8) & 0xFF00 |
-                                 (sr << 8) & 0xFF0000 | (sr << 24);
+                            sr = (sr >> 24) | ((unsigned int)sr >> 8) & 0xFF00 | (sr << 8) & 0xFF0000 | (sr << 24);
                         }
 
-                        stream->sample_rate = did;
+                        stream->sample_rate = sr;
                         stream->pitch = (sr * 0x1000) / 48000;
                         size = vfh->DataSize;
                         if (vfh->ID == 0x70474156) {
-                            size = (size >> 24) | (size >> 8) & 0xFF00 |
-                                   (size << 8) & 0xFF0000 | (size << 24);
+                            size = (size >> 24) | (size >> 8) & 0xFF00 | (size << 8) & 0xFF0000 | (size << 24);
                         }
 
                         stream->samples_total = 28 * (size >> 4);
                         stream->bytes_played = 0;
-                        stream->bytes_remaining =
-                            stream->file_start_offset + 48 + size;
+                        stream->bytes_remaining = size + 48 + stream->file_start_offset;
                         stream->bytes_total = stream->bytes_remaining;
                         stream->buff[0].flags = 9;
                         stream->buff[1].flags = 1;
-                        if (stream->bytes_remaining <
-                            (stream->buff_size >> 1) + 1) {
+                        if (stream->bytes_remaining < (stream->buff_size >> 1) + 1) {
                             stream->buff[0].flags |= 4u;
                             if ((stream->flags & 0x400) != 0) {
                                 stream->buff[0].flags |= 0x800u;
                             }
                         } else {
-                            if (stream->bytes_remaining >=
-                                stream->buff_size + 1) {
-                                stream->buff[0].flags |= 0x20u;
-                            } else {
+                            if (stream->bytes_remaining < stream->buff_size + 1) {
                                 stream->buff[1].flags |= 4u;
+                            } else {
+                                stream->buff[0].flags |= 0x20u;
                             }
                         }
 
                         if (stream->sync_list) {
-                            stream->sync_list->bytes_remaining =
-                                size + stream->sync_list->file_start_offset +
-                                48;
-                            stream->sync_list->bytes_total =
-                                stream->sync_list->bytes_remaining;
+                            stream->sync_list->bytes_remaining = size + 48 + stream->sync_list->file_start_offset;
+                            stream->sync_list->bytes_total = stream->sync_list->bytes_remaining;
                             stream->sync_list->pitch = stream->pitch;
-                            stream->sync_list->sample_rate =
-                                stream->sample_rate;
+                            stream->sync_list->sample_rate = stream->sample_rate;
                             stream->sync_list->buff[0].flags = 9;
                             stream->sync_list->buff[1].flags = 1;
-                            stream->sync_list->buff[0].flags |=
-                                stream->buff[0].flags & 0x800;
+                            stream->sync_list->buff[0].flags |= stream->buff[0].flags & 0x800;
                             stream->sync_list->bytes_played = 0;
-                            stream->sync_list->samples_total =
-                                stream->samples_total;
-                            if (!snd_AddVAGStreamLoadBuffer(
-                                    stream->sync_list->buff)) {
+                            stream->sync_list->samples_total = stream->samples_total;
+                            if (!snd_AddVAGStreamLoadBuffer(stream->sync_list->buff)) {
                                 dead = 1;
                             }
 
@@ -2674,19 +2537,17 @@ void snd_VAGStreamLoadDoneThread() {
                             stream->orig_pan = 0;
                         }
 
-                        if (!dead && stream->buff_size >> 1 < stream->bytes_remaining) {
+                        if (!dead && stream->bytes_remaining > (stream->buff_size >> 1)) {
                             if (stream->sync_list) {
-                                if (!snd_AddVAGStreamLoadBuffer(
-                                    &stream->sync_list->buff[1])) {
-                                        dead = 1;
-                                    }
+                                if (!snd_AddVAGStreamLoadBuffer(&stream->sync_list->buff[1])) {
+                                    dead = 1;
+                                }
                             }
 
                             if (!dead) {
-                                if (!snd_AddVAGStreamLoadBuffer(
-                                    &stream->buff[1])) {
-                                        dead = 1;
-                                    }
+                                if (!snd_AddVAGStreamLoadBuffer(&stream->buff[1])) {
+                                    dead = 1;
+                                }
                             }
                         }
 
@@ -2698,6 +2559,11 @@ void snd_VAGStreamLoadDoneThread() {
                             dead = 0;
                         }
                     } else if (vfh->ID == 0x56504B20) {
+                        VAGStreamHeader *new_master;
+                        VPKFileHeadPtr vpk;
+                        UInt32 original_stream_flags;
+                        BOOL queued_stream;
+
                         vpk = (VPKFileHeadPtr)vfh;
                         original_stream_flags = stream->flags;
                         queued_stream = stream->handler->qued_stream == stream;
@@ -2706,33 +2572,278 @@ void snd_VAGStreamLoadDoneThread() {
                             snd_MarkVoiceFree(stream->handler->doubling_voice);
                             stream->handler->doubling_voice = -1;
                         }
+
                         if (vpk->buff_size != stream->buff_size) {
-                            snd_ShowError(67, stream->buff_size, vpk->buff_size,
-                                          0, 0);
+                            snd_ShowError(67, stream->buff_size, vpk->buff_size, 0, 0);
                             gVAGReadBusy = 0;
                             stream->handler->SH.flags |= 4u;
                         } else {
-                            new_master = (VAGStreamHeader *)
-                                snd_GetFirstOfAdjacentStreamHeaders(
-                                    stream, vpk->num_channels);
+                            new_master =
+                                (VAGStreamHeader *)snd_GetFirstOfAdjacentStreamHeaders(stream, vpk->num_channels);
                             if (!new_master) {
                                 snd_ShowError(68, 0, 0, 0, 0);
                                 gVAGReadBusy = 0;
                                 stream->handler->SH.flags |= 4u;
                             } else {
+                                BOOL free_orig_stream;
+                                VAGStreamHeader *list_hold;
+
                                 free_orig_stream = 1;
                                 snd_LockMasterTick(88);
                                 snd_LockVoiceAllocatorEx(1, 92);
-                                // TODO wip here
+                                walk = new_master;
+                                for (i = 0; i < vpk->num_channels; ++i) {
+                                    if (walk == stream) {
+                                        free_orig_stream = 0;
+                                        break;
+                                    }
+                                    walk = walk->next;
+                                }
+
+                                walk = new_master;
+                                walk->file_handle = stream->file_handle;
+                                walk->stdio_file_offset = stream->stdio_file_offset;
+                                list_hold = new_master;
+                                for (i = 0; i < vpk->num_channels; i++) {
+                                    walk->handler = stream->handler;
+                                    walk->flags = original_stream_flags | 2;
+                                    if ((walk->handler->SH.flags & 2) != 0) {
+                                        walk->flags |= 0x10u;
+                                    }
+
+                                    walk->sync_list = 0;
+                                    walk->file_start_sector = stream->file_start_sector;
+                                    if (i == 0) {
+                                        walk->voice = stream->voice;
+                                        if (walk != stream) {
+                                            stream->voice = -1;
+                                            stream->file_handle = stream->file_handle;
+                                        }
+                                    } else {
+                                        list_hold->sync_list = walk;
+                                        list_hold = walk;
+                                        walk->voice = snd_AllocateVoice(stream->handler->SH.VolGroup, 127);
+                                        walk->file_handle = -1;
+                                    }
+
+                                    if (walk->voice == -1) {
+                                        printf("989SND error: didn't get a voice for an interleaved stream!\n");
+                                        while (1)
+                                            ;
+                                    }
+
+                                    gChannelStatus[walk->voice].Status = 4;
+                                    gChannelStatus[walk->voice].Owner = &walk->handler->SH;
+                                    walk->sample_rate = vpk->sample_rate;
+                                    walk->pitch = (walk->sample_rate * 0x1000) / 48000;
+                                    size = vpk->size;
+                                    walk->samples_total = 28 * (size >> 4);
+                                    walk->bytes_played = 0;
+                                    walk->bytes_remaining = size;
+                                    walk->bytes_total = size;
+                                    walk->buff[0].flags = 9;
+                                    walk->buff[1].flags = 1;
+                                    walk->buff[0].flags |= 0x100u;
+                                    walk->buff[1].flags |= 0x100u;
+                                    if (i == 0) {
+                                        walk->buff[0].flags |= 0x200u;
+                                        walk->buff[1].flags |= 0x200u;
+                                    }
+
+                                    if (walk->bytes_remaining < (walk->buff_size >> 1) + 1) {
+                                        walk->buff[0].flags |= 4u;
+                                    } else {
+                                        if (stream->bytes_remaining < stream->buff_size + 1) {
+                                            walk->buff[1].flags |= 4u;
+                                        } else {
+                                            walk->buff[0].flags |= 0x20u;
+                                        }
+                                    }
+
+                                    walk->orig_vol = vpk->vol_pan[i].vol;
+                                    walk->orig_pan = vpk->vol_pan[i].pan;
+                                    walk->group = vpk->vol_pan[i].group;
+                                    walk->PlayingBuffer = 0;
+                                    walk->buff[0].is_end = 0;
+                                    walk->buff[1].is_end = 0;
+                                    walk->LastPosition = 0;
+                                    walk->ErrorAccumulator = 0;
+                                    walk->LastBufferChangeTick = 0;
+                                    walk->last_loc = 0;
+                                    walk->cur_pos = 0;
+                                    walk->file_start_offset = 0;
+                                    if (i == 0) {
+                                        walk->next_read_offset = stream->file_start_sector + 1;
+                                        walk->file_start_sector = stream->file_start_sector;
+                                        if ((walk->flags & 0x1c000) != 0) {
+                                            UInt32 overage;
+                                            overage = (walk->ee_NextIOPReadAddress - walk->ee_EEStartAddress) %
+                                                      (walk->buff_size >> 1);
+                                            if (overage) {
+                                                walk->ee_NextIOPReadAddress += (walk->buff_size >> 1) - overage;
+                                            }
+
+                                            walk->ee_NextIOPReadAddress += 2048;
+                                            if (walk->ee_NextIOPReadAddress >=
+                                                &walk->ee_EEStartAddress[walk->ee_BufferSize]) {
+                                                walk->ee_NextIOPReadAddress -= walk->ee_BufferSize;
+                                            }
+                                        }
+                                    }
+                                    walk = walk->next;
+                                }
+
+                                dis = CpuSuspendIntr(&intr_state);
+                                if (free_orig_stream) {
+                                    stream->flags = 1;
+                                    stream->voice = -1;
+                                }
+
+                                stream = new_master;
+                                if (!queued_stream) {
+                                    new_master->handler->SH.Sound = (SoundPtr)new_master;
+                                    new_master->handler->num_streams = vpk->num_channels;
+                                }
+
+                                for (walk = new_master; walk; walk = walk->sync_list) {
+                                    SInt32 core;
+                                    SInt32 c_v;
+
+                                    core = walk->voice / 24;
+                                    c_v = walk->voice % 24;
+                                    stream->handler->SH.Voices.core[core] |= 1 << c_v;
+                                }
+
+                                gVAGReadBusy = new_master->buff;
+                                if (!dis) {
+                                    CpuResumeIntr(intr_state);
+                                }
+
+                                if (!dead && new_master->bytes_remaining > (new_master->buff_size >> 1)) {
+                                    if (!snd_AddVAGStreamLoadBuffer(&new_master->buff[1])) {
+                                        dead = 1;
+                                    }
+                                }
+
+                                if (!dead) {
+                                    snd_KickVAGRead(0);
+                                } else {
+                                    gVAGReadBusy = 0;
+                                    stream->handler->SH.flags |= 4u;
+                                    dead = 0;
+                                }
+
+                                snd_UnlockVoiceAllocator();
+                                snd_UnlockMasterTick();
                             }
                         }
+                    } else {
+                        gVAGReadBusy = 0;
+                        snd_ShowError(69, stream->file_start_sector, stream->file_start_offset, 0, 0);
+                        stream->handler->SH.flags = 4;
+                    }
+                } else {
+                    if ((gVAGReadBusy->flags & 0x100) == 0) {
+                        char *start_addr;
+                        if ((gVAGReadBusy->flags & 0x400) != 0) {
+                            gVAGReadBusy->flags &= ~0x400u;
+                            memcpy(gVAGReadBusy->shift_to, gVAGReadBusy->shift_from, gVAGReadBusy->shift_amount);
+                            gVAGReadBusy->bytes -= gVAGReadBusy->shift_from - gVAGReadBusy->shift_to;
+                        }
+
+                        if (gVAGReadBusy->is_end && (gVAGReadBusy->owner->flags & 0x400) != 0 &&
+                            (gVAGReadBusy->flags & 0x800) == 0) {
+                            SInt32 space_left;
+                            space_left = (gVAGReadBusy->owner->buff_size >> 1) - gVAGReadBusy->bytes + 16;
+                            *(&gVAGReadBusy->IOPbuff[gVAGReadBusy->bytes] - 15) = 0;
+                            if (gVAGReadBusy->bytes > 0x10) {
+                                *(&gVAGReadBusy->IOPbuff[gVAGReadBusy->bytes] - 31) = 0;
+                            }
+
+                            gVAGReadBusy->is_end = 0;
+                            gVAGReadBusy->owner->flags &= ~0x20u;
+                            gVAGReadBusy->owner->bytes_remaining = gVAGReadBusy->owner->bytes_total;
+                            gVAGReadBusy->owner->next_read_offset = gVAGReadBusy->owner->file_start_sector;
+                            if ((gVAGReadBusy->owner->flags & 0x1C000) != 0) {
+                                UInt32 overage;
+                                overage = (gVAGReadBusy->owner->ee_NextIOPReadAddress -
+                                           gVAGReadBusy->owner->ee_EEStartAddress) %
+                                          (gVAGReadBusy->owner->buff_size >> 1);
+                                if (overage) {
+                                    gVAGReadBusy->owner->ee_NextIOPReadAddress +=
+                                        (gVAGReadBusy->owner->buff_size >> 1) - overage;
+                                }
+
+                                if (gVAGReadBusy->owner->ee_NextIOPReadAddress >=
+                                    &gVAGReadBusy->owner->ee_EEStartAddress[gVAGReadBusy->owner->ee_BufferSize]) {
+                                    gVAGReadBusy->owner->ee_NextIOPReadAddress -= gVAGReadBusy->owner->ee_BufferSize;
+                                }
+                            }
+
+                            if (space_left > 2048) {
+                                gVAGReadBusy->flags |= 0x400u;
+                                gVAGReadBusy->shift_to = &gVAGReadBusy->IOPbuff[gVAGReadBusy->bytes - 16];
+                                gVAGReadBusy->shift_from =
+                                    &gVAGReadBusy->IOPbuff[gVAGReadBusy->bytes + 64 +
+                                                           gVAGReadBusy->owner->file_start_offset - 16];
+                                gVAGReadBusy->shift_amount = space_left - (gVAGReadBusy->owner->file_start_offset + 64);
+                                snd_KickVAGRead(gVAGReadBusy->bytes - 16);
+                                goto label;
+                            } else {
+                                VAGBuffer *next_buff;
+                                gVAGReadBusy->bytes -= 16;
+                                next_buff = (gVAGReadBusy == gVAGReadBusy->owner->buff) ? &gVAGReadBusy->owner->buff[1]
+                                                                                        : gVAGReadBusy->owner->buff;
+
+                                next_buff->flags |= 0x400u;
+                                next_buff->shift_from = &next_buff->IOPbuff[next_buff->owner->file_start_offset] + 64;
+                                next_buff->shift_to = &next_buff->IOPbuff[0];
+                                next_buff->shift_amount =
+                                    (gVAGReadBusy->owner->buff_size >> 1) - (next_buff->owner->file_start_offset + 64);
+                            }
+                        }
+
+                        if ((gVAGReadBusy->flags & 0x800) != 0) {
+                            start_addr = &gVAGReadBusy->IOPbuff[gVAGReadBusy->owner->file_start_offset + 48];
+                            gVAGReadBusy->bytes = gVAGReadBusy->bytes - (gVAGReadBusy->owner->file_start_offset + 64);
+                        } else {
+                            start_addr = gVAGReadBusy->IOPbuff;
+                        }
+
+                        gVAGReadBusy->bytes = snd_MakeVAGLoop(start_addr, gVAGReadBusy->bytes, gVAGReadBusy->is_end,
+                                                              gVAGReadBusy->flags & 0x800);
+                    } else {
+                        walk = gVAGReadBusy->owner;
+                        i = gVAGReadBusy != walk->buff;
+                        while (walk) {
+                            walk->buff[i].bytes =
+                                snd_MakeVAGLoop(walk->buff[i].IOPbuff, gVAGReadBusy->bytes, gVAGReadBusy->is_end, 0);
+                            walk = walk->sync_list;
+                        }
+                    }
+
+                    gVAGReadBusy->flags |= 0x80u;
+                    if ((gVAGReadBusy->flags & 1) != 0) {
+                        snd_AddVAGStreamDMABuffer(gVAGReadBusy);
+                        do_dma = 1;
+                    } else if ((gVAGReadBusy->flags & 0x40) != 0) {
+                        gVAGReadBusy->owner->handler->SH.flags |= 8u;
+                        snd_StartVAGStreamSounding(gVAGReadBusy->owner, 1);
+                    }
+
+                    gVAGReadBusy = 0;
+                    if (do_dma) {
+                        SignalSema(gStartDMASema);
+                        do_dma = 0;
                     }
                 }
+            } else {
+                gVAGReadBusy = 0;
             }
+        label:
         }
 
-        if (!gVAGReadBusy && VAGStreamLoadList ||
-            !gDataReadBusy && gSSNeedSectors) {
+        if (!gVAGReadBusy && VAGStreamLoadList || !gDataReadBusy && gSSNeedSectors) {
             SignalSema(gStartDataLoadSema);
         }
 
@@ -2746,17 +2857,262 @@ void snd_VAGStreamLoadDoneThread() {
 }
 #endif
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_RestartInterleavedStream);
+void snd_RestartInterleavedStream(VAGStreamHandler *handler) {
+    VAGStreamHeader *walk;
+    SInt32 i;
+    UInt32 overage;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_SignalDataReadDone);
+    walk = (VAGStreamHeader *)handler->SH.Sound;
+    if (!walk) {
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_VAGStreamDMAThread);
+    for (i = 0; i < handler->num_streams; ++i) {
+        walk->flags &= 0x1FD00u;
+        walk->flags |= 2u;
+        if ((handler->SH.flags & 2) != 0) {
+            walk->flags |= 0x10u;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_KickVAGDMA);
+        walk->bytes_played = 0;
+        walk->bytes_remaining = walk->bytes_total;
+        walk->buff[0].flags = 9;
+        walk->buff[1].flags = 1;
+        walk->buff[0].flags |= 0x100u;
+        walk->buff[1].flags |= 0x100u;
+        if (i == 0) {
+            walk->buff[0].flags |= 0x200u;
+            walk->buff[1].flags |= 0x200u;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_VAGStreamDMADoneThread);
+        if (walk->bytes_remaining < (walk->buff_size >> 1) + 1) {
+            walk->buff[0].flags |= 4u;
+        } else {
+            if (walk->bytes_remaining < walk->buff_size + 1) {
+                walk->buff[1].flags |= 4u;
+            } else {
+                walk->buff[0].flags |= 0x20u;
+            }
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_RepairIOPMemoryBuffer);
+        walk->PlayingBuffer = 0;
+        walk->buff[0].is_end = 0;
+        walk->buff[1].is_end = 0;
+        walk->LastPosition = 0;
+        walk->ErrorAccumulator = 0;
+        walk->LastBufferChangeTick = 0;
+        walk->last_loc = 0;
+        walk->cur_pos = 0;
+        walk->next_read_offset = walk->file_start_sector + 1;
+        walk = walk->next;
+    }
+
+    walk = (VAGStreamHeader *)handler->SH.Sound;
+    if ((walk->flags & 0x1C000) != 0) {
+        overage = (walk->ee_NextIOPReadAddress - walk->ee_EEStartAddress) % (walk->buff_size >> 1);
+        if (overage) {
+            walk->ee_NextIOPReadAddress += (walk->buff_size >> 1) - overage;
+        }
+
+        walk->ee_NextIOPReadAddress += 2048;
+        if (walk->ee_NextIOPReadAddress >= &walk->ee_EEStartAddress[walk->ee_BufferSize]) {
+            walk->ee_NextIOPReadAddress -= walk->ee_BufferSize;
+        }
+    }
+
+    snd_AddVAGStreamLoadBuffer(walk->buff);
+    if (walk->bytes_remaining > (walk->buff_size >> 1) && !snd_AddVAGStreamLoadBuffer(&walk->buff[1])) {
+        handler->SH.flags |= 4u;
+    }
+
+    SignalSema(gStartDataLoadSema);
+}
+
+void snd_SignalDataReadDone() {
+    SInt32 th_id;
+
+    if (gBreakDataRead) {
+        gLastDATAReadError = 1;
+    }
+
+    gBreakDataRead = 0;
+    gSSNeedSectors = 0;
+    if (gReadWaitThread != -1) {
+        th_id = gReadWaitThread;
+        gReadWaitThread = -1;
+        WakeupThread(th_id);
+    }
+
+    if (gReadIsEE) {
+        snd_SetCDSifReg(0, gLastDATAReadError);
+    }
+}
+
+void snd_VAGStreamDMAThread() {
+    SInt32 intr_state;
+    SInt32 dis;
+    SInt32 ws_ret;
+
+    ws_ret = 0;
+    while (1) {
+        if (!VAGStreamDMAList || gDMAInUse[0] && gDMAInUse[1]) {
+            ws_ret = WaitSema(gStartDMASema);
+        }
+
+        if (ws_ret) {
+            snd_ShowError(70, ws_ret, 0, 0, 0);
+        }
+
+        if (!gDMAInUse[0] && gDMABusy[0] && !gDMAInUse[1] && gDMABusy[1]) {
+            ws_ret = WaitSema(gStartDMASema);
+        }
+
+        if (ws_ret) {
+            snd_ShowError(70, ws_ret, 0, 0, 0);
+        }
+
+        if (!gDMABusy[0] && !gDMAInUse[0] && VAGStreamDMAList) {
+            dis = CpuSuspendIntr(&intr_state);
+            gDMAInUse[0] = 1;
+            while (!gDMABusy[0] && VAGStreamDMAList) {
+                gDMABusy[0] = VAGStreamDMAList;
+                VAGStreamDMAList = VAGStreamDMAList->list;
+                if (!VAGStreamDMAList)
+                    VAGStreamDMAListTail = 0;
+                if (gDMABusy[0] && (gDMABusy[0]->owner->handler->SH.flags & 4) != 0)
+                    gDMABusy[0] = 0;
+            }
+
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+
+            if (!gDMABusy[0]) {
+                gDMAInUse[0] = 0;
+            } else {
+                sceSdSetTransIntrHandler(0, (sceSdTransIntrHandler)snd_VAGDMADone0, 0);
+                snd_KickVAGDMA(0);
+            }
+        }
+
+        if (!gDMABusy[1] && !gDMAInUse[1] && VAGStreamDMAList) {
+            dis = CpuSuspendIntr(&intr_state);
+            gDMAInUse[1] = 1;
+            while (!gDMABusy[1] && VAGStreamDMAList) {
+                gDMABusy[1] = VAGStreamDMAList;
+                VAGStreamDMAList = VAGStreamDMAList->list;
+                if (!VAGStreamDMAList) {
+                    VAGStreamDMAListTail = 0;
+                }
+                if (gDMABusy[1] && (gDMABusy[1]->owner->handler->SH.flags & 4) != 0) {
+                    gDMABusy[1] = 0;
+                }
+            }
+
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+
+            if (!gDMABusy[1]) {
+                gDMAInUse[1] = 0;
+            } else {
+                sceSdSetTransIntrHandler(1, (sceSdTransIntrHandler)snd_VAGDMADone0, 0);
+                snd_KickVAGDMA(1);
+            }
+        }
+    }
+}
+
+void snd_KickVAGDMA(SInt32 ch) {
+    SInt32 size;
+
+    if (!gDMABusy[ch]) {
+        gDMAInUse[ch] = 0;
+        return;
+    }
+
+    if ((gDMABusy[ch]->flags & 0x100) != 0) {
+        size = (gDMABusy[ch]->owner->buff_size >> 1) * gDMABusy[ch]->owner->handler->num_streams;
+    } else {
+        size = gDMABusy[ch]->owner->buff_size >> 1;
+    }
+
+    sceSdVoiceTrans(ch, 0, gDMABusy[ch]->IOPbuff, (UInt32)gDMABusy[ch]->SPUbuff, size);
+}
+
+void snd_VAGStreamDMADoneThread() {
+    SInt32 ws_ret;
+
+    ws_ret = 0;
+
+    while (1) {
+        if (!gLastDMA0Complete && !gLastDMA1Complete) {
+            ws_ret = WaitSema(gDoneDMASema);
+        }
+
+        if (ws_ret) {
+            snd_ShowError(71, ws_ret, 0, 0, 0);
+        }
+
+        if (gLastDMA0Complete) {
+            gLastDMA0Complete = 0;
+            snd_VAGDMADone(0);
+        }
+
+        if (gLastDMA1Complete) {
+            gLastDMA1Complete = 0;
+            snd_VAGDMADone(1);
+        }
+
+        if (VAGStreamDMAList) {
+            SignalSema(gStartDMASema);
+        }
+    }
+}
+
+void snd_RepairIOPMemoryBuffer(VAGBuffer *buff) {
+    SInt32 back;
+    SInt32 ii;
+    VAGStreamHeader *walk;
+    VAGStreamHeader *master;
+    int i;
+    u_int c;
+
+    if ((buff->owner->flags & 0x400) != 0 && (buff->flags & 0x100) == 0) {
+        return;
+    } else {
+        if ((buff->flags & 0x100) == 0) {
+            back = buff->bytes;
+            for (ii = 0; ii < 5 && back >= 16; ++ii) {
+                memcpy(&buff->IOPbuff[16 * ii], &buff->OrigIOPbuff[16 * ii], 0x10u);
+                back -= 16;
+            }
+
+            if (gVAGReadBusy->bytes > 0x20) {
+                memcpy(&buff->IOPbuff[buff->bytes] - 32, &buff->OrigIOPbuff[buff->bytes] - 32, 0x20u);
+            }
+        } else {
+            master = walk = buff->owner;
+            i = buff != walk->buff;
+            c = 0;
+
+            while (walk) {
+                back = buff->bytes;
+                for (ii = 0; ii < 5 && back >= 16; ++ii) {
+                    memcpy(&walk->buff[i].IOPbuff[16 * ii], &walk->buff[i].OrigIOPbuff[16 * ii], 0x10u);
+                    back -= 16;
+                }
+
+                if (gVAGReadBusy->bytes > 0x20) {
+                    memcpy(&walk->buff[i].IOPbuff[master->buff[i].bytes] - 32,
+                           &walk->buff[i].OrigIOPbuff[master->buff[i].bytes] - 32, 0x20u);
+                }
+
+                walk = walk->sync_list;
+            }
+        }
+    }
+}
 
 INCLUDE_ASM("asm/nonmatchings/stream", snd_VAGDMADone);
 

@@ -27,6 +27,8 @@ extern SInt32 gSPURAMTransSema;
 extern SInt32 gDoneLoadSema;
 extern SInt32 gOddCdError;
 extern SInt32 gDMAInUse[2];
+extern SInt32 gLastDMA0Complete;
+extern SInt32 gLastDMA1Complete;
 extern SInt32 gDoneDMASema;
 extern SInt32 gWaitingDMAComplete;
 

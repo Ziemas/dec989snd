@@ -4,6 +4,7 @@
 #include "intrman.h"
 #include "libcdvd.h"
 #include "libsd.h"
+#include "sdmacro.h"
 #include "sif.h"
 #include "sifrpc.h"
 #include "stdio.h"
@@ -2362,9 +2363,6 @@ SInt32 snd_GetStreamDataFromCD(SInt32 offset, SInt32 readbytes, UInt32 readsecto
     return ret_code;
 }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/stream", snd_VAGStreamLoadDoneThread);
-#else
 void snd_VAGStreamLoadDoneThread() {
     SInt32 do_dma;
     SInt32 intr_state;
@@ -2416,7 +2414,8 @@ void snd_VAGStreamLoadDoneThread() {
                 } else if (gBreakDataRead) {
                     gSSNeedSectors = 0;
                 } else if (gDataReadBusy != -1) {
-                    if (gReadIsEE && gSSNeedSectors) {
+                    if (!gReadIsEE) {
+                    } else if (gSSNeedSectors) {
                         SInt32 did;
                         sceSifDmaData transData;
 
@@ -2855,7 +2854,6 @@ void snd_VAGStreamLoadDoneThread() {
         }
     }
 }
-#endif
 
 void snd_RestartInterleavedStream(VAGStreamHandler *handler) {
     VAGStreamHeader *walk;
@@ -3114,51 +3112,766 @@ void snd_RepairIOPMemoryBuffer(VAGBuffer *buff) {
     }
 }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_VAGDMADone);
+void snd_VAGDMADone(SInt32 ch) {
+    SInt32 start;
+    SInt32 start_chain;
+    SInt32 done;
+    SInt32 nothing;
+    SInt32 start_after_next_load;
+    VAGStreamHeaderPtr walk;
+    SInt32 which;
+    SInt32 dv;
+    SInt32 intr_state;
+    SInt32 dis;
+    SInt32 core;
+    SInt32 voice;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StartVAGStreamSounding);
+    if (!gDMABusy[ch]) {
+        gDMAInUse[ch] = 0;
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_MakeVAGLoop);
+    if ((gDMABusy[ch]->owner->flags & 0x800) != 0) {
+        snd_RepairIOPMemoryBuffer(gDMABusy[ch]);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetFreeVAGStream);
+    nothing = gDMABusy[ch]->flags & 1;
+    start = gDMABusy[ch]->flags & 4;
+    start_chain = gDMABusy[ch]->flags & 0x1000;
+    done = gDMABusy[ch]->is_end;
+    start_after_next_load = gDMABusy[ch]->flags & 0x20;
+    gDMABusy[ch]->flags &= 0xF00u;
+    if ((gDMABusy[ch]->owner->flags & 1) == 0 && (gDMABusy[ch]->owner->handler->SH.flags & 4) == 0) {
+        if (start) {
+            gDMABusy[ch]->owner->handler->SH.flags |= 8u;
+            snd_StartVAGStreamSounding(gDMABusy[ch]->owner, 1);
+        } else if (start_chain) {
+            gDMABusy[ch]->owner->handler->SH.flags |= 8u;
+            walk = (VAGStreamHeaderPtr)gDMABusy[ch]->owner->handler->SH.Sound;
+            snd_StartVAGStreamSounding(walk, 1);
+        } else if (!nothing) {
+            dv = gDMABusy[ch]->owner->handler->doubling_voice;
+            dis = CpuSuspendIntr(&intr_state);
+            if ((gDMABusy[ch]->flags & 0x100) != 0) {
+                walk = gDMABusy[ch]->owner;
+                which = gDMABusy[ch] != walk->buff;
+                while (walk) {
+                    core = walk->voice / 24;
+                    voice = walk->voice % 24;
+                    sceSdSetAddr((core | SD_VOICE(voice)) | SD_VA_LSAX, (UInt32)walk->buff[which].SPUbuff);
+                    walk = walk->sync_list;
+                }
+            } else {
+                if (dv != -1) {
+                    core = dv / 24;
+                    voice = dv % 24;
+                    sceSdSetAddr((core | SD_VOICE(voice)) | SD_VA_LSAX, (UInt32)gDMABusy[ch]->SPUbuff);
+                }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_AddVAGStreamDMABuffer);
+                core = gDMABusy[ch]->owner->voice / 24;
+                voice = gDMABusy[ch]->owner->voice % 24;
+                sceSdSetAddr((core | SD_VOICE(voice)) | SD_VA_LSAX, (UInt32)gDMABusy[ch]->SPUbuff);
+            }
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_AddVAGStreamLoadBuffer);
+        if (((gDMABusy[ch]->owner->flags & 2) != 0 || (gDMABusy[ch]->owner->flags & 8) != 0 ||
+             (gDMABusy[ch]->owner->flags & 0x10) != 0) &&
+            ((gDMABusy[ch]->owner->flags & 0x20) == 0 || (gDMABusy[ch]->owner->flags & 0x400) != 0)) {
+            if (start_after_next_load) {
+                gDMABusy[ch]->flags |= 0x40u;
+            }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_RemoveVAGStreamLoadBuffer);
+            if ((gDMABusy[ch]->flags & 0x800) == 0 && !snd_AddVAGStreamLoadBuffer(gDMABusy[ch])) {
+                gDMABusy[ch]->owner->handler->SH.flags |= 4u;
+            }
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_RemoveVAGStreamDMABuffer);
+        if (done) {
+            gDMABusy[ch]->owner->flags |= 0x40u;
+        }
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_AddQueEntryToHandler);
+    gDMABusy[ch] = 0;
+    SignalSema(gStartDMASema);
+    SignalSema(gStartDataLoadSema);
+}
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetFreeQueSlot);
+// INCLUDE_ASM("asm/nonmatchings/stream", snd_StartVAGStreamSounding);
+void snd_StartVAGStreamSounding(VAGStreamHeader *stream, SInt32 do_sync_list) {
+    SInt32 paused;
+    UInt32 core;
+    UInt32 c_v;
+    SInt32 x;
+    BOOL first;
+    SInt32 dv;
+    UInt32 dv_core;
+    UInt32 dv_v;
+    SInt32 state;
+    SInt32 dis;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_FreeQueChain);
+    core = 0;
+    c_v = 0;
+    x = 0;
+    first = 1;
+    dv = -1;
+    dv_core = 0;
+    dv_v = 0;
+    dis = CpuSuspendIntr(&state);
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_CleanUpThread);
+    while (stream) {
+        if (stream->voice == -1) {
+            stream->flags |= 0x80u;
+            if (!dis) {
+                CpuResumeIntr(state);
+            }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_CleanUpSema);
+            return;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_FreeVAGStreamResources);
+        if (first) {
+            if ((stream->handler->SH.flags & 0x10) != 0) {
+                stream->handler->SH.Current_Vol = stream->master_volume;
+                stream->handler->SH.Current_Pan = stream->master_pan;
+            }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_CloseVAGStreaming);
+            dv = stream->handler->doubling_voice;
+            first = 0;
+        } else {
+            dv = -1;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamSafeCheckCDIdle);
+        core = stream->voice / 24;
+        c_v = stream->voice % 24;
+        paused = stream->flags & 0x10;
+        gNumStreamsPlaying++;
+        gChannelStatus[stream->voice].Volume.left = gChannelStatus[stream->voice].Volume.right = 0;
+        gChannelStatus[stream->voice].VolGroup = stream->handler->SH.VolGroup;
+        gChannelStatus[stream->voice].Owner = &stream->handler->SH;
+        if (dv != -1) {
+            stream->orig_pan = 270;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetFreeVAGStreamHandler);
+        snd_MakeVolumesB(stream->handler->group_vols[stream->group], stream->handler->SH.Current_Vol,
+                         stream->handler->SH.Current_Pan, stream->orig_vol, stream->orig_pan, 127, 0,
+                         &gChannelStatus[stream->voice].Volume);
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_AddStreamToHandler);
+        if ((stream->buff[0].flags & 0x800) == 0 && stream->bytes_total > (stream->buff_size >> 1)) {
+            stream->flags |= 0x200u;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_AddStreamToHandlerQueue);
+        if (dv != -1) {
+            gChannelStatus[dv].Volume.right = gChannelStatus[stream->voice].Volume.left;
+            gChannelStatus[dv].Volume.left = gChannelStatus[stream->voice].Volume.right;
+            gChannelStatus[dv].VolGroup = gChannelStatus[stream->voice].VolGroup;
+            gChannelStatus[dv].Owner = &stream->handler->SH;
+            dv_core = dv / 24;
+            dv_v = dv % 24;
+            sceSdSetParam(
+                dv_core | SD_VOICE(dv_v) | SD_VP_VOLL,
+                paused
+                    ? 0
+                    : (UInt16)snd_AdjustVolToGroup(gChannelStatus[dv].Volume.left, gChannelStatus[dv].VolGroup) >> 1);
+            sceSdSetParam(
+                dv_core | SD_VOICE(dv_v) | SD_VP_VOLR,
+                paused
+                    ? 0
+                    : (UInt16)snd_AdjustVolToGroup(gChannelStatus[dv].Volume.right, gChannelStatus[dv].VolGroup) >> 1);
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetNumStreamChannels);
+            sceSdSetSwitch(dv_core | SD_S_VMIXL, sceSdGetSwitch(dv_core | SD_S_VMIXL) | (1 << dv_v));
+            sceSdSetSwitch(dv_core | SD_S_VMIXR, sceSdGetSwitch(dv_core | SD_S_VMIXR) | (1 << dv_v));
+            sceSdSetParam(dv_core | SD_VOICE(dv_v) | SD_VP_PITCH,
+                          paused ? 0 : snd_ModifyRawPitch(stream->handler->SH.Current_PM, stream->pitch));
+            sceSdSetAddr(dv_core | SD_VOICE(dv_v) | SD_VA_LSAX, 0x5000u);
+            stream->last_loc = (UInt32)&stream->buff[0].SPUbuff[stream->file_start_offset + 48];
+            sceSdSetAddr(dv_core | SD_VOICE(dv_v) | SD_VA_SSA, stream->last_loc);
+            sceSdSetParam(dv_core | SD_VOICE(dv_v) | SD_VP_ADSR1, 0x80Fu);
+            sceSdSetParam(dv_core | SD_VOICE(dv_v) | SD_VP_ADSR2, 0x1FC0u);
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_FixVol);
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL,
+                      paused ? 0
+                             : (UInt16)snd_AdjustVolToGroup(gChannelStatus[stream->voice].Volume.left,
+                                                            gChannelStatus[stream->voice].VolGroup) >>
+                                   1);
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR,
+                      paused ? 0
+                             : (UInt16)snd_AdjustVolToGroup(gChannelStatus[stream->voice].Volume.right,
+                                                            gChannelStatus[stream->voice].VolGroup) >>
+                                   1);
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_FixPan);
+        sceSdSetSwitch(core | SD_S_VMIXL, sceSdGetSwitch(core | SD_S_VMIXL) | (1 << c_v));
+        sceSdSetSwitch(core | SD_S_VMIXR, sceSdGetSwitch(core | SD_S_VMIXR) | (1 << c_v));
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH,
+                      paused ? 0 : snd_ModifyRawPitch(stream->handler->SH.Current_PM, stream->pitch));
+        sceSdSetAddr(core | SD_VOICE(c_v) | SD_VA_LSAX, 0x5000u);
+        stream->last_loc = (UInt32)&stream->buff[0].SPUbuff[stream->file_start_offset];
+        if ((stream->buff[0].flags & 0x100) == 0 && (stream->buff[0].flags & 0x100) == 0) {
+            stream->last_loc += 48;
+        }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_SetVAGStreamSubGroupVolPan);
+        sceSdSetAddr(core | SD_VOICE(c_v) | SD_VA_SSA, stream->last_loc);
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_ADSR1, 0x80Fu);
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_ADSR2, 0x1FC0u);
+
+        stream->flags |= 4u;
+        gAwaitingKeyOn[core] |= 1 << c_v;
+        if ((stream->flags & 0x100) != 0) {
+            gReverbVoices[core] |= 1 << c_v;
+        } else {
+            gReverbVoices[core] &= ~(1 << c_v);
+        }
+
+        if (dv != -1) {
+            gAwaitingKeyOn[dv_core] |= 1 << dv_v;
+            if ((stream->flags & 0x100) != 0) {
+                gReverbVoices[dv_core] |= 1 << dv_v;
+            } else {
+                gReverbVoices[dv_core] &= ~(1 << dv_v);
+            }
+        }
+
+        x++;
+
+        if (do_sync_list) {
+            stream = stream->sync_list;
+        } else {
+            stream = 0;
+        }
+    }
+
+    if (!dis) {
+        CpuResumeIntr(state);
+    }
+}
+
+SInt32 snd_MakeVAGLoop(SInt8 *vag, SInt32 size, SInt32 final, SInt32 sl) {
+    if (sl) {
+        *(&vag[1]) = 6;
+        *(&vag[17]) = 2;
+        *(&vag[size] - 15) = 3;
+        return size;
+    }
+
+    if (size == 16) {
+        memmove(vag + 16, vag, 16);
+        memset(vag, 0, 16);
+        *(&vag[17]) = 7;
+        *(&vag[1]) = 1;
+        return 32;
+    }
+
+    if (size == 32) {
+        *(&vag[1]) = 1;
+        return 32;
+    }
+
+    if (!final) {
+        *(&vag[1]) = 6;
+        *(&vag[17]) = 2;
+        *(&vag[size] - 15) = 3;
+    } else {
+        *(&vag[1]) = 4;
+        *(&vag[size] - 15) = 7;
+        *(&vag[size] - 31) = 1;
+    }
+
+    return size;
+}
+
+VAGStreamHeader *snd_GetFreeVAGStream(SInt32 vol_group) {
+    SInt32 intr_state;
+    VAGStreamHeader *walk;
+    SInt32 dis;
+    SInt32 x;
+
+    dis = CpuSuspendIntr(&intr_state);
+    walk = (VAGStreamHeader *)VAGStreamList;
+    for (x = 0; x < gStreamChannelRange[vol_group].min && walk; x++) {
+        walk = walk->next;
+    }
+
+    for (; walk && x < gStreamChannelRange[vol_group].max + 1; walk = walk->next, x++) {
+        if (walk->flags & 1) {
+            walk->flags = 2;
+            walk->sync_list = NULL;
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+
+            return walk;
+        }
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    return NULL;
+}
+
+SInt32 snd_AddVAGStreamDMABuffer(VAGBuffer *buffer) {
+    SInt32 intr_state;
+    SInt32 dis;
+
+    if ((buffer->flags & 0x80) == 0) {
+        snd_ShowError(72, 0, 0, 0, 0);
+        return 0;
+    }
+
+    dis = CpuSuspendIntr(&intr_state);
+    if (!VAGStreamDMAListTail) {
+        VAGStreamDMAList = buffer;
+    } else {
+        VAGStreamDMAListTail->list = buffer;
+    }
+
+    VAGStreamDMAListTail = buffer;
+    buffer->list = 0;
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    return 1;
+}
+
+BOOL snd_AddVAGStreamLoadBuffer(VAGBuffer *buffer) {
+    SInt32 intr_state;
+    VAGBuffer *walk;
+    SInt32 dis;
+
+    dis = CpuSuspendIntr(&intr_state);
+    for (walk = VAGStreamLoadList; walk; walk = walk->list) {
+        if (walk == buffer) {
+            if (!dis)
+                CpuResumeIntr(intr_state);
+            snd_ShowError(73, buffer->owner->voice, 0, 0, 0);
+            return 0;
+        }
+    }
+
+    if (!VAGStreamLoadListTail) {
+        VAGStreamLoadList = buffer;
+    } else {
+        VAGStreamLoadListTail->list = buffer;
+    }
+
+    VAGStreamLoadListTail = buffer;
+    buffer->list = 0;
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    return 1;
+}
+
+void snd_RemoveVAGStreamLoadBuffer(VAGBuffer *buffer) {
+    VAGBuffer *walk;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    dis = CpuSuspendIntr(&intr_state);
+    if (VAGStreamLoadList == buffer) {
+        VAGStreamLoadList = buffer->list;
+        if (!VAGStreamLoadList) {
+            VAGStreamLoadListTail = 0;
+        }
+    } else {
+        walk = VAGStreamLoadList;
+        while (walk && walk->list != buffer) {
+            walk = walk->list;
+        }
+
+        if (walk) {
+            walk->list = buffer->list;
+            if (!walk->list) {
+                VAGStreamLoadListTail = walk;
+            }
+        }
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+}
+
+void snd_RemoveVAGStreamDMABuffer(VAGBuffer *buffer) {
+    VAGBuffer *walk;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    dis = CpuSuspendIntr(&intr_state);
+    if (VAGStreamDMAList == buffer) {
+        VAGStreamDMAList = buffer->list;
+        if (!VAGStreamDMAList)
+            VAGStreamDMAListTail = 0;
+    } else {
+        walk = VAGStreamDMAList;
+        while (walk && walk->list != buffer) {
+            walk = walk->list;
+        }
+
+        if (walk) {
+            walk->list = buffer->list;
+            if (!walk->list) {
+                VAGStreamDMAListTail = walk;
+            }
+        }
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+}
+
+void snd_AddQueEntryToHandler(VAGStreamHandlerPtr handler, VAGStreamQueEntry *que) {
+    VAGStreamQueEntry *walk;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    dis = CpuSuspendIntr(&intr_state);
+    if (!handler->que_list) {
+        handler->que_list = que;
+    } else {
+        walk = handler->que_list;
+        while (walk->next) {
+            walk = walk->next;
+        }
+
+        walk->next = que;
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+}
+
+VAGStreamQueEntry *snd_GetFreeQueSlot() {
+    SInt32 x;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    dis = CpuSuspendIntr(&intr_state);
+    for (x = 0; x < 64; ++x) {
+        if (!gVAGStreamQue[x].flags) {
+            gVAGStreamQue[x].flags = 1;
+            gVAGStreamQue[x].next = 0;
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+
+            return &gVAGStreamQue[x];
+        }
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    return 0;
+}
+
+void snd_FreeQueChain(VAGStreamQueEntry *que, BOOL is_stdio) {
+    while (que) {
+        if (is_stdio) {
+            snd_AddDeferredCloseFile(que->loc - 1, 15);
+        }
+
+        que->flags = 0;
+        que = que->next;
+    }
+}
+
+void snd_CleanUpThread(SInt32 *tid) {
+    if (!*tid) {
+        return;
+    }
+
+    if (*tid < 0) {
+        *tid = 0;
+        return;
+    }
+
+    TerminateThread(*tid);
+    DeleteThread(*tid);
+
+    *tid = 0;
+}
+
+void snd_CleanUpSema(SInt32 *sema) {
+    if (*sema <= 0) {
+        *sema = 0;
+        return;
+    }
+
+    DeleteSema(*sema);
+    *sema = 0;
+}
+
+// INCLUDE_ASM("asm/nonmatchings/stream", snd_FreeVAGStreamResources);
+void snd_FreeVAGStreamResources() {
+    VAGStreamHeader *hold;
+    VAGStreamHeader *walk;
+    SInt32 dis;
+    SInt32 intr_state;
+    struct ThreadInfo info;
+    SInt32 err;
+
+    walk = VAGStreamList;
+    snd_CleanUpThread(&gDataLoadThread);
+    snd_CleanUpThread(&gDMAThread);
+    snd_CleanUpThread(&gDMADoneThread);
+    snd_CleanUpThread(&gLoadDoneThread);
+    snd_CleanUpSema(&gStartDataLoadSema);
+    snd_CleanUpSema(&gStartDMASema);
+    snd_CleanUpSema(&gDoneDMASema);
+    snd_CleanUpSema(&gDoneLoadSema);
+    snd_CleanUpSema(&gSearchFileSema);
+    err = ReferThreadStatus(gDeferredFileCloseThread, &info);
+    while (info.status != 4 || info.waitType != 3 || info.waitId != gDeferredFileCloseSema) {
+        DelayThread(3000);
+        err = ReferThreadStatus(gDeferredFileCloseThread, &info);
+    }
+    snd_CleanUpThread(&gDeferredFileCloseThread);
+    snd_CleanUpSema(&gDeferredFileCloseSema);
+    snd_CloseAllDeferredFiles();
+    gLastDMA0Complete = 0;
+    gLastDMA1Complete = 0;
+    if (walk) {
+        gFreeProc(walk->buff[0].IOPbuff);
+        dis = CpuSuspendIntr(&intr_state);
+        snd_SRAMFree((UInt32)walk->buff[0].SPUbuff, walk->buff_size * gNumVAGStreams);
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
+    }
+
+    while (walk) {
+        hold = walk->next;
+        gFreeProc(walk);
+        walk = hold;
+    }
+
+    VAGStreamList = 0;
+    if (gVAGStreamHandler) {
+        gFreeProc(gVAGStreamHandler);
+        gVAGStreamHandler = 0;
+    }
+
+    gMasterReadBufferSize = 0;
+    if (gMasterReadBuffer) {
+        gFreeProc(gMasterReadBuffer);
+        gMasterReadBuffer = 0;
+    }
+
+    gNumVAGStreams = 0;
+}
+
+void snd_CloseVAGStreaming() {
+    if (!gVAGStreamingInited) {
+        return;
+    }
+
+    gVAGStreamingInited = 0;
+    gShuttingDownStreaming = 1;
+    while (snd_StreamSafeCdSync(0)) {
+        DelayThread(33000);
+    }
+
+    snd_StopAllStreams();
+    sceCdCallback(0);
+    sceCdStop();
+    sceCdSync(0);
+    snd_FreeVAGStreamResources();
+    sceSdSetTransIntrHandler(0, 0, 0);
+    sceSdSetTransIntrHandler(1, 0, 0);
+    gShuttingDownStreaming = 0;
+}
+
+SInt32 snd_StreamSafeCheckCDIdle(SInt32 block) {
+    if (!VAGStreamList) {
+        snd_ShowError(74, 0, 0, 0, 0);
+        return 1;
+    }
+
+    while (gVAGReadBusy || gDataReadBusy || gSSNeedSectors) {
+        if (!block) {
+            return 0;
+        }
+
+        gCDIdleWaiter = GetThreadId();
+        SleepThread();
+        gCDIdleWaiter = 0;
+    }
+
+    sceCdCallback(0);
+    return 1;
+}
+
+VAGStreamHandlerPtr snd_GetFreeVAGStreamHandler() {
+    SInt32 x;
+    SInt32 owner_num;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    dis = CpuSuspendIntr(&intr_state);
+    for (x = 0; x < gNumVAGStreams; ++x) {
+        if (!gVAGStreamHandler[x].SH.Sound) {
+            owner_num = (gVAGStreamHandler[x].SH.OwnerID & 0xffff) + 1;
+            gVAGStreamHandler[x].SH.OwnerID = (owner_num & 0xffff) | (x << 16) | (4 << 24);
+            gVAGStreamHandler[x].SH.prev = 0;
+            gVAGStreamHandler[x].SH.next = 0;
+            gVAGStreamHandler[x].SH.parent = 0;
+            gVAGStreamHandler[x].SH.first_child = 0;
+            gVAGStreamHandler[x].SH.siblings = 0;
+            gVAGStreamHandler[x].SH.flags = 0;
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+
+            return &gVAGStreamHandler[x];
+        }
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    return 0;
+}
+
+void snd_AddStreamToHandler(VAGStreamHandlerPtr handler, VAGStreamHeader *stream) {
+    VAGStreamHeader *walk;
+
+    if (!handler->SH.Sound) {
+        handler->SH.Sound = (MIDISoundPtr)stream;
+    } else {
+        walk = (VAGStreamHeader *)handler->SH.Sound;
+        while (walk->sync_list && walk != stream) {
+            walk = walk->sync_list;
+        }
+
+        if (walk == stream) {
+            snd_ShowError(75, 0, 0, 0, 0);
+        } else {
+            walk->sync_list = stream;
+        }
+    }
+}
+
+void snd_AddStreamToHandlerQueue(VAGStreamHandlerPtr handler, VAGStreamHeader *stream) {
+    VAGStreamHeader *walk;
+
+    if (!handler->qued_stream) {
+        handler->qued_stream = stream;
+    } else {
+        walk = handler->qued_stream;
+        while (walk->sync_list && walk != stream) {
+            walk = walk->sync_list;
+        }
+
+        if (walk == stream) {
+            snd_ShowError(76, 0, 0, 0, 0);
+        } else {
+            walk->sync_list = stream;
+        }
+    }
+}
+
+SInt32 snd_GetNumStreamChannels(VAGStreamHeader *stream) {
+    SInt32 count;
+
+    count = 0;
+    while (stream) {
+        count++;
+        stream = stream->sync_list;
+    }
+
+    return count;
+}
+
+SInt32 snd_FixVol(SInt32 orig_vol, SInt32 new_vol) {
+
+    if (new_vol < 0) {
+        new_vol = -1 * new_vol;
+    } else if (new_vol != 0x7FFFFFFF) {
+        new_vol = (127 * new_vol) >> 10;
+    } else {
+        new_vol = orig_vol;
+    }
+
+    if (new_vol >= 128) {
+        new_vol = 127;
+    }
+
+    return new_vol;
+}
+
+SInt32 snd_FixPan(SInt32 orig_pan, SInt32 new_pan) {
+    if (new_pan == -1) {
+        new_pan = 0;
+    } else if (new_pan == -2) {
+        new_pan = orig_pan;
+    }
+
+    while (new_pan >= 360) {
+        new_pan -= 360;
+    }
+    while (new_pan < 0) {
+        new_pan += 360;
+    }
+
+    return new_pan;
+}
+
+// INCLUDE_ASM("asm/nonmatchings/stream", snd_SetVAGStreamSubGroupVolPan);
+void snd_SetVAGStreamSubGroupVolPan(UInt32 handle, SInt32 group, SInt32 vol, SInt32 pan) {
+    VAGStreamHandlerPtr hand;
+    VAGStreamHeader *stream;
+    VAGStreamQueEntry *walk;
+
+    snd_LockMasterTick(89);
+
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    if (!stream || ((hand->SH.flags & 0x10) == 0 && (stream->buff[0].flags & 0x100) == 0)) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    if ((stream->buff[0].flags & 0x100) != 0) {
+        if (group < 0 || group >= 0x10) {
+            snd_UnlockMasterTick();
+            return;
+        }
+        hand->group_vols[group] = (127 * vol) >> 10;
+        snd_SetVAGStreamVolPan(handle, 0x7FFFFFFF, -2);
+    } else {
+        if (group == -1 || stream->sub_group == group)
+            snd_SetVAGStreamVolPan(handle, vol, pan);
+
+        if (hand->qued_stream && (group == -1 || hand->qued_stream->sub_group == group)) {
+            hand->qued_stream->master_volume = snd_FixVol(hand->qued_stream->master_volume, vol);
+            hand->qued_stream->master_pan = snd_FixPan(hand->qued_stream->master_pan, pan);
+        }
+
+        for (walk = hand->que_list; walk; walk = walk->next) {
+            if (group == -1 || walk->sub_group == group) {
+                walk->vol = snd_FixVol(walk->vol, vol);
+                walk->pan = snd_FixPan(walk->pan, pan);
+            }
+        }
+    }
+
+    snd_UnlockMasterTick();
+    return;
+}
 
 INCLUDE_ASM("asm/nonmatchings/stream", snd_SetVAGStreamVolPan);
 

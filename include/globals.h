@@ -71,5 +71,6 @@ extern UInt32 gAwaitingKeyOn[2];
 extern UInt32 gAwaitingKeyOff[2];
 extern UInt32 gKeyedOnVoices[2];
 extern UInt32 gKeyedOffVoices[2];
+extern UInt32 gReverbVoices[2];
 
 #endif

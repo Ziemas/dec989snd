@@ -2285,7 +2285,6 @@ SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes, UInt32
     return ret_code;
 }
 
-// INCLUDE_ASM("asm/nonmatchings/stream", snd_GetStreamDataFromStdio);
 SInt32 snd_GetStreamDataFromStdio(SInt32 offset, SInt32 readbytes, UInt32 readsectors) {
     SInt32 ret_code;
     SInt32 stdio_error;
@@ -3199,7 +3198,6 @@ void snd_VAGDMADone(SInt32 ch) {
     SignalSema(gStartDataLoadSema);
 }
 
-// INCLUDE_ASM("asm/nonmatchings/stream", snd_StartVAGStreamSounding);
 void snd_StartVAGStreamSounding(VAGStreamHeader *stream, SInt32 do_sync_list) {
     SInt32 paused;
     UInt32 core;
@@ -3610,7 +3608,6 @@ void snd_CleanUpSema(SInt32 *sema) {
     *sema = 0;
 }
 
-// INCLUDE_ASM("asm/nonmatchings/stream", snd_FreeVAGStreamResources);
 void snd_FreeVAGStreamResources() {
     VAGStreamHeader *hold;
     VAGStreamHeader *walk;
@@ -3826,7 +3823,6 @@ SInt32 snd_FixPan(SInt32 orig_pan, SInt32 new_pan) {
     return new_pan;
 }
 
-// INCLUDE_ASM("asm/nonmatchings/stream", snd_SetVAGStreamSubGroupVolPan);
 void snd_SetVAGStreamSubGroupVolPan(UInt32 handle, SInt32 group, SInt32 vol, SInt32 pan) {
     VAGStreamHandlerPtr hand;
     VAGStreamHeader *stream;
@@ -3873,22 +3869,294 @@ void snd_SetVAGStreamSubGroupVolPan(UInt32 handle, SInt32 group, SInt32 vol, SIn
     return;
 }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_SetVAGStreamVolPan);
+void snd_SetVAGStreamVolPan(UInt32 handle, SInt32 vol, SInt32 pan) {
+    VAGStreamHandlerPtr hand;
+    VAGStreamHeader *stream;
+    SInt32 own_the_allocator;
+    SpuVolume spu_vol;
+    SInt32 x;
+    SInt32 intr_state;
+    SInt32 dis;
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetFirstOfAdjacentStreamHeaders);
+    snd_LockMasterTick(90);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_GetFreeStreamLoop);
+    hand->SH.Current_Vol = snd_FixVol(hand->SH.Current_Vol, vol);
+    hand->SH.Current_Pan = snd_FixPan(hand->SH.Current_Pan, pan);
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    if (!stream) {
+        snd_UnlockMasterTick();
+        snd_ShowError(77, 0, 0, 0, 0);
+        return;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_StreamIsFreeForVolGroup);
+    own_the_allocator = snd_LockVoiceAllocatorEx(1, 93);
+    dis = CpuSuspendIntr(&intr_state);
+    x = 0;
+    while (stream) {
+        if ((stream->flags & 4) != 0 && stream->voice > -1 && stream->voice < 0x30) {
+            snd_MakeVolumesB(hand->group_vols[stream->group], hand->SH.Current_Vol, hand->SH.Current_Pan,
+                             stream->orig_vol, stream->orig_pan, 127, 0, &gChannelStatus[stream->voice].Volume);
+            if (!x && hand->doubling_voice != -1) {
+                gChannelStatus[hand->doubling_voice].Volume.right = gChannelStatus[stream->voice].Volume.left;
+                gChannelStatus[hand->doubling_voice].Volume.left = gChannelStatus[stream->voice].Volume.right;
+            }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_SetVagStreamPitchModifier);
+            if ((hand->SH.flags & 2) == 0) {
+                spu_vol.left = (UInt16)snd_AdjustVolToGroup(gChannelStatus[stream->voice].Volume.left,
+                                                            gChannelStatus[stream->voice].VolGroup) >>
+                               1;
+                spu_vol.right = (UInt16)snd_AdjustVolToGroup(gChannelStatus[stream->voice].Volume.right,
+                                                             gChannelStatus[stream->voice].VolGroup) >>
+                                1;
+                sceSdSetParam((stream->voice / 24) | SD_VOICE(stream->voice % 24) | SD_VP_VOLL, spu_vol.left);
+                sceSdSetParam((stream->voice / 24) | SD_VOICE(stream->voice % 24) | SD_VP_VOLR, spu_vol.right);
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_ModifyRawPitch);
+                if (!x && hand->doubling_voice != -1) {
+                    sceSdSetParam(((hand->doubling_voice / 24) | SD_VOICE(hand->doubling_voice % 24)) | SD_VP_VOLR,
+                                  spu_vol.left);
+                    sceSdSetParam((hand->doubling_voice / 24) | SD_VOICE(hand->doubling_voice % 24) | SD_VP_VOLL,
+                                  spu_vol.right);
+                }
+            }
+        }
+        stream = stream->sync_list;
+        ++x;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_DeferredFileCloseWatcher);
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_CloseAllDeferredFiles);
+    if (own_the_allocator) {
+        snd_UnlockVoiceAllocator();
+    }
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_AllStdioFilesClosed);
+    snd_UnlockMasterTick();
+}
 
-INCLUDE_ASM("asm/nonmatchings/stream", snd_AddDeferredCloseFile);
+VAGStreamHeaderPtr snd_GetFirstOfAdjacentStreamHeaders(VAGStreamHeaderPtr consider, SInt32 num_channels) {
+    VAGStreamHeaderPtr start;
+    VAGStreamHeaderPtr last_tested;
+    SInt32 result;
+    SInt32 intr_state;
+    SInt32 i;
+    SInt32 dis;
+    SInt32 vol_group;
+
+    start = VAGStreamList;
+    last_tested = 0;
+    result = 0;
+    vol_group = consider->handler->SH.VolGroup;
+    dis = CpuSuspendIntr(&intr_state);
+
+    while (start && !result) {
+        result = snd_GetFreeStreamLoop(start, consider, num_channels, &last_tested, vol_group);
+        if (!result) {
+            if (last_tested) {
+                start = last_tested->next;
+            } else {
+                start = 0;
+            }
+        }
+    }
+
+    if (result) {
+        last_tested = start;
+        for (i = 0; i < num_channels; ++i) {
+            last_tested->flags = 0;
+            last_tested->sync_list = 0;
+            last_tested = last_tested->next;
+        }
+    } else {
+        start = 0;
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    return start;
+}
+
+SInt32 snd_GetFreeStreamLoop(VAGStreamHeaderPtr start, VAGStreamHeaderPtr consider, SInt32 num_channels,
+                             VAGStreamHeaderPtr *last_tested, SInt32 vol_group) {
+    *last_tested = start;
+
+    if (!snd_StreamIsFreeForVolGroup(start, vol_group) && start != consider) {
+        return 0;
+    }
+
+    if (num_channels == 1) {
+        return 1;
+    }
+
+    if (start->next) {
+        return snd_GetFreeStreamLoop(start->next, consider, num_channels - 1, last_tested, vol_group);
+    }
+
+    return 0;
+}
+
+BOOL snd_StreamIsFreeForVolGroup(VAGStreamHeaderPtr stream, SInt32 vol_group) {
+    SInt32 index;
+    VAGStreamHeader *walk;
+
+    walk = VAGStreamList;
+    if ((stream->flags & 1) == 0) {
+        return 0;
+    }
+
+    for (index = 0; index < gNumVAGStreams; index++, walk = walk->next) {
+        if (stream == walk) {
+            break;
+        }
+    }
+
+    if (index == gNumVAGStreams) {
+        return 0;
+    }
+
+    if (index >= gStreamChannelRange[vol_group].min && gStreamChannelRange[vol_group].max >= index) {
+        return true;
+    }
+
+    return false;
+}
+
+void snd_SetVagStreamPitchModifier(UInt32 handle, SInt16 mod) {
+    SInt32 core;
+    SInt32 voice;
+    VAGStreamHeader *stream;
+    VAGStreamHandlerPtr hand;
+    SInt32 x;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    snd_LockMasterTick(91);
+    if (!(hand = (VAGStreamHandlerPtr)snd_CheckHandlerStillActive(handle))) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    hand->SH.Current_PM = mod;
+
+    if (hand->SH.flags & 2) {
+        snd_UnlockMasterTick();
+        return;
+    }
+
+    stream = (VAGStreamHeader *)hand->SH.Sound;
+    dis = CpuSuspendIntr(&intr_state);
+    x = 0;
+    while (stream) {
+        if ((stream->flags & 4) != 0) {
+            core = stream->voice / 24;
+            voice = stream->voice % 24;
+            sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH,
+                          snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
+
+            if (!x && hand->doubling_voice != -1) {
+                core = hand->doubling_voice / 24;
+                voice = hand->doubling_voice % 24;
+                sceSdSetParam((core | SD_VOICE(voice)) | SD_VP_PITCH,
+                              snd_ModifyRawPitch(hand->SH.Current_PM, stream->pitch));
+            }
+        }
+
+        stream = stream->sync_list;
+        ++x;
+    }
+
+    if (!dis) {
+        CpuResumeIntr(intr_state);
+    }
+
+    snd_UnlockMasterTick();
+}
+
+UInt16 snd_ModifyRawPitch(SInt32 pm, UInt32 pitch) {
+    SInt32 next_shift;
+    SInt32 shift_notes;
+    SInt32 x;
+
+    shift_notes = abs(pm / 128);
+
+    if (pm > 0) {
+        for (x = 0; x < shift_notes; ++x) {
+            pitch = (69432 * pitch) >> 16;
+            pm -= 128;
+        }
+
+        if (pm > 0) {
+            next_shift = ((69432 * pitch) >> 16);
+            pitch += ((next_shift - pitch) * pm) >> 7;
+        }
+    } else if (pm < 0) {
+        for (x = 0; x < shift_notes; ++x) {
+            pitch = (pitch << 16) / 0x10F38;
+            pm += 128;
+        }
+
+        if (pm < 0) {
+            next_shift = (pitch << 16) / 0x10F38;
+            pitch -= (((pitch - next_shift)) * (pm * -1)) >> 7;
+        }
+    }
+
+    return pitch;
+}
+
+void snd_DeferredFileCloseWatcher() {
+    while (1) {
+        WaitSema(gDeferredFileCloseSema);
+        snd_CloseAllDeferredFiles();
+    }
+}
+
+void snd_CloseAllDeferredFiles() {
+    int i;
+
+    snd_LockMasterTick(95);
+    for (i = 0; i < 16; ++i) {
+        if (gDeferredCloseHandles[i] != -1) {
+            close(gDeferredCloseHandles[i]);
+            gDeferredCloseHandles[i] = -1;
+        }
+    }
+
+    snd_UnlockMasterTick();
+}
+
+BOOL snd_AllStdioFilesClosed() {
+    SInt32 i;
+
+    for (i = 0; i < 16; ++i) {
+        if (gDeferredCloseHandles[i] != -1) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void snd_AddDeferredCloseFile(SInt32 handle, int from) {
+    SInt32 i;
+
+    if (handle == -1) {
+        return;
+    }
+
+    for (i = 0; i < 16; ++i) {
+        if (gDeferredCloseHandles[i] == -1) {
+            gDeferredCloseHandles[i] = handle;
+            SignalSema(gDeferredFileCloseSema);
+            return;
+        }
+    }
+
+    snd_ShowError(111, 0, 0, 0, 0);
+}

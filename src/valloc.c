@@ -376,50 +376,398 @@ void snd_StartVAGVoice(SInt32 voice, BOOL noise) {
     snd_MarkVoicePlaying(voice);
 }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_StartVoices);
+void snd_StartVoices(VoiceFlags *voices) {
+    SInt32 count;
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_StartPendingVoices);
+    for (count = 0; count < 48; ++count) {
+        if (count < 24 && (voices->core[0] & (1 << count)) != 0 ||
+            count >= 24 && (voices->core[1] & (1 << (count - 24))) != 0) {
+            snd_MarkVoicePlaying(count);
+            gChannelStatus[count].StartTick = snd_GetTick();
+        }
+    }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_StopPendingVoices);
+    gAwaitingKeyOn[0] |= voices->core[0];
+    gAwaitingKeyOn[1] |= voices->core[1];
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_GetKeyedOnVoices);
+void snd_StartPendingVoices() {
+    SInt32 intr_state;
+    SInt32 dis;
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_GetKeyedOffVoices);
+    if (gAwaitingKeyOn[0] || gAwaitingKeyOn[1]) {
+        dis = CpuSuspendIntr(&intr_state);
+        sceSdSetSwitch(SD_S_VMIXEL | SD_CORE_0, gReverbVoices[0]);
+        sceSdSetSwitch(SD_S_VMIXER | SD_CORE_0, gReverbVoices[0]);
+        sceSdSetSwitch(SD_S_VMIXEL | SD_CORE_1, gReverbVoices[1]);
+        sceSdSetSwitch(SD_S_VMIXER | SD_CORE_1, gReverbVoices[1]);
+        sceSdSetSwitch(SD_S_KON | SD_CORE_0, gAwaitingKeyOn[0]);
+        sceSdSetSwitch(SD_S_KON | SD_CORE_1, gAwaitingKeyOn[1]);
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_VoiceIsDone);
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_GetVoiceAge);
+        gKeyedOffVoices[0] &= ~gAwaitingKeyOn[0];
+        gKeyedOffVoices[1] &= ~gAwaitingKeyOn[1];
+        gKeyedOnVoices[0] |= gAwaitingKeyOn[0];
+        gKeyedOnVoices[1] |= gAwaitingKeyOn[1];
+        gAwaitingKeyOn[1] = 0;
+        gAwaitingKeyOn[0] = 0;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_GetVoiceStatus);
+void snd_StopPendingVoices() {
+    SInt32 intr_state;
+    SInt32 dis;
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_GetVoicePriority);
+    if (gAwaitingKeyOff[0] || gAwaitingKeyOff[1]) {
+        dis = CpuSuspendIntr(&intr_state);
+        sceSdSetSwitch(SD_S_KOFF | SD_CORE_0, gAwaitingKeyOff[0]);
+        sceSdSetSwitch(SD_S_KOFF | SD_CORE_1, gAwaitingKeyOff[1]);
+        if (!dis) {
+            CpuResumeIntr(intr_state);
+        }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_KeyOffVoice);
+        gKeyedOnVoices[0] &= ~gAwaitingKeyOff[0];
+        gKeyedOnVoices[1] &= ~gAwaitingKeyOff[1];
+        gKeyedOffVoices[0] |= gAwaitingKeyOff[0];
+        gKeyedOffVoices[1] |= gAwaitingKeyOff[1];
+        gAwaitingKeyOff[1] = 0;
+        gAwaitingKeyOff[0] = 0;
+    }
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_KeyOffVoicesEx);
+void snd_GetKeyedOnVoices(VoiceFlags *voices) {
+    voices->core[0] = gKeyedOnVoices[0];
+    voices->core[1] = gKeyedOnVoices[1];
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_SilenceVoicesEx);
+void snd_GetKeyedOffVoices(VoiceFlags *voices) {
+    voices->core[0] = gKeyedOffVoices[0];
+    voices->core[1] = gKeyedOffVoices[1];
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_PauseVoices);
+void snd_VoiceIsDone(SInt32 voice) {
+    if (gChannelStatus[voice].Priority != 127) {
+        snd_MarkVoiceFree(voice);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_PauseVoicesOwnedWithOwner);
+    if (gChannelStatus[voice].OwnerProc) {
+        gChannelStatus[voice].OwnerProc(voice, gChannelStatus[voice].Owner, 2);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_UnPauseVoices);
+    gChannelStatus[voice].OwnerProc = 0;
+    gKeyedOffVoices[voice / 24] &= ~(1 << (voice % 24));
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_UnPauseVoicesOwnedWithOwner);
+UInt32 snd_GetVoiceAge(SInt32 voice) {
+    if (gChannelStatus[voice].Status == 1) {
+        return snd_GetTick() - gChannelStatus[voice].StartTick;
+    }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_GetVoiceStatusPtr);
+    return 0;
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", PS1Note2Pitch);
+SInt32 snd_GetVoiceStatus(SInt32 voice) { return gChannelStatus[voice].Status; }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_PitchBendTone);
+SInt32 snd_GetVoicePriority(SInt32 voice) { return gChannelStatus[voice].Priority; }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_MarkVoicePlaying);
+void snd_KeyOffVoice(SInt32 voice) {
+    SInt32 core;
+    SInt32 c_v;
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_MarkVoiceFree);
+    if (gChannelStatus[voice].Status == 1 && gChannelStatus[voice].OwnerProc) {
+        gChannelStatus[voice].OwnerProc(voice, gChannelStatus[voice].Owner, 3);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_HardFreeVoice);
+    gChannelStatus[voice].OwnerProc = 0;
+    core = voice / 24;
+    c_v = voice % 24;
+    if ((gAwaitingKeyOn[core] & (1 << (c_v))) != 0) {
+        gAwaitingKeyOn[core] &= ~(1 << c_v);
+    }
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_KeyOnVoiceRaw);
+    gAwaitingKeyOff[core] |= 1 << c_v;
+}
 
-INCLUDE_ASM("asm/nonmatchings/valloc", snd_KeyOffVoiceRaw);
+void snd_KeyOffVoicesEx(VoiceFlags *voices, BOOL do_owner_proc) {
+    SInt32 count;
+    SInt32 core;
+    SInt32 c_v;
+
+    for (count = 0; count < 48; ++count) {
+        core = count / 24;
+        c_v = count % 24;
+        if ((voices->core[core] & (1 << (c_v))) != 0 && gChannelStatus[count].Status == 1) {
+            gAwaitingKeyOff[core] |= 1 << c_v;
+            if (do_owner_proc && gChannelStatus[count].OwnerProc) {
+                gChannelStatus[count].OwnerProc(count, gChannelStatus[count].Owner, 3);
+            }
+
+            gChannelStatus[count].OwnerProc = 0;
+            if ((gAwaitingKeyOn[core] & (1 << c_v)) != 0) {
+                gAwaitingKeyOn[core] &= ~(1 << c_v);
+            }
+        }
+    }
+}
+
+void snd_SilenceVoicesEx(VoiceFlags *voices, BOOL do_owner_proc) {
+    SInt32 count;
+    SInt32 core;
+    SInt32 c_v;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    for (count = 0; count < 48; ++count) {
+        core = count / 24;
+        c_v = count % 24;
+        if ((voices->core[core] & (1 << (c_v))) != 0) {
+            if (do_owner_proc && gChannelStatus[count].Status == 1 && gChannelStatus[count].OwnerProc) {
+                gChannelStatus[count].OwnerProc(count, gChannelStatus[count].Owner, 3);
+            }
+
+            gChannelStatus[count].OwnerProc = 0;
+            if (gChannelStatus[count].Priority != 127) {
+                snd_MarkVoiceFree(count);
+            }
+
+            dis = CpuSuspendIntr(&intr_state);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL, 0);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR, 0);
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+
+            snd_KeyOffVoiceRaw(core, c_v);
+        }
+    }
+}
+
+void snd_PauseVoices(VoiceFlags *voices) {
+    SInt32 count;
+    SInt32 core;
+    SInt32 c_v;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    for (count = 0; count < 48; ++count) {
+        core = count / 24;
+        c_v = count % 24;
+        if ((voices->core[core] & (1 << (c_v))) != 0) {
+            dis = CpuSuspendIntr(&intr_state);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL, 0);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR, 0);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH, 0);
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+        }
+    }
+}
+
+void snd_PauseVoicesOwnedWithOwner(GSoundHandlerPtr owner) {
+    SInt32 count;
+    SInt32 core;
+    SInt32 c_v;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    snd_LockVoiceAllocatorEx(1, 0x7Au);
+    for (count = 0; count < 48; ++count) {
+        if (gChannelStatus[count].Status && gChannelStatus[count].Owner == owner) {
+            core = count / 24;
+            c_v = count % 24;
+            dis = CpuSuspendIntr(&intr_state);
+            sceSdSetParam((core) | SD_VOICE(c_v) | SD_VP_VOLL, 0);
+            sceSdSetParam((core) | SD_VOICE(c_v) | SD_VP_VOLR, 0);
+            sceSdSetParam((core) | SD_VOICE(c_v) | SD_VP_PITCH, 0);
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+        }
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+void snd_UnPauseVoices(VoiceFlags *voices) {
+    SInt32 note;
+    SInt32 fine;
+    SInt32 count;
+    SInt32 core;
+    SInt32 c_v;
+    UInt32 pitch;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    for (count = 0; count < 48; ++count) {
+        core = count / 24;
+        c_v = count % 24;
+        if ((voices->core[core] & (1 << (c_v))) != 0) {
+            dis = CpuSuspendIntr(&intr_state);
+
+            sceSdSetParam(
+                core | SD_VOICE(c_v) | SD_VP_VOLL,
+                (UInt16)snd_AdjustVolToGroup(gChannelStatus[count].Volume.left, gChannelStatus[count].VolGroup) >> 1);
+            sceSdSetParam(
+                core | SD_VOICE(c_v) | SD_VP_VOLR,
+                (UInt16)snd_AdjustVolToGroup(gChannelStatus[count].Volume.right, gChannelStatus[count].VolGroup) >> 1);
+
+            snd_PitchBendTone(gChannelStatus[count].Tone, gChannelStatus[count].Current_PB,
+                              gChannelStatus[count].Current_PM, gChannelStatus[count].StartNote,
+                              gChannelStatus[count].StartFine, &note, &fine);
+            pitch = PS1Note2Pitch(gChannelStatus[count].Tone->CenterNote, gChannelStatus[count].Tone->CenterFine, note,
+                                  fine);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH, pitch);
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+        }
+    }
+}
+
+void snd_UnPauseVoicesOwnedWithOwner(GSoundHandlerPtr owner) {
+    SInt32 note;
+    SInt32 fine;
+    SInt32 count;
+    SInt32 core;
+    SInt32 c_v;
+    UInt32 pitch;
+    SInt32 intr_state;
+    SInt32 dis;
+
+    snd_LockVoiceAllocatorEx(1, 0x7Bu);
+    for (count = 0; count < 48; ++count) {
+        if (gChannelStatus[count].Status && gChannelStatus[count].Owner == owner) {
+            core = count / 24;
+            c_v = count % 24;
+            dis = CpuSuspendIntr(&intr_state);
+
+            sceSdSetParam(
+                core | SD_VOICE(c_v) | SD_VP_VOLL,
+                (UInt16)snd_AdjustVolToGroup(gChannelStatus[count].Volume.left, gChannelStatus[count].VolGroup) >> 1);
+            sceSdSetParam(
+                core | SD_VOICE(c_v) | SD_VP_VOLR,
+                (UInt16)snd_AdjustVolToGroup(gChannelStatus[count].Volume.right, gChannelStatus[count].VolGroup) >> 1);
+            snd_PitchBendTone(gChannelStatus[count].Tone, gChannelStatus[count].Current_PB,
+                              gChannelStatus[count].Current_PM, gChannelStatus[count].StartNote,
+                              gChannelStatus[count].StartFine, &note, &fine);
+            pitch = PS1Note2Pitch(gChannelStatus[count].Tone->CenterNote, gChannelStatus[count].Tone->CenterFine, note,
+                                  fine);
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH, pitch);
+            if (!dis) {
+                CpuResumeIntr(intr_state);
+            }
+        }
+    }
+
+    snd_UnlockVoiceAllocator();
+}
+
+VoiceAttributes *snd_GetVoiceStatusPtr(SInt32 voice) { return &gChannelStatus[voice]; }
+
+UInt16 PS1Note2Pitch(SInt8 center_note, SInt8 center_fine, UInt16 note, SInt16 fine) {
+    UInt32 pitch;
+    BOOL ps1;
+
+    if (center_note < 0) {
+        ps1 = 0;
+        center_note = center_note * -1;
+    } else {
+        ps1 = 1;
+    }
+
+    pitch = sceSdNote2Pitch(center_note, center_fine, note, fine);
+    if (ps1) {
+        pitch = 44100 * pitch / 48000;
+    }
+
+    return pitch;
+}
+
+void snd_PitchBendTone(TonePtr tone, SInt32 pb, SInt32 pm, SInt32 note, SInt32 fine, SInt32 *new_note,
+                       SInt32 *new_fine) {
+    SInt32 pitch;
+
+    pitch = (note * 128) + fine;
+    pitch += pm;
+    pitch += pb < 0 ? tone->PBLow * 128 * pb / -0x8000 * -1 : tone->PBHigh * 128 * pb / 0x7FFF;
+
+    *new_note = pitch / 128;
+    *new_fine = pitch % 128;
+}
+
+void snd_MarkVoicePlaying(SInt32 voice) {
+    VoiceAttributes *va;
+    VoiceAttributes *walk;
+
+    va = &gChannelStatus[voice];
+    va->Status = 1;
+    va->playlist = 0;
+    if (!gPlayingListHead) {
+        gPlayingListHead = va;
+    } else {
+        walk = gPlayingListHead;
+        if (va == gPlayingListHead) {
+            snd_ShowError(82, 0, 0, 0, 0);
+            return;
+        }
+
+        while (walk->playlist && walk->playlist != va) {
+            walk = walk->playlist;
+        }
+
+        if (walk->playlist == va) {
+            snd_ShowError(82, 0, 0, 0, 0);
+            return;
+        } else {
+            walk->playlist = va;
+        }
+    }
+}
+
+void snd_MarkVoiceFree(SInt32 voice) {
+    VoiceAttributes *va;
+    UInt32 core;
+    VoiceAttributes *walk;
+
+    core = voice / 24;
+    va = &gChannelStatus[voice];
+    va->Status = 0;
+    va->Owner = 0;
+    if (va == gPlayingListHead) {
+        gPlayingListHead = va->playlist;
+    } else {
+        walk = gPlayingListHead;
+        while (walk && walk->playlist != va) {
+            walk = walk->playlist;
+        }
+
+        if (walk) {
+            walk->playlist = va->playlist;
+        }
+    }
+
+    if (gNoiseOwnerVoice[core] == voice) {
+        gNoiseOwnerVoice[core] = -1;
+        gNoiseOwnerPriority[core] = -1;
+    }
+}
+
+void snd_HardFreeVoice(SInt32 voice) { snd_MarkVoiceFree(voice); }
+
+void snd_KeyOnVoiceRaw(int core, int voice, BOOL reverb) {
+    gAwaitingKeyOn[core] |= 1 << voice;
+    if (reverb) {
+        gReverbVoices[core] |= 1 << voice;
+    } else {
+        gReverbVoices[core] &= ~(1 << voice);
+    }
+}
+
+void snd_KeyOffVoiceRaw(int core, int voice) {
+    gAwaitingKeyOn[core] &= ~(1 << voice);
+    gAwaitingKeyOff[core] |= 1 << voice;
+}

@@ -1,8 +1,7 @@
 #include "common.h"
 #include "functions.h"
 
-void snd_AutoVol(UInt32 handle, SInt32 vol, SInt32 delta_time,
-                 SInt32 delta_from) {
+void snd_AutoVol(UInt32 handle, SInt32 vol, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;
     SInt32 volchange;
     SInt32 stopit;

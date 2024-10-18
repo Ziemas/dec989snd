@@ -63,8 +63,7 @@ void snd_ShutdownLoader() {
     gSPURAMTransSema = -1;
 }
 
-void snd_RegisterIOPMemAllocator(ExternSndIOPAlloc AllocProc,
-                                 ExternSndIOPFree FreeProc) {
+void snd_RegisterIOPMemAllocator(ExternSndIOPAlloc AllocProc, ExternSndIOPFree FreeProc) {
     if (AllocProc) {
         gAllocProc = AllocProc;
     } else {
@@ -202,8 +201,7 @@ SInt32 snd_ReadBytesFromEE(UInt32 ee_loc, void *iop_loc, SInt32 bytes) {
     if ((ee_loc % 16)) {
         part_size = 16 - (ee_loc % 16);
         ee_loc -= ee_loc % 16;
-        ret = sceSifGetOtherData(&data_track, (void *)ee_loc, gEEAlignBuffer,
-                                 16, 0);
+        ret = sceSifGetOtherData(&data_track, (void *)ee_loc, gEEAlignBuffer, 16, 0);
         if (ret < 0) {
             return 0;
         }
@@ -217,8 +215,7 @@ SInt32 snd_ReadBytesFromEE(UInt32 ee_loc, void *iop_loc, SInt32 bytes) {
 
     for (full_blocks = bytes / 16; full_blocks; full_blocks -= get_blocks) {
         get_blocks = (full_blocks > 0x3fff) ? 0x3fff : full_blocks;
-        ret = sceSifGetOtherData(&data_track, (void *)ee_loc, iop_loc,
-                                 16 * get_blocks, 0);
+        ret = sceSifGetOtherData(&data_track, (void *)ee_loc, iop_loc, 16 * get_blocks, 0);
         if (ret < 0) {
             return 0;
         }
@@ -229,8 +226,7 @@ SInt32 snd_ReadBytesFromEE(UInt32 ee_loc, void *iop_loc, SInt32 bytes) {
     }
 
     if (bytes) {
-        ret = sceSifGetOtherData(&data_track, (void *)ee_loc, gEEAlignBuffer,
-                                 16, 0);
+        ret = sceSifGetOtherData(&data_track, (void *)ee_loc, gEEAlignBuffer, 16, 0);
         if (ret < 0) {
             return 0;
         }
@@ -266,8 +262,7 @@ SInt32 snd_ReadBytes(void *buffer, SInt32 count) {
             return ret;
         }
     } else {
-        if (snd_FileRead(gFileNextReadSector, gFileNextReadOffset, count,
-                         buffer) == 0) {
+        if (snd_FileRead(gFileNextReadSector, gFileNextReadOffset, count, buffer) == 0) {
             return 0;
         }
 
@@ -282,8 +277,7 @@ SInt32 snd_ReadBytes(void *buffer, SInt32 count) {
     return 0;
 }
 
-SoundBankPtr snd_BankLoadEx(SInt8 *name, SInt32 offset, UInt32 spu_mem_loc,
-                            UInt32 spu_mem_size) {
+SoundBankPtr snd_BankLoadEx(SInt8 *name, SInt32 offset, UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     SoundBankPtr ret;
 
     if (!snd_OpenDataSourceByName(name, offset)) {
@@ -315,8 +309,7 @@ void snd_IterateBlockListToMonitor() {
     }
 }
 
-SoundBankPtr snd_ParseIOPBank(SInt8 *iop_loc, UInt32 spu_mem_loc,
-                              UInt32 spu_mem_size) {
+SoundBankPtr snd_ParseIOPBank(SInt8 *iop_loc, UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     SInt32 result;
     SoundBankPtr bank_head;
     SFXBlock2Ptr block;
@@ -330,8 +323,7 @@ SoundBankPtr snd_ParseIOPBank(SInt8 *iop_loc, UInt32 spu_mem_loc,
     if (fa->type == 1 || fa->type == 3) {
         // If we have a midi chunk we want to be able to store its ptr, so add
         // space for it
-        size =
-            (fa->num_chunks >= 3) ? (fa->where[0].size + 4) : fa->where[0].size;
+        size = (fa->num_chunks >= 3) ? (fa->where[0].size + 4) : fa->where[0].size;
         bank_head_ram = gAllocProc(size, 1, 0);
         if (!bank_head_ram) {
             snd_ShowError(15, size, 0, 0, 0);
@@ -350,34 +342,26 @@ SoundBankPtr snd_ParseIOPBank(SInt8 *iop_loc, UInt32 spu_mem_loc,
 
         if (fa->where[1].size) {
             data_loc = iop_loc + fa->where[1].offset;
-            result = snd_BankTransfer(bank_head, data_loc, fa->where[1].size, 0,
-                                      0, spu_mem_loc, spu_mem_size, 0);
+            result = snd_BankTransfer(bank_head, data_loc, fa->where[1].size, 0, 0, spu_mem_loc, spu_mem_size, 0);
             snd_IsCurrentTransferComplete(1);
             snd_EndBankTransfer(bank_head);
         } else {
             if (bank_head->DataID == 0x32764253) {
-                bank_head->FirstSound =
-                    (SoundPtr)((UInt32)bank_head->FirstSound +
-                               (UInt32)bank_head);
-                bank_head->FirstProg =
-                    (ProgPtr)((UInt32)bank_head->FirstProg + (UInt32)bank_head);
-                bank_head->FirstTone =
-                    (TonePtr)((UInt32)bank_head->FirstTone + (UInt32)bank_head);
+                bank_head->FirstSound = (SoundPtr)((UInt32)bank_head->FirstSound + (UInt32)bank_head);
+                bank_head->FirstProg = (ProgPtr)((UInt32)bank_head->FirstProg + (UInt32)bank_head);
+                bank_head->FirstTone = (TonePtr)((UInt32)bank_head->FirstTone + (UInt32)bank_head);
                 bank_head->Flags |= 1;
             } else {
                 block = (SFXBlock2Ptr)bank_head;
-                block->FirstSound =
-                    (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
-                block->FirstGrain =
-                    (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
+                block->FirstSound = (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
+                block->FirstGrain = (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
                 block->Flags |= 1;
             }
             snd_EndBankTransfer(bank_head);
         }
 
         if (fa->num_chunks == 3) {
-            *((MultiMIDIBlockHeaderPtr *)bank_head_ram) =
-                snd_MMDLoadFromIOPLoc(iop_loc + fa->where[2].offset);
+            *((MultiMIDIBlockHeaderPtr *)bank_head_ram) = snd_MMDLoadFromIOPLoc(iop_loc + fa->where[2].offset);
             if ((*(MultiMIDIBlockHeaderPtr *)bank_head_ram) == NULL) {
                 snd_RemoveBank(bank_head);
                 gFreeProc(bank_head_ram);
@@ -423,8 +407,7 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     if (fa->type == 1 || fa->type == 3) {
         // If we have a midi chunk we want to be able to store its ptr, so add
         // space for it
-        size =
-            (fa->num_chunks >= 3) ? (fa->where[0].size + 4) : fa->where[0].size;
+        size = (fa->num_chunks >= 3) ? (fa->where[0].size + 4) : fa->where[0].size;
 
         bank_head_ram = gAllocProc(size, 1, 0);
         if (!bank_head_ram) {
@@ -483,12 +466,9 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
                 }
 
                 if (!block) {
-                    result =
-                        snd_BankTransfer(bank_head, bank_body, max_length, 0, 0,
-                                         spu_mem_loc, spu_mem_size, 0);
+                    result = snd_BankTransfer(bank_head, bank_body, max_length, 0, 0, spu_mem_loc, spu_mem_size, 0);
                 } else {
-                    result = snd_BankTransfer(bank_head, bank_body, max_length,
-                                              sram_offset, 1, spu_mem_loc,
+                    result = snd_BankTransfer(bank_head, bank_body, max_length, sram_offset, 1, spu_mem_loc,
                                               spu_mem_size, 0);
                 }
                 if (result < 0) {
@@ -510,30 +490,21 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
             gFreeProc(bank_body);
         } else {
             if (bank_head->DataID == 0x32764253) {
-                bank_head->FirstSound =
-                    (SoundPtr)((UInt32)bank_head->FirstSound +
-                               (UInt32)bank_head);
-                bank_head->FirstProg =
-                    (ProgPtr)((UInt32)bank_head->FirstProg + (UInt32)bank_head);
-                bank_head->FirstTone =
-                    (TonePtr)((UInt32)bank_head->FirstTone + (UInt32)bank_head);
+                bank_head->FirstSound = (SoundPtr)((UInt32)bank_head->FirstSound + (UInt32)bank_head);
+                bank_head->FirstProg = (ProgPtr)((UInt32)bank_head->FirstProg + (UInt32)bank_head);
+                bank_head->FirstTone = (TonePtr)((UInt32)bank_head->FirstTone + (UInt32)bank_head);
                 bank_head->Flags |= 1;
             } else {
                 block_head = (SFXBlock2Ptr)bank_head;
-                block_head->FirstSound =
-                    (SFX2Ptr)((UInt32)block_head->FirstSound +
-                              (UInt32)block_head);
-                block_head->FirstGrain =
-                    (SFX2Ptr)((UInt32)block_head->FirstGrain +
-                              (UInt32)block_head);
+                block_head->FirstSound = (SFX2Ptr)((UInt32)block_head->FirstSound + (UInt32)block_head);
+                block_head->FirstGrain = (SFX2Ptr)((UInt32)block_head->FirstGrain + (UInt32)block_head);
                 block_head->Flags |= 1;
             }
             snd_EndBankTransfer(bank_head);
         }
         if (fa->num_chunks == 3) {
             snd_SeekDataSource(fa->where[2].offset, 0);
-            *(MultiMIDIBlockHeaderPtr *)bank_head_ram =
-                snd_MMDLoadFromDataSource();
+            *(MultiMIDIBlockHeaderPtr *)bank_head_ram = snd_MMDLoadFromDataSource();
             if (!*(MultiMIDIBlockHeaderPtr *)bank_head_ram) {
                 snd_RemoveBank(bank_head);
                 gFreeProc(bank_head_ram);
@@ -544,8 +515,7 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
             }
         }
     } else {
-        snd_ShowError(84, (UInt32)buff, gFileStartSector, gReadBufferHasSector,
-                      0);
+        snd_ShowError(84, (UInt32)buff, gFileStartSector, gReadBufferHasSector, 0);
         gReadBufferHasSector = -1;
         gLastLoadError = 263;
         bank_head = NULL;
@@ -554,8 +524,7 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     return bank_head;
 }
 
-SInt32 snd_FileRead(SInt32 sect_loc, SInt32 offset, SInt32 size,
-                    SInt8 *buffer) {
+SInt32 snd_FileRead(SInt32 sect_loc, SInt32 offset, SInt32 size, SInt8 *buffer) {
     sceCdRMode mode;
     SInt32 bytes_needed;
     SInt32 move_bytes;
@@ -614,8 +583,7 @@ SInt32 snd_FileRead(SInt32 sect_loc, SInt32 offset, SInt32 size,
 
     get_whole_sectors = bytes_needed / 2048;
     if (get_whole_sectors) {
-        err = snd_StreamSafeCdRead(sector, get_whole_sectors,
-                                   &buffer[move_bytes]);
+        err = snd_StreamSafeCdRead(sector, get_whole_sectors, &buffer[move_bytes]);
         snd_StreamSafeCdSync(0);
         if (!err || (err = snd_StreamSafeCdGetError()) != 0) {
             if (!err) {
@@ -656,8 +624,7 @@ SInt32 snd_FileRead(SInt32 sect_loc, SInt32 offset, SInt32 size,
     return 1;
 }
 
-SoundBankPtr snd_BankLoadByLocEx(SInt32 sect_loc, SInt32 file_offset,
-                                 UInt32 spu_mem_loc, UInt32 spu_mem_size) {
+SoundBankPtr snd_BankLoadByLocEx(SInt32 sect_loc, SInt32 file_offset, UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     SoundBankPtr ret;
 
     if (!snd_OpenDataSourceByLoc(sect_loc, file_offset))
@@ -676,8 +643,7 @@ SoundBankPtr snd_BankLoadByLocEx(SInt32 sect_loc, SInt32 file_offset,
     return ret;
 }
 
-SoundBankPtr snd_BankLoadFromEEEx(UInt32 ee_loc, UInt32 spu_mem_loc,
-                                  UInt32 spu_mem_size) {
+SoundBankPtr snd_BankLoadFromEEEx(UInt32 ee_loc, UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     SoundBankPtr ret;
 
     if (!snd_OpenDataSourceFromEE(ee_loc))
@@ -708,8 +674,7 @@ UInt32 snd_GetSRAMUsedByBank(SoundBankPtr bank) {
     return bank->VagDataSize;
 }
 
-SoundBankPtr snd_BankLoadFromIOPEx(void *iop_loc, UInt32 spu_mem_loc,
-                                   UInt32 spu_mem_size) {
+SoundBankPtr snd_BankLoadFromIOPEx(void *iop_loc, UInt32 spu_mem_loc, UInt32 spu_mem_size) {
     SoundBankPtr ret;
 
     gLastLoadError = 0;
@@ -919,9 +884,8 @@ void snd_UnloadAllMMD() {
     }
 }
 
-SInt32 snd_BankTransfer(SoundBankPtr bank, SInt8 *data, UInt32 data_size,
-                        SInt32 offset, SInt32 state, UInt32 spu_mem_loc,
-                        UInt32 spu_mem_size, SpuTransferCallbackProc callback) {
+SInt32 snd_BankTransfer(SoundBankPtr bank, SInt8 *data, UInt32 data_size, SInt32 offset, SInt32 state,
+                        UInt32 spu_mem_loc, UInt32 spu_mem_size, SpuTransferCallbackProc callback) {
     UInt32 size;
     SInt32 ch;
     SInt32 msg;
@@ -1010,18 +974,13 @@ SInt32 snd_BankTransfer(SoundBankPtr bank, SInt8 *data, UInt32 data_size,
 
         if ((bank->Flags & 1) == 0) {
             if (bank->DataID == 0x32764253) {
-                bank->FirstSound =
-                    (SoundPtr)((UInt32)bank->FirstSound + (UInt32)bank);
-                bank->FirstProg =
-                    (ProgPtr)((UInt32)bank->FirstProg + (UInt32)bank);
-                bank->FirstTone =
-                    (TonePtr)((UInt32)bank->FirstTone + (UInt32)bank);
+                bank->FirstSound = (SoundPtr)((UInt32)bank->FirstSound + (UInt32)bank);
+                bank->FirstProg = (ProgPtr)((UInt32)bank->FirstProg + (UInt32)bank);
+                bank->FirstTone = (TonePtr)((UInt32)bank->FirstTone + (UInt32)bank);
                 bank->Flags |= 1;
             } else {
-                block->FirstSound =
-                    (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
-                block->FirstGrain =
-                    (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
+                block->FirstSound = (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
+                block->FirstGrain = (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
                 block->Flags |= 1;
             }
         }
@@ -1078,13 +1037,10 @@ SInt32 snd_EndBankTransfer(SoundBankPtr bank) {
     if (bank->DataID == 0x32764253) {
         SoundBankPtr walker;
         for (x = 0; x < bank->NumTones; ++x) {
-            bank->FirstTone[x].VAGInSR =
-                (void *)((UInt32)bank->FirstTone[x].VAGInSR +
-                         (UInt32)bank->VagsInSR);
+            bank->FirstTone[x].VAGInSR = (void *)((UInt32)bank->FirstTone[x].VAGInSR + (UInt32)bank->VagsInSR);
         }
         for (x = 0; x < bank->NumProgs; ++x) {
-            bank->FirstProg[x].FirstTone =
-                (TonePtr)((UInt32)bank + (UInt32)bank->FirstProg[x].FirstTone);
+            bank->FirstProg[x].FirstTone = (TonePtr)((UInt32)bank + (UInt32)bank->FirstProg[x].FirstTone);
         }
 
         if (!gBankListHead) {
@@ -1101,34 +1057,25 @@ SInt32 snd_EndBankTransfer(SoundBankPtr bank) {
         for (x = 0; x < block->NumGrains; ++x) {
             TonePtr tp;
             if (block->FirstGrain[x].OpcodeData.MicroOp.Type == 1) {
-                tp = (TonePtr)((char *)block->GrainData +
-                               (block->FirstGrain[x].OpcodeData.Opcode &
-                                0xFFFFFF));
+                tp = (TonePtr)((char *)block->GrainData + (block->FirstGrain[x].OpcodeData.Opcode & 0xFFFFFF));
                 tp->VAGInSR = (void *)(tp->VAGInSR + (UInt32)block->VagsInSR);
             }
         }
         for (x = 0; x < block->NumSounds; ++x) {
             block->FirstSound[x].FirstGrain =
-                (SFXGrain2Ptr)((UInt32)block->FirstGrain +
-                               (UInt32)block->FirstSound[x].FirstGrain);
+                (SFXGrain2Ptr)((UInt32)block->FirstGrain + (UInt32)block->FirstSound[x].FirstGrain);
             block->FirstSound[x].Flags &= ~0x4000u;
         }
 
         if ((block->Flags & 0x100) != 0) {
-            block->BlockNames =
-                (SFXBlockNames *)((UInt32)block->BlockNames + (UInt32)block);
-            block->BlockNames->SFXNameTableOffset +=
-                (UInt32)block->BlockNames->BlockName;
-            block->BlockNames->VAGNameTableOffset +=
-                (UInt32)block->BlockNames->BlockName;
-            block->BlockNames->VAGImportsTableOffset +=
-                (UInt32)block->BlockNames->BlockName;
-            block->BlockNames->VAGExportsTableOffset +=
-                (UInt32)block->BlockNames->BlockName;
+            block->BlockNames = (SFXBlockNames *)((UInt32)block->BlockNames + (UInt32)block);
+            block->BlockNames->SFXNameTableOffset += (UInt32)block->BlockNames->BlockName;
+            block->BlockNames->VAGNameTableOffset += (UInt32)block->BlockNames->BlockName;
+            block->BlockNames->VAGImportsTableOffset += (UInt32)block->BlockNames->BlockName;
+            block->BlockNames->VAGExportsTableOffset += (UInt32)block->BlockNames->BlockName;
         }
         if ((block->Flags & 0x200) != 0) {
-            block->SFXUD =
-                (SFXUserData *)((UInt32)block + (UInt32)block->SFXUD);
+            block->SFXUD = (SFXUserData *)((UInt32)block + (UInt32)block->SFXUD);
         }
 
         if (!gBlockListHead) {
@@ -1242,12 +1189,9 @@ void snd_ResolveBankXREFS() {
     while (bank) {
         for (x = 0; x < bank->NumSounds; ++x) {
             bank->FirstSound[x].Bank = bank;
-            if (bank->FirstSound[x].Type == 4 ||
-                bank->FirstSound[x].Type == 5) {
+            if (bank->FirstSound[x].Type == 4 || bank->FirstSound[x].Type == 5) {
                 midisound = (MIDISound *)&bank->FirstSound[x];
-                midisound->MIDIBlock =
-                    (MultiMIDIBlockHeaderPtr)snd_FindMIDIBlock(
-                        midisound->MIDIID);
+                midisound->MIDIBlock = (MultiMIDIBlockHeaderPtr)snd_FindMIDIBlock(midisound->MIDIID);
                 if (!midisound->MIDIBlock)
                     snd_ShowError(90, midisound->MIDIID, 0, 0, 0);
             }
@@ -1293,8 +1237,7 @@ SFXBlock2Ptr snd_FindBlockByName(UInt32 *name) {
     while (block) {
         if ((block->Flags & 0x100) != 0) {
             names_header = block->BlockNames;
-            if (names_header->BlockName[0] == buffer[0] &&
-                names_header->BlockName[1] == buffer[1])
+            if (names_header->BlockName[0] == buffer[0] && names_header->BlockName[1] == buffer[1])
                 return block;
         }
 
@@ -1376,8 +1319,7 @@ SInt32 snd_RegisterMIDI(MIDIBlockHeaderPtr midi) {
         }
         snd_InsertMIDIBlockInList(mmid);
         for (x = 0; x < mmid->NumMIDIBlocks; x++) {
-            mmid->BlockPtr[x] =
-                (SInt8 *)((UInt32)mmid->BlockPtr[x] + (UInt32)mmid);
+            mmid->BlockPtr[x] = (SInt8 *)((UInt32)mmid->BlockPtr[x] + (UInt32)mmid);
             hold = mmid->BlockPtr[x];
             snd_RegisterMIDI(hold);
             hold->MultiMIDIParent = mmid;
@@ -1464,14 +1406,12 @@ void snd_MIDIStreamGone(MIDIBlockHeaderPtr midi) {
     bank = gBankListHead;
     while (bank) {
         for (x = 0; x < bank->NumSounds; ++x) {
-            if (bank->FirstSound[x].Type == 4 ||
-                bank->FirstSound[x].Type == 5) {
+            if (bank->FirstSound[x].Type == 4 || bank->FirstSound[x].Type == 5) {
 
                 midisound = (MIDISoundPtr)&bank->FirstSound[x];
                 if (midisound->MIDIBlock == midi) {
                     snd_LockMasterTick(512);
-                    snd_StopAllHandlersForSound(
-                        (MIDISound *)&bank->FirstSound[x], 0, 0);
+                    snd_StopAllHandlersForSound((MIDISound *)&bank->FirstSound[x], 0, 0);
                     snd_UnlockMasterTick();
                     midisound->MIDIBlock = 0;
                 }
@@ -1554,8 +1494,7 @@ void *snd_IOPMemAlloc(SInt32 size, SInt32 use, SInt32 *act_size) {
         max_avail = QueryMaxFreeMemSize();
         if (gLimit2Meg && max_avail > 0x200000) {
             if (!gPrefs_Silent) {
-                printf("989snd: detected more then 2 meg free (%d free).\n",
-                       max_avail);
+                printf("989snd: detected more then 2 meg free (%d free).\n", max_avail);
             }
             max_avail -= 0x600000;
             if (max_avail < 0) {

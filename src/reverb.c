@@ -77,8 +77,7 @@ void snd_PreAllocReverbWorkArea_L(SInt32 core, SInt32 type) {
     }
 }
 
-void snd_SetReverbEx(UInt32 core, SInt32 type, SInt32 depth, SInt32 delay,
-                     SInt32 feedback) {
+void snd_SetReverbEx(UInt32 core, SInt32 type, SInt32 depth, SInt32 delay, SInt32 feedback) {
     if (core & 1) {
         snd_SetReverbType_L(0, type, delay, feedback);
         snd_SetReverbDepth_L(0, depth, depth);
@@ -107,8 +106,7 @@ void snd_SetReverbType(SInt32 core, SInt32 type) {
 }
 
 // INCLUDE_ASM("asm/nonmatchings/reverb", snd_SetReverbType_L);
-SInt32 snd_SetReverbType_L(SInt32 core, SInt32 type, SInt32 delay,
-                           SInt32 feedback) {
+SInt32 snd_SetReverbType_L(SInt32 core, SInt32 type, SInt32 delay, SInt32 feedback) {
     sceSdEffectAttr ef;
     SInt32 ch;
     SInt32 dis;
@@ -125,8 +123,7 @@ SInt32 snd_SetReverbType_L(SInt32 core, SInt32 type, SInt32 delay,
         return 0;
     }
 
-    if (gRevRamPreAllocType[core] > 0 &&
-        gRevRamUse[gRevRamPreAllocType[core]] < gRevRamUse[type]) {
+    if (gRevRamPreAllocType[core] > 0 && gRevRamUse[gRevRamPreAllocType[core]] < gRevRamUse[type]) {
         snd_ShowError(87, 0, 0, 0, 0);
         return -13;
     }
@@ -151,8 +148,7 @@ SInt32 snd_SetReverbType_L(SInt32 core, SInt32 type, SInt32 delay,
 
     if (gRevRamPreAllocType[core] <= 0) {
         dis = CpuSuspendIntr(&oldstat);
-        if (type &&
-            !(gRevRamStart[core] = snd_SRAMMallocRev(gRevRamUse[type]))) {
+        if (type && !(gRevRamStart[core] = snd_SRAMMallocRev(gRevRamUse[type]))) {
             if (!dis) {
                 CpuResumeIntr(oldstat);
             }
@@ -168,8 +164,7 @@ SInt32 snd_SetReverbType_L(SInt32 core, SInt32 type, SInt32 delay,
 
     snd_KillAutoVerbForCore(core);
     if (type) {
-        sceSdSetAddr(core | SD_A_EEA,
-                     gRevRamStart[core] - (1 - gRevRamUse[type]));
+        sceSdSetAddr(core | SD_A_EEA, gRevRamStart[core] - (1 - gRevRamUse[type]));
     }
 
     ef.core = core;

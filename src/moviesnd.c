@@ -21,8 +21,8 @@
 /* data 13d4 */ UInt32 gMovieSoundPausePos = 0;
 /* bss 8 */ SpuVolume gMovieSPUVol;
 
-void *snd_InitMovieSoundEx(SInt32 buff_size, SInt32 spu_buff_size, SInt32 vol,
-                           SInt32 pan, SInt32 vol_group, SInt32 type) {
+void *snd_InitMovieSoundEx(SInt32 buff_size, SInt32 spu_buff_size, SInt32 vol, SInt32 pan, SInt32 vol_group,
+                           SInt32 type) {
     SInt32 msg;
 
     msg = 0;
@@ -104,8 +104,7 @@ void *snd_InitMovieSoundEx(SInt32 buff_size, SInt32 spu_buff_size, SInt32 vol,
 }
 
 void snd_UpdateMovieADPCM(SInt32 data_size, UInt32 offset) {
-    sceSdVoiceTrans(gMovieDMAChannel, 0, gMovieSoundBuffer,
-                    gMovieSoundSPUBuffer + offset, data_size);
+    sceSdVoiceTrans(gMovieDMAChannel, 0, gMovieSoundBuffer, gMovieSoundSPUBuffer + offset, data_size);
     sceSdVoiceTransStatus(gMovieDMAChannel, 1);
 }
 
@@ -132,8 +131,7 @@ void snd_ClearMovieSoundBuffer() {
         len = gMovieSoundBufferSize / 4;
         for (i = 0; i < len; ++i)
             walk[i] = 0;
-        sceSdBlockTrans(gMovieDMAChannel, SD_TRANS_MODE_WRITE,
-                        gMovieSoundBuffer, 1024);
+        sceSdBlockTrans(gMovieDMAChannel, SD_TRANS_MODE_WRITE, gMovieSoundBuffer, 1024);
     }
 }
 
@@ -178,8 +176,7 @@ void snd_ResetMovieSound() {
         dis = CpuSuspendIntr(&intr_state);
         sceSdSetParam(gMovieDMAChannel | SD_P_BVOLL, 0);
         sceSdSetParam(gMovieDMAChannel | SD_P_BVOLR, 0);
-        sceSdSetParam(gMovieDMAChannel | SD_P_MMIX,
-                      sceSdGetParam(gMovieDMAChannel | SD_P_MMIX) & 0xFF3F);
+        sceSdSetParam(gMovieDMAChannel | SD_P_MMIX, sceSdGetParam(gMovieDMAChannel | SD_P_MMIX) & 0xFF3F);
         if (!dis) {
             CpuResumeIntr(intr_state);
         }
@@ -198,8 +195,7 @@ void snd_ResetMovieSound() {
     gMovieSoundRunning = 0;
 }
 
-void snd_StartMovieSoundEx(void *buff, SInt32 buff_size, SInt32 offset,
-                           UInt32 sr, SInt32 ch) {
+void snd_StartMovieSoundEx(void *buff, SInt32 buff_size, SInt32 offset, UInt32 sr, SInt32 ch) {
     SInt32 vol;
     SInt32 ret;
     UInt32 core;
@@ -212,17 +208,14 @@ void snd_StartMovieSoundEx(void *buff, SInt32 buff_size, SInt32 offset,
     snd_CalcStereoBalance3d(gMovieVol, gMoviePan, &gMovieSPUVol);
 
     if (gMovieSoundType != 3) {
-        ret = sceSdBlockTrans(gMovieDMAChannel,
-                              SD_TRANS_MODE_WRITE_FROM | SD_BLOCK_LOOP, buff,
-                              buff_size, offset);
+        ret = sceSdBlockTrans(gMovieDMAChannel, SD_TRANS_MODE_WRITE_FROM | SD_BLOCK_LOOP, buff, buff_size, offset);
         dis = CpuSuspendIntr(&intr_state);
 
         vol = snd_AdjustVolToGroup(gMovieSPUVol.left, gMovieVolGroup);
         sceSdSetParam(gMovieDMAChannel | SD_P_BVOLL, vol);
         vol = snd_AdjustVolToGroup(gMovieSPUVol.right, gMovieVolGroup);
         sceSdSetParam(gMovieDMAChannel | SD_P_BVOLR, vol);
-        sceSdSetParam(gMovieDMAChannel | SD_P_MMIX,
-                      sceSdGetParam(gMovieDMAChannel | SD_P_MMIX) | 0xC0);
+        sceSdSetParam(gMovieDMAChannel | SD_P_MMIX, sceSdGetParam(gMovieDMAChannel | SD_P_MMIX) | 0xC0);
         if (!dis) {
             CpuResumeIntr(intr_state);
         }
@@ -235,27 +228,19 @@ void snd_StartMovieSoundEx(void *buff, SInt32 buff_size, SInt32 offset,
 
         sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_ADSR1, 0xFu);
         sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_ADSR2, 0x1FC0u);
-        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH,
-                      ((sr * 0x1000) / 48000));
-        sceSdSetAddr(core | SD_VOICE(c_v) | SD_VA_SSA,
-                     gMovieSoundSPUBuffer + gMovieSoundPausePos);
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH, ((sr * 0x1000) / 48000));
+        sceSdSetAddr(core | SD_VOICE(c_v) | SD_VA_SSA, gMovieSoundSPUBuffer + gMovieSoundPausePos);
 
-        sceSdSetSwitch(core | SD_S_VMIXL,
-                       sceSdGetSwitch(core | SD_S_VMIXL) | (1 << c_v));
-        sceSdSetSwitch(core | SD_S_VMIXR,
-                       sceSdGetSwitch(core | SD_S_VMIXR) | (1 << c_v));
-        sceSdSetParam(
-            core | SD_VOICE(c_v) | SD_VP_VOLL,
-            (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.left, gMovieVolGroup) >>
-                1);
+        sceSdSetSwitch(core | SD_S_VMIXL, sceSdGetSwitch(core | SD_S_VMIXL) | (1 << c_v));
+        sceSdSetSwitch(core | SD_S_VMIXR, sceSdGetSwitch(core | SD_S_VMIXR) | (1 << c_v));
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL,
+                      (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.left, gMovieVolGroup) >> 1);
 
         if (ch >= 2) {
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR, 0);
         } else {
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR,
-                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right,
-                                                       gMovieVolGroup) >>
-                              1);
+                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right, gMovieVolGroup) >> 1);
         }
 
         if (ch >= 2) {
@@ -263,21 +248,15 @@ void snd_StartMovieSoundEx(void *buff, SInt32 buff_size, SInt32 offset,
             c_v = gMovieSoundVoice[1] % 24;
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_ADSR1, 0xFu);
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_ADSR2, 0x1FC0u);
-            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH,
-                          ((sr * 0x1000) / 48000));
+            sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH, ((sr * 0x1000) / 48000));
             sceSdSetAddr(core | SD_VOICE(c_v) | SD_VA_SSA,
-                         gMovieSoundSPUBuffer + gMovieSPUBufferSize +
-                             gMovieSoundPausePos);
+                         gMovieSoundSPUBuffer + gMovieSPUBufferSize + gMovieSoundPausePos);
 
-            sceSdSetSwitch(core | SD_S_VMIXL,
-                           sceSdGetSwitch(core | SD_S_VMIXL) | (1 << c_v));
-            sceSdSetSwitch(core | SD_S_VMIXR,
-                           sceSdGetSwitch(core | SD_S_VMIXR) | (1 << c_v));
+            sceSdSetSwitch(core | SD_S_VMIXL, sceSdGetSwitch(core | SD_S_VMIXL) | (1 << c_v));
+            sceSdSetSwitch(core | SD_S_VMIXR, sceSdGetSwitch(core | SD_S_VMIXR) | (1 << c_v));
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL, 0);
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR,
-                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right,
-                                                       gMovieVolGroup) >>
-                              1);
+                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right, gMovieVolGroup) >> 1);
 
             snd_KeyOnVoiceRaw(core, c_v, 0);
         }
@@ -316,10 +295,8 @@ void snd_AdjustMovieVolDueToMasterChange(SInt32 which) {
     } else {
         core = gMovieSoundVoice[0] / 24;
         c_v = gMovieSoundVoice[0] % 24;
-        sceSdSetParam(
-            core | SD_VOICE(c_v) | SD_VP_VOLL,
-            (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.left, gMovieVolGroup) >>
-                1);
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL,
+                      (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.left, gMovieVolGroup) >> 1);
 
         if (gMovieSoundCh >= 2) {
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR, 0);
@@ -330,14 +307,10 @@ void snd_AdjustMovieVolDueToMasterChange(SInt32 which) {
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL, 0);
 
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR,
-                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right,
-                                                       gMovieVolGroup) >>
-                              1);
+                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right, gMovieVolGroup) >> 1);
         } else {
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR,
-                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right,
-                                                       gMovieVolGroup) >>
-                              1);
+                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right, gMovieVolGroup) >> 1);
         }
     }
 
@@ -370,10 +343,8 @@ void snd_SetMovieSoundVolPan(SInt32 vol, SInt32 pan) {
     } else {
         core = gMovieSoundVoice[0] / 24;
         c_v = gMovieSoundVoice[0] % 24;
-        sceSdSetParam(
-            core | SD_VOICE(c_v) | SD_VP_VOLL,
-            (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.left, gMovieVolGroup) >>
-                1);
+        sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL,
+                      (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.left, gMovieVolGroup) >> 1);
 
         if (gMovieSoundCh >= 2) {
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR, 0);
@@ -381,14 +352,10 @@ void snd_SetMovieSoundVolPan(SInt32 vol, SInt32 pan) {
             c_v = gMovieSoundVoice[1] % 24;
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLL, 0);
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR,
-                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right,
-                                                       gMovieVolGroup) >>
-                              1);
+                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right, gMovieVolGroup) >> 1);
         } else {
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_VOLR,
-                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right,
-                                                       gMovieVolGroup) >>
-                              1);
+                          (UInt16)snd_AdjustVolToGroup(gMovieSPUVol.right, gMovieVolGroup) >> 1);
         }
     }
 
@@ -421,8 +388,7 @@ SInt32 snd_PauseMovieSound() {
             CpuResumeIntr(intr_state);
         }
 
-        ret = sceSdBlockTrans(gMovieDMAChannel, SD_TRANS_MODE_STOP, 0, 0) &
-              0xFFFFFF;
+        ret = sceSdBlockTrans(gMovieDMAChannel, SD_TRANS_MODE_STOP, 0, 0) & 0xFFFFFF;
     } else {
         gMovieSoundPausePos = snd_GetMovieNAX();
 

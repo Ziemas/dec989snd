@@ -119,8 +119,7 @@ SInt32 snd_InstallSoundTick() {
     gTimerInfo.thid = &gTimerThreadID;
     gTimerInfo.compare = clock.low / 0xF0;
     gTimerID = AllocHardTimer(1, 32, 1);
-    ret = SetTimerHandler(gTimerID, gTimerInfo.compare, snd_TimerLLTick,
-                          &gTimerInfo);
+    ret = SetTimerHandler(gTimerID, gTimerInfo.compare, snd_TimerLLTick, &gTimerInfo);
     ret = SetupHardTimer(gTimerID, 1, 0, 1);
     ret = StartHardTimer(gTimerID);
     if (gTimerThreadID > 0) {

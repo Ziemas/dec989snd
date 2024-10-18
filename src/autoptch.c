@@ -1,8 +1,7 @@
 #include "common.h"
 #include "functions.h"
 
-void snd_AutoPitch(UInt32 handle, SInt32 pitch, SInt32 delta_time,
-                   SInt32 delta_from) {
+void snd_AutoPitch(UInt32 handle, SInt32 pitch, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;
     SInt32 pitchchange;
     SInt32 current_pitch;
@@ -86,8 +85,7 @@ void snd_AutoPitch(UInt32 handle, SInt32 pitch, SInt32 delta_time,
 SInt32 snd_AutoPitchHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
     SInt16 newMpitch;
 
-    newMpitch =
-        snd_GetSoundCurrentPitch(handler->OwnerID) + effect->delta_value;
+    newMpitch = snd_GetSoundCurrentPitch(handler->OwnerID) + effect->delta_value;
 
     if ((effect->delta_value > 0 && newMpitch > effect->destination) ||
         (effect->delta_value < 0 && newMpitch < effect->destination)) {

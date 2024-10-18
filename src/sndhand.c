@@ -12,8 +12,7 @@
 /* bss 68e0 */ MIDIHandler gMIDIHandler[32];
 /* bss 59d0 */ AMEHandler gAMEHandler[4];
 
-void snd_InitHandlers(GSoundHandlerPtr handlers, SInt32 count, UInt32 type,
-                      SInt32 size) {
+void snd_InitHandlers(GSoundHandlerPtr handlers, SInt32 count, UInt32 type, SInt32 size) {
     int x;
 
     for (x = 0; x < count; ++x) {
@@ -31,8 +30,7 @@ void snd_InitHandlers(GSoundHandlerPtr handlers, SInt32 count, UInt32 type,
 void snd_InitSoundHandlers() {
     SInt32 x;
 
-    snd_InitHandlers(&gBlockSoundHandler[0].SH, 64, 5,
-                     sizeof(BlockSoundHandler));
+    snd_InitHandlers(&gBlockSoundHandler[0].SH, 64, 5, sizeof(BlockSoundHandler));
     snd_InitHandlers(&gMIDIHandler[0].SH, 32, 1, sizeof(MIDIHandler));
     snd_InitHandlers(&gAMEHandler[0].SH, 4, 2, sizeof(AMEHandler));
     for (x = 0; x < 64; ++x) {
@@ -43,8 +41,7 @@ void snd_InitSoundHandlers() {
     gActiveSoundListHead = NULL;
 }
 
-GSoundHandlerPtr snd_FindFreeHandler(GSoundHandlerPtr handlers, SInt32 count,
-                                     UInt32 type, SInt32 size) {
+GSoundHandlerPtr snd_FindFreeHandler(GSoundHandlerPtr handlers, SInt32 count, UInt32 type, SInt32 size) {
     SInt32 x;
     SInt32 owner_num;
     SInt32 intr_state;
@@ -77,8 +74,7 @@ GSoundHandlerPtr snd_FindFreeHandler(GSoundHandlerPtr handlers, SInt32 count,
     return 0;
 }
 
-BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent,
-                            BlockSoundHandlerPtr *weakest_holder) {
+BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent, BlockSoundHandlerPtr *weakest_holder) {
     SInt32 inst;
     SInt32 type;
     BlockSoundHandlerPtr weakest;
@@ -98,15 +94,11 @@ BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent,
 
     while (walk) {
         type = (walk->SH.OwnerID >> 24) & 0x1f;
-        if (type == 5 &&
-            ((parent && walk->orig_sound == sfx) || walk->SH.Sound == sfx)) {
+        if (type == 5 && ((parent && walk->orig_sound == sfx) || walk->SH.Sound == sfx)) {
             inst++;
 
-            if (!weakest ||
-                ((sfx->Flags & 0x10) != 0 &&
-                 walk->App_Vol < weakest->App_Vol) ||
-                ((sfx->Flags & 0x20) != 0 &&
-                 walk->start_tick < weakest->start_tick)) {
+            if (!weakest || ((sfx->Flags & 0x10) != 0 && walk->App_Vol < weakest->App_Vol) ||
+                ((sfx->Flags & 0x20) != 0 && walk->start_tick < weakest->start_tick)) {
                 weakest = walk;
             }
         }
@@ -115,8 +107,7 @@ BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent,
     }
 
     if (sfx->InstanceLimit - 1 < inst) {
-        if (weakest && (((sfx->Flags & 0x10) != 0 && weakest->App_Vol < vol) ||
-                        (sfx->Flags & 0x20) != 0)) {
+        if (weakest && (((sfx->Flags & 0x10) != 0 && weakest->App_Vol < vol) || (sfx->Flags & 0x20) != 0)) {
             *weakest_holder = weakest;
         } else {
             return false;
@@ -126,8 +117,7 @@ BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent,
     return true;
 }
 
-BlockSoundHandlerPtr snd_GetFreeBlockSoundHandler(SFX2 *sfx, SInt32 vol,
-                                                  BOOL parent) {
+BlockSoundHandlerPtr snd_GetFreeBlockSoundHandler(SFX2 *sfx, SInt32 vol, BOOL parent) {
     BlockSoundHandlerPtr weakest;
 
     if (sfx && (sfx->Flags & 8) != 0) {
@@ -140,17 +130,12 @@ BlockSoundHandlerPtr snd_GetFreeBlockSoundHandler(SFX2 *sfx, SInt32 vol,
         }
     }
 
-    return snd_FindFreeHandler(&gBlockSoundHandler[0].SH, 64, 5,
-                               sizeof(BlockSoundHandler));
+    return snd_FindFreeHandler(&gBlockSoundHandler[0].SH, 64, 5, sizeof(BlockSoundHandler));
 }
 
-MIDIHandlerPtr snd_GetFreeMIDIHandler() {
-    return snd_FindFreeHandler(&gMIDIHandler[0].SH, 32, 1, sizeof(MIDIHandler));
-}
+MIDIHandlerPtr snd_GetFreeMIDIHandler() { return snd_FindFreeHandler(&gMIDIHandler[0].SH, 32, 1, sizeof(MIDIHandler)); }
 
-AMEHandlerPtr snd_GetFreeAMEHandler() {
-    return snd_FindFreeHandler(&gAMEHandler[0].SH, 4, 2, sizeof(AMEHandler));
-}
+AMEHandlerPtr snd_GetFreeAMEHandler() { return snd_FindFreeHandler(&gAMEHandler[0].SH, 4, 2, sizeof(AMEHandler)); }
 
 void snd_ActivateHandler(GSoundHandlerPtr snd) {
     SInt32 intr_state;
@@ -360,8 +345,7 @@ GSoundHandlerPtr snd_CheckHandlerStillActive(UInt32 handle) {
     return NULL;
 }
 
-void snd_StopHandler(UInt32 handle, SInt32 and_child, SInt32 silence,
-                     BOOL vlimit_stop) {
+void snd_StopHandler(UInt32 handle, SInt32 and_child, SInt32 silence, BOOL vlimit_stop) {
     SInt32 handler_index;
     SInt32 handler_type;
     GSoundHandlerPtr snd;
@@ -499,8 +483,7 @@ void snd_StopAllSounds() {
     }
 }
 
-void snd_StopHandlerPtr(GSoundHandlerPtr snd, SInt32 and_child, SInt32 silence,
-                        BOOL vlimit_stop) {
+void snd_StopHandlerPtr(GSoundHandlerPtr snd, SInt32 and_child, SInt32 silence, BOOL vlimit_stop) {
     SInt32 do_voice_and_deactivate;
     BOOL kill_block_sound;
     GSoundHandlerPtr walk;
@@ -531,8 +514,7 @@ void snd_StopHandlerPtr(GSoundHandlerPtr snd, SInt32 and_child, SInt32 silence,
     case 5:
         if (kill_block_sound) {
             snd_DoBlockSoundStop((BlockSoundHandler *)snd, 1, vlimit_stop);
-        } else if (snd_DoBlockSoundStop((BlockSoundHandler *)snd, silence,
-                                        vlimit_stop)) {
+        } else if (snd_DoBlockSoundStop((BlockSoundHandler *)snd, silence, vlimit_stop)) {
             do_voice_and_deactivate = 0;
         }
         break;
@@ -565,8 +547,7 @@ void snd_StopHandlerPtr(GSoundHandlerPtr snd, SInt32 and_child, SInt32 silence,
     snd_UnlockMasterTick();
 }
 
-void snd_StopAllHandlersForSound(SoundPtr snd, SInt32 silence,
-                                 BOOL vlimit_stop) {
+void snd_StopAllHandlersForSound(SoundPtr snd, SInt32 silence, BOOL vlimit_stop) {
     GSoundHandlerPtr walk;
 
     for (walk = gActiveSoundListHead; walk; walk = walk->next) {
@@ -620,8 +601,7 @@ void snd_UpdateHandlers() {
         switch (type) {
         case 5:
             if (!(walk->flags & 2)) {
-                stop_current_handler =
-                    snd_ProcessBlockSoundTick((BlockSoundHandlerPtr)walk);
+                stop_current_handler = snd_ProcessBlockSoundTick((BlockSoundHandlerPtr)walk);
             }
             break;
         case 0:
@@ -629,8 +609,7 @@ void snd_UpdateHandlers() {
         case 1:
         case 3:
             if (!(walk->flags & 2)) {
-                stop_current_handler =
-                    snd_ProcessMIDITick((MIDIHandlerPtr)walk);
+                stop_current_handler = snd_ProcessMIDITick((MIDIHandlerPtr)walk);
             }
             break;
         case 2:
@@ -734,8 +713,7 @@ void snd_AddEffectToHandler(GSoundHandlerPtr handler, EffectChainPtr effect) {
     }
 }
 
-void snd_RemoveEffectFromHandler(GSoundHandlerPtr handler,
-                                 EffectChainPtr effect) {
+void snd_RemoveEffectFromHandler(GSoundHandlerPtr handler, EffectChainPtr effect) {
     SInt32 intr_state;
     SInt32 res;
     EffectChainPtr walk;

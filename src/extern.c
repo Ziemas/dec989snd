@@ -21,30 +21,23 @@ SInt32 InitResidentModule() {
     return ret;
 }
 
-UInt32 snd_PlaySoundByNameVolPanPMPB_E(SoundBankPtr block, char *block_name,
-                                       char *sound, SInt32 vol, SInt32 pan,
+UInt32 snd_PlaySoundByNameVolPanPMPB_E(SoundBankPtr block, char *block_name, char *sound, SInt32 vol, SInt32 pan,
                                        SInt16 pitch_mod, SInt16 bend) {
     UInt32 ret;
 
-    ret = snd_PlaySoundByNameVolPanPMPB(block, block_name, sound, vol, pan,
-                                        pitch_mod, bend);
+    ret = snd_PlaySoundByNameVolPanPMPB(block, block_name, sound, vol, pan, pitch_mod, bend);
 
     return ret;
 }
 
-SInt32 snd_GetSoundUserData_E(SoundBankPtr bank, char *bank_name,
-                              int sound_index, char *sound_name,
-                              int *destination) {
+SInt32 snd_GetSoundUserData_E(SoundBankPtr bank, char *bank_name, int sound_index, char *sound_name, int *destination) {
     SInt32 ret;
 
-    ret = snd_GetSoundUserData(bank, bank_name, sound_index, sound_name,
-                               destination);
+    ret = snd_GetSoundUserData(bank, bank_name, sound_index, sound_name, destination);
     return ret;
 }
 
-void snd_SetMIDIRegister_E(UInt32 handle, SInt32 reg, SInt16 value) {
-    snd_SetMIDIRegister(handle, reg, value);
-}
+void snd_SetMIDIRegister_E(UInt32 handle, SInt32 reg, SInt16 value) { snd_SetMIDIRegister(handle, reg, value); }
 
 SInt32 snd_GetMIDIRegister_E(UInt32 handle, SInt32 reg) {
     SInt32 ret;
@@ -124,9 +117,7 @@ SInt16 snd_MIDITo360Pan_E(SInt8 pan) {
 
 void snd_ReleaseDamper_E(MIDIHandlerPtr stream) { snd_ReleaseDamper(stream); }
 
-void snd_ResetControllers_E(MIDIHandlerPtr stream) {
-    snd_ResetControllers(stream);
-}
+void snd_ResetControllers_E(MIDIHandlerPtr stream) { snd_ResetControllers(stream); }
 
 SInt32 snd_SRAMGetFreeMem_E() {
     SInt32 ret;

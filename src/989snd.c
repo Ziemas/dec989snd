@@ -177,8 +177,7 @@ BOOL snd_UnregisterExternProcHandler(Extern989HandlerPtr hand) {
         while (work && work->reserved1 != (UInt32)hand) {
             work = (Extern989HandlerPtr)work->reserved1;
         }
-        work->reserved1 =
-            (UInt32)((Extern989HandlerPtr)work->reserved1)->reserved1;
+        work->reserved1 = (UInt32)((Extern989HandlerPtr)work->reserved1)->reserved1;
     }
 
     return true;
@@ -187,8 +186,7 @@ BOOL snd_UnregisterExternProcHandler(Extern989HandlerPtr hand) {
 Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id) {
     Extern989HandlerPtr work;
 
-    for (work = gExternHandlersList; work;
-         work = (Extern989HandlerPtr)work->reserved1) {
+    for (work = gExternHandlersList; work; work = (Extern989HandlerPtr)work->reserved1) {
         if (work->proc_id == id) {
             return work;
         }
@@ -197,8 +195,8 @@ Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id) {
     return work;
 }
 
-SInt32 snd_DoExternCall(UInt32 proc_id, SInt32 func_index, SInt32 arg1,
-                        SInt32 arg2, SInt32 arg3, SInt32 arg4, SInt32 arg5) {
+SInt32 snd_DoExternCall(UInt32 proc_id, SInt32 func_index, SInt32 arg1, SInt32 arg2, SInt32 arg3, SInt32 arg4,
+                        SInt32 arg5) {
     Extern989HandlerPtr work;
 
     work = snd_FindExternProcHandler(proc_id);
@@ -215,8 +213,7 @@ SInt32 snd_DoExternCall(UInt32 proc_id, SInt32 func_index, SInt32 arg1,
     return work->procs[func_index](arg1, arg2, arg3, arg4, arg5);
 }
 
-SInt32 snd_DoExternCallWithData(UInt32 proc_id, SInt32 func_index,
-                                SInt32 data_size, void *data_ptr) {
+SInt32 snd_DoExternCallWithData(UInt32 proc_id, SInt32 func_index, SInt32 data_size, void *data_ptr) {
     Extern989HandlerPtr work;
 
     work = snd_FindExternProcHandler(proc_id);
@@ -244,8 +241,7 @@ void snd_CMD_SL_INIT(SInt8 *msg_data) {
 void snd_CMD_SL_CLOSE(SInt8 *msg_data) { snd_StopSoundSystem(); }
 
 void snd_CMD_SL_LOADBANK(SInt8 *msg_data) {
-    *gWriteBackdataOffset =
-        (UInt32)snd_BankLoadEx(&msg_data[4], *(SInt32 *)msg_data, 0, 0);
+    *gWriteBackdataOffset = (UInt32)snd_BankLoadEx(&msg_data[4], *(SInt32 *)msg_data, 0, 0);
 }
 
 void snd_CMD_SL_LOADBANKBYLOC(SInt8 *msg_data) {
@@ -266,13 +262,11 @@ void snd_CMD_SL_BANKLOADFROMIOP(SInt8 *msg_data) {
     UInt32 *data;
 
     data = (UInt32 *)msg_data;
-    *gWriteBackdataOffset =
-        (UInt32)snd_BankLoadFromIOPEx((void *)data[0], 0, 0);
+    *gWriteBackdataOffset = (UInt32)snd_BankLoadFromIOPEx((void *)data[0], 0, 0);
 }
 
 void snd_CMD_SL_LOADMMD(SInt8 *msg_data) {
-    *gWriteBackdataOffset =
-        (UInt32)snd_MMDLoad((char *)&msg_data[4], *(SInt32 *)msg_data);
+    *gWriteBackdataOffset = (UInt32)snd_MMDLoad((char *)&msg_data[4], *(SInt32 *)msg_data);
 }
 
 void snd_CMD_SL_LOADMMDBYLOC(SInt8 *msg_data) {
@@ -287,9 +281,7 @@ void snd_CMD_SL_UNLOADBANK_A(SInt8 *msg_data) {
     *gWriteBackdataOffset = 0;
 }
 
-void snd_CMD_SL_UNLOADMIDI_A(SInt8 *msg_data) {
-    snd_UnloadMMD(*(MultiMIDIBlockHeaderPtr *)msg_data);
-}
+void snd_CMD_SL_UNLOADMIDI_A(SInt8 *msg_data) { snd_UnloadMMD(*(MultiMIDIBlockHeaderPtr *)msg_data); }
 
 void snd_CMD_SL_RESOLVEBANKS(SInt8 *msg_data) { snd_ResolveBankXREFS(); }
 
@@ -300,17 +292,11 @@ void snd_CMD_SL_SETMASTERVOL_A(SInt8 *msg_data) {
     snd_SetMasterVolume(data[0], data[1]);
 }
 
-void snd_CMD_SL_GETMASTERVOL(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetMasterVolume(*(SInt32 *)msg_data);
-}
+void snd_CMD_SL_GETMASTERVOL(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetMasterVolume(*(SInt32 *)msg_data); }
 
-void snd_CMD_SL_SETPLAYBACKMODE_A(SInt8 *msg_data) {
-    snd_SetPlaybackMode(*(SInt32 *)msg_data);
-}
+void snd_CMD_SL_SETPLAYBACKMODE_A(SInt8 *msg_data) { snd_SetPlaybackMode(*(SInt32 *)msg_data); }
 
-void snd_CMD_SL_GETPLAYBACKMODE(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetPlaybackMode();
-}
+void snd_CMD_SL_GETPLAYBACKMODE(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetPlaybackMode(); }
 
 void snd_CMD_SL_SETMIXERMODE_A(SInt8 *msg_data) {
     SInt32 *data;
@@ -319,9 +305,7 @@ void snd_CMD_SL_SETMIXERMODE_A(SInt8 *msg_data) {
     snd_SetMixerMode(data[0], data[1]);
 }
 
-void snd_CMD_SL_SETREVERBMODE(SInt8 *msg_data) {
-    snd_SetReverbMode(*(SInt32 *)msg_data);
-}
+void snd_CMD_SL_SETREVERBMODE(SInt8 *msg_data) { snd_SetReverbMode(*(SInt32 *)msg_data); }
 
 void snd_CMD_SL_SETGROUPVOICERANGE(SInt8 *msg_data) {
     SInt32 *data;
@@ -355,9 +339,8 @@ void snd_CMD_SL_PLAYSOUND(SInt8 *msg_data) {
     SInt32 *data;
 
     data = (SInt32 *)msg_data;
-    *gWriteBackdataOffset = snd_PlaySoundVolPanPMPB(
-        (SoundBankPtr)data[0], data[1], data[2], data[3], *(SInt16 *)&data[4],
-        *(SInt16 *)&data[5]);
+    *gWriteBackdataOffset = snd_PlaySoundVolPanPMPB((SoundBankPtr)data[0], data[1], data[2], data[3],
+                                                    *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
 }
 
 void snd_CMD_SL_PLAYSOUND_A(SInt8 *msg_data) {
@@ -365,8 +348,7 @@ void snd_CMD_SL_PLAYSOUND_A(SInt8 *msg_data) {
 
     data = (SInt32 *)msg_data;
 
-    snd_PlaySoundVolPanPMPB((SoundBankPtr)data[0], data[1], data[2], data[3],
-                            *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
+    snd_PlaySoundVolPanPMPB((SoundBankPtr)data[0], data[1], data[2], data[3], *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
 }
 
 void snd_CMD_SL_PLAYSOUNDEX(SInt8 *msg_data) {
@@ -376,31 +358,19 @@ void snd_CMD_SL_PLAYSOUNDEX(SInt8 *msg_data) {
     *gWriteBackdataOffset = snd_PlaySoundEx(params);
 }
 
-void snd_CMD_SL_PAUSESOUND(SInt8 *msg_data) {
-    snd_PauseSound(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_PAUSESOUND(SInt8 *msg_data) { snd_PauseSound(*(UInt32 *)msg_data); }
 
-void snd_CMD_SL_CONTINUESOUND(SInt8 *msg_data) {
-    snd_ContinueSound(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_CONTINUESOUND(SInt8 *msg_data) { snd_ContinueSound(*(UInt32 *)msg_data); }
 
-void snd_CMD_SL_STOPSOUND(SInt8 *msg_data) {
-    snd_StopSound(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_STOPSOUND(SInt8 *msg_data) { snd_StopSound(*(UInt32 *)msg_data); }
 
-void snd_CMD_SL_PAUSEALLSOUNDS(SInt8 *msg_data) {
-    snd_PauseAllSoundsInGroup(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_PAUSEALLSOUNDS(SInt8 *msg_data) { snd_PauseAllSoundsInGroup(*(UInt32 *)msg_data); }
 
-void snd_CMD_SL_CONTINUEALLSOUNDS(SInt8 *msg_data) {
-    snd_ContinueAllSoundsInGroup(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_CONTINUEALLSOUNDS(SInt8 *msg_data) { snd_ContinueAllSoundsInGroup(*(UInt32 *)msg_data); }
 
 void snd_CMD_SL_STOPALLSOUNDS(SInt8 *msg_data) { snd_StopAllSounds(); }
 
-void snd_CMD_SL_STOPALLSOUNDSINGROUP(SInt8 *msg_data) {
-    snd_StopAllSoundsInGroup(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_STOPALLSOUNDSINGROUP(SInt8 *msg_data) { snd_StopAllSoundsInGroup(*(UInt32 *)msg_data); }
 
 void snd_CMD_SL_SOUNDISSTILLPLAYING(SInt8 *msg_data) {
     *gWriteBackdataOffset = snd_SoundIsStillPlaying(*(UInt32 *)msg_data);
@@ -424,8 +394,7 @@ void snd_CMD_SL_GETSOUNDORIGPITCH(SInt8 *msg_data) {
     SInt32 *data;
 
     data = (SInt32 *)msg_data;
-    *gWriteBackdataOffset =
-        snd_GetSoundOriginalPitch((SoundBankPtr)data[0], data[1]);
+    *gWriteBackdataOffset = snd_GetSoundOriginalPitch((SoundBankPtr)data[0], data[1]);
 }
 
 void snd_CMD_SL_GETSOUNDCURRPITCH(SInt8 *msg_data) {
@@ -458,16 +427,14 @@ void snd_CMD_SL_SETSOUNDPARAMS(SInt8 *msg_data) {
 
     data = (SInt32 *)msg_data;
     *gWriteBackdataOffset =
-        snd_SetSoundParams(data[0], data[1], data[2], data[3],
-                           *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
+        snd_SetSoundParams(data[0], data[1], data[2], data[3], *(SInt16 *)&data[4], *(SInt16 *)&data[5]);
 }
 
 void snd_CMD_SL_AUTOVOL_A(SInt8 *msg_data) {
     SInt32 *data;
 
     data = (SInt32 *)msg_data;
-    snd_AutoVol(data[0], *(SInt16 *)&data[1], *(SInt16 *)&data[2],
-                *(SInt16 *)&data[3]);
+    snd_AutoVol(data[0], *(SInt16 *)&data[1], *(SInt16 *)&data[2], *(SInt16 *)&data[3]);
 }
 
 void snd_CMD_SL_AUTOPAN_A(SInt8 *msg_data) {
@@ -491,13 +458,9 @@ void snd_CMD_SL_AUTOPITCHBEND_A(SInt8 *msg_data) {
     snd_AutoPitchBend(data[0], data[1], data[2], data[3]);
 }
 
-void snd_CMD_SL_GETGLOBALEXCITE(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetGlobalExcite();
-}
+void snd_CMD_SL_GETGLOBALEXCITE(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetGlobalExcite(); }
 
-void snd_CMD_SL_SETGLOBALEXCITE_A(SInt8 *msg_data) {
-    snd_SetGlobalExcite(*(SInt32 *)msg_data);
-}
+void snd_CMD_SL_SETGLOBALEXCITE_A(SInt8 *msg_data) { snd_SetGlobalExcite(*(SInt32 *)msg_data); }
 
 void snd_CMD_SL_GETMIDIREGISTER(SInt8 *msg_data) {
     SInt32 *data;
@@ -517,8 +480,7 @@ void snd_CMD_SL_INITVAGSTREAMINGEX(SInt8 *msg_data) {
     SInt32 *data;
 
     data = (SInt32 *)msg_data;
-    *gWriteBackdataOffset =
-        snd_InitVAGStreamingEx(data[0], data[1], data[2], data[3]) != 0;
+    *gWriteBackdataOffset = snd_InitVAGStreamingEx(data[0], data[1], data[2], data[3]) != 0;
 }
 
 void snd_CMD_SL_SETVAGSTREAMCHANNELRANGE(SInt8 *msg_data) {
@@ -547,40 +509,30 @@ void snd_CMD_SL_PLAYVAGSTREAMBYNAME(SInt8 *msg_data) {
         name2 = data->name2;
     }
 
-    *gWriteBackdataOffset = snd_PlayVAGStreamByNameEx(
-        name1, name2, data->offset1, data->offset2, data->vol, data->pan,
-        data->vol_group, data->queue, data->sub_group, data->flags);
+    *gWriteBackdataOffset = snd_PlayVAGStreamByNameEx(name1, name2, data->offset1, data->offset2, data->vol, data->pan,
+                                                      data->vol_group, data->queue, data->sub_group, data->flags);
 }
 
 void snd_CMD_SL_PLAYVAGSTREAMBYLOC(SInt8 *msg_data) {
     SInt32 *data;
 
     data = (SInt32 *)msg_data;
-    *gWriteBackdataOffset = snd_PlayVAGStreamByLocEx(
-        data[0], data[1], data[2] & 0xffff, data[3] & 0xffff,
-        ((UInt32)data[2] >> 16) & 0xffff, ((UInt32)data[3] >> 16) & 0xffff,
-        data[4], data[5], data[6], data[7]);
+    *gWriteBackdataOffset =
+        snd_PlayVAGStreamByLocEx(data[0], data[1], data[2] & 0xffff, data[3] & 0xffff, ((UInt32)data[2] >> 16) & 0xffff,
+                                 ((UInt32)data[3] >> 16) & 0xffff, data[4], data[5], data[6], data[7]);
 }
 
-void snd_CMD_SL_PAUSEVAGSTREAM(SInt8 *msg_data) {
-    snd_PauseVAGStream(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_PAUSEVAGSTREAM(SInt8 *msg_data) { snd_PauseVAGStream(*(UInt32 *)msg_data); }
 
-void snd_CMD_SL_CONTINUEVAGSTREAM(SInt8 *msg_data) {
-    snd_ContinueVAGStream(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_CONTINUEVAGSTREAM(SInt8 *msg_data) { snd_ContinueVAGStream(*(UInt32 *)msg_data); }
 
-void snd_CMD_SL_STOPVAGSTREAM(SInt8 *msg_data) {
-    snd_StopVAGStream(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_STOPVAGSTREAM(SInt8 *msg_data) { snd_StopVAGStream(*(UInt32 *)msg_data); }
 
 void snd_CMD_SL_GETVAGSTREAMQUEUECOUNT(SInt8 *msg_data) {
     *gWriteBackdataOffset = snd_GetVAGStreamQueueCount(*(UInt32 *)msg_data);
 }
 
-void snd_CMD_SL_GETVAGSTREAMLOC(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetVAGStreamLoc(*(UInt32 *)msg_data);
-}
+void snd_CMD_SL_GETVAGSTREAMLOC(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetVAGStreamLoc(*(UInt32 *)msg_data); }
 
 void snd_CMD_SL_GETVAGSTREAMTIMEREMAINING(SInt8 *msg_data) {
     *gWriteBackdataOffset = snd_GetVAGStreamTimeRemaining(*(UInt32 *)msg_data);
@@ -602,9 +554,7 @@ void snd_CMD_SL_STREAMSAFECHECKCDIDLE(SInt8 *msg_data) {
     *gWriteBackdataOffset = snd_StreamSafeCheckCDIdle(*(UInt32 *)msg_data);
 }
 
-void snd_CMD_SL_STREAMSAFECDBREAK(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_StreamSafeCdBreak();
-}
+void snd_CMD_SL_STREAMSAFECDBREAK(SInt8 *msg_data) { *gWriteBackdataOffset = snd_StreamSafeCdBreak(); }
 
 void snd_CMD_SL_STREAMSAFECDREAD(SInt8 *msg_data) {
     UInt32 *data = (UInt32 *)msg_data;
@@ -650,17 +600,14 @@ void snd_CMD_SL_STREAMSAFECDSEARCHFILE(SInt8 *msg_data) {
     *gWriteBackdataOffset = ret;
 }
 
-void snd_CMD_SL_ALLOCIOPRAM(SInt8 *msg_data) {
-    *gWriteBackdataOffset = (UInt32)gAllocProc(*(UInt32 *)msg_data, 7, 0);
-}
+void snd_CMD_SL_ALLOCIOPRAM(SInt8 *msg_data) { *gWriteBackdataOffset = (UInt32)gAllocProc(*(UInt32 *)msg_data, 7, 0); }
 
 void snd_CMD_SL_FREEIOPRAM(SInt8 *msg_data) { gFreeProc(*(void **)msg_data); }
 
 void snd_CMD_SL_INITMOVIESOUND(SInt8 *msg_data) {
     SInt32 *data = (SInt32 *)msg_data;
 
-    *gWriteBackdataOffset = (UInt32)snd_InitMovieSoundEx(
-        data[0], data[1], data[2], data[3], data[4], data[5]);
+    *gWriteBackdataOffset = (UInt32)snd_InitMovieSoundEx(data[0], data[1], data[2], data[3], data[4], data[5]);
 }
 
 void snd_CMD_SL_CLOSEMOVIESOUND(SInt8 *msg_data) { snd_CloseMovieSound(); }
@@ -673,9 +620,7 @@ void snd_CMD_SL_STARTMOVIESOUND(SInt8 *msg_data) {
     snd_StartMovieSoundEx((void *)data[0], data[1], data[2], data[3], data[4]);
 }
 
-void snd_CMD_SL_PAUSEMOVIESOUND(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_PauseMovieSound();
-}
+void snd_CMD_SL_PAUSEMOVIESOUND(SInt8 *msg_data) { *gWriteBackdataOffset = snd_PauseMovieSound(); }
 
 void snd_CMD_SL_SETMOVIESOUNDVOLPAN(SInt8 *msg_data) {
     SInt32 *data = (SInt32 *)msg_data;
@@ -689,17 +634,11 @@ void snd_CMD_SL_UPDATEMOVIEADPCM(SInt8 *msg_data) {
     snd_UpdateMovieADPCM(data[0], data[1]);
 }
 
-void snd_CMD_SL_GETMOVIENAX(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetMovieNAX();
-}
+void snd_CMD_SL_GETMOVIENAX(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetMovieNAX(); }
 
-void snd_CMD_SL_GETTRANSSTATUS(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetMovieBufferPos();
-}
+void snd_CMD_SL_GETTRANSSTATUS(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetMovieBufferPos(); }
 
-void snd_CMD_SL_GETSTICK(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetTick();
-}
+void snd_CMD_SL_GETSTICK(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetTick(); }
 
 void snd_CMD_SL_GETVOICEALLOC(SInt8 *msg_data) {
     SInt32 core;
@@ -718,9 +657,7 @@ void snd_CMD_SL_GETVOICEALLOC(SInt8 *msg_data) {
     }
 }
 
-void snd_CMD_SL_LOCKVALLOC(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_LockVoiceAllocatorEx(0, 0x12345678);
-}
+void snd_CMD_SL_LOCKVALLOC(SInt8 *msg_data) { *gWriteBackdataOffset = snd_LockVoiceAllocatorEx(0, 0x12345678); }
 
 void snd_CMD_SL_EXTERNVALLOC(SInt8 *msg_data) {
     SInt32 *data = (SInt32 *)msg_data;
@@ -728,9 +665,7 @@ void snd_CMD_SL_EXTERNVALLOC(SInt8 *msg_data) {
     *gWriteBackdataOffset = snd_ExternVoiceAlloc(data[0], data[1]);
 }
 
-void snd_CMD_SL_EXTERNVFREE(SInt8 *msg_data) {
-    snd_ExternVoiceFree(*(SInt32 *)msg_data);
-}
+void snd_CMD_SL_EXTERNVFREE(SInt8 *msg_data) { snd_ExternVoiceFree(*(SInt32 *)msg_data); }
 
 void snd_CMD_SL_UNLOCKVALLOC(SInt8 *msg_data) { snd_UnlockVoiceAllocator(); }
 
@@ -801,15 +736,13 @@ void snd_CMD_SL_SRAMMAXFREE(SInt8 *msg_data) {
 void snd_CMD_SL_EXTERNCALL(SInt8 *msg_data) {
     SInt32 *data = (SInt32 *)msg_data;
 
-    *gWriteBackdataOffset = snd_DoExternCall(data[0], data[1], data[2], data[3],
-                                             data[4], data[5], data[6]);
+    *gWriteBackdataOffset = snd_DoExternCall(data[0], data[1], data[2], data[3], data[4], data[5], data[6]);
 }
 
 void snd_CMD_SL_EXTERNCALLWITHDATA(SInt8 *msg_data) {
     SInt32 *data = (SInt32 *)msg_data;
 
-    *gWriteBackdataOffset =
-        snd_DoExternCallWithData(data[0], data[1], data[2], &data[3]);
+    *gWriteBackdataOffset = snd_DoExternCallWithData(data[0], data[1], data[2], &data[3]);
 }
 
 void snd_CMD_SL_SETREVERBEX(SInt8 *msg_data) {
@@ -824,13 +757,9 @@ void snd_CMD_SL_PREALLOCREVERBWORKAREA(SInt8 *msg_data) {
     snd_PreAllocReverbWorkArea(data[0], data[1]);
 }
 
-void snd_CMD_SL_GETLASTLOADERROR(SInt8 *msg_data) {
-    *gWriteBackdataOffset = snd_GetLastLoadError();
-}
+void snd_CMD_SL_GETLASTLOADERROR(SInt8 *msg_data) { *gWriteBackdataOffset = snd_GetLastLoadError(); }
 
-void snd_CMD_SL_SETPANMODE(SInt8 *msg_data) {
-    snd_SetPanMode(*(SInt32 *)msg_data);
-}
+void snd_CMD_SL_SETPANMODE(SInt8 *msg_data) { snd_SetPanMode(*(SInt32 *)msg_data); }
 
 void snd_CMD_SL_PLAYSOUNDBYNAME(SInt8 *msg_data) { *gWriteBackdataOffset = 0; }
 
@@ -846,8 +775,7 @@ void snd_CMD_SL_GETSOUNDUD(SInt8 *msg_data) {
     sceSifDmaData transData;
 
     data = (GetSoundUserDataCommandStruct *)msg_data;
-    ret = snd_GetSoundUserData((SoundBankPtr)data->bank,
-                               (char *)data->bank_name, data->snd_index,
+    ret = snd_GetSoundUserData((SoundBankPtr)data->bank, (char *)data->bank_name, data->snd_index,
                                (char *)data->snd_name, return_hold);
     if (ret) {
         transData.data = (UInt32)return_hold;
@@ -919,9 +847,7 @@ void snd_CMD_SL_SETMASTERVOLUMEDUCKER(SInt8 *msg_data) {
     snd_SetMasterVolumeDucker(*data, state);
 }
 
-void snd_CMD_SL_CDSTATUS(SInt8 *msg_data) {
-    *gWriteBackdataOffset = sceCdStatus();
-}
+void snd_CMD_SL_CDSTATUS(SInt8 *msg_data) { *gWriteBackdataOffset = sceCdStatus(); }
 
 void snd_CMD_SL_COMMAND_BATCH(SInt8 *msg_data) {
     SndCommandBufferPtr batch = (SndCommandBufferPtr)msg_data;
@@ -963,32 +889,27 @@ SInt32 snd_StartEEMessaging() {
     *(SInt32 *)snd_MESSAGE_RETURN_BUFFER = -1;
     sceSifInitRpc(0);
     sceSifSetRpcQueue(&qd, GetThreadId());
-    sceSifRegisterRpc(&sd, 0x123456, snd_EEMessageParser,
-                      snd_MESSAGE_RECIEVE_BUFFER, NULL, NULL, &qd);
+    sceSifRegisterRpc(&sd, 0x123456, snd_EEMessageParser, snd_MESSAGE_RECIEVE_BUFFER, NULL, NULL, &qd);
     sceSifRpcLoop(&qd);
 
     return 0;
 }
 
-static void *snd_EELoaderMessageParser(UInt32 command, void *data,
-                                       SInt32 size) {
+static void *snd_EELoaderMessageParser(UInt32 command, void *data, SInt32 size) {
     SInt32 ret_val = 0;
 
     switch (command) {
     case SL_LOADBANK:
-        ret_val =
-            (SInt32)snd_BankLoadEx((char *)&data[4], *(SInt32 *)&data[0], 0, 0);
+        ret_val = (SInt32)snd_BankLoadEx((char *)&data[4], *(SInt32 *)&data[0], 0, 0);
         break;
     case SL_LOADBANKBYLOC:
-        ret_val = (SInt32)snd_BankLoadByLocEx(*(SInt32 *)&data[0],
-                                              *(SInt32 *)&data[4], 0, 0);
+        ret_val = (SInt32)snd_BankLoadByLocEx(*(SInt32 *)&data[0], *(SInt32 *)&data[4], 0, 0);
         break;
     case SL_LOADMMD:
         ret_val = (SInt32)snd_MMDLoad((char *)&data[4], *(SInt32 *)data);
         break;
     case SL_LOADMMDBYLOC:
-        ret_val =
-            (SInt32)snd_MMDLoadByLoc(*(SInt32 *)&data[0], *(SInt32 *)&data[4]);
+        ret_val = (SInt32)snd_MMDLoadByLoc(*(SInt32 *)&data[0], *(SInt32 *)&data[4]);
         break;
     case SL_BANKLOADFROMEE:
         ret_val = (SInt32)snd_BankLoadFromEEEx(*(SInt32 *)&data[0], 0, 0);
@@ -1008,8 +929,7 @@ SInt32 snd_StartEELoaderMessaging() {
 
     sceSifInitRpc(0);
     sceSifSetRpcQueue(&qd, GetThreadId());
-    sceSifRegisterRpc(&sd, 0x123457, snd_EELoaderMessageParser,
-                      snd_LOADER_MESSAGE_RECIEVE_BUFFER, NULL, NULL, &qd);
+    sceSifRegisterRpc(&sd, 0x123457, snd_EELoaderMessageParser, snd_LOADER_MESSAGE_RECIEVE_BUFFER, NULL, NULL, &qd);
     sceSifRpcLoop(&qd);
 
     return 0;
@@ -1128,19 +1048,15 @@ void snd_DumpVersionAndInfo() {
     printf("\n");
     printf("==========================================================\n");
     printf(" 989snd (c)2000-2003 Sony Computer Entertainment America\n");
-    printf(" by Buzz Burrowes                               v%d.%d.%d\n", 3, 1,
-           2);
-    printf("                        (built %s at %s)\n", "Nov 19 2003",
-           "14:31:04");
+    printf(" by Buzz Burrowes                               v%d.%d.%d\n", 3, 1, 2);
+    printf("                        (built %s at %s)\n", "Nov 19 2003", "14:31:04");
     printf(" (build with sce library rev %d.%d.%d)\n", 2, 7, 0);
     printf("==========================================================\n");
     printf("    Thread Priorities:\n");
     printf("                         Sound Tick = %d\n", gThreadPriority_TICK);
     printf("                           Main RPC = %d\n", gThreadPriority_RPC);
-    printf("                        Loading RPC = %d\n",
-           gThreadPriority_RPC + 1);
-    printf("                          Streaming = %d, %d, %d, %d\n",
-           gThreadPriority_STREAM, gThreadPriority_STREAM + 1,
+    printf("                        Loading RPC = %d\n", gThreadPriority_RPC + 1);
+    printf("                          Streaming = %d, %d, %d, %d\n", gThreadPriority_STREAM, gThreadPriority_STREAM + 1,
            gThreadPriority_STREAM + 2, gThreadPriority_STREAM + 3);
     printf("   Memory Locations...\n");
     printf("       Voice Allocator Owner  : 0x%8.8x\n", &gVAllocOwnerID);
@@ -1149,15 +1065,12 @@ void snd_DumpVersionAndInfo() {
     printf("\n");
 }
 
-void snd_RegisterErrorDisplayFunc(SndErrorDisplayFunc func) {
-    gErrorDisplayFunc = func;
-}
+void snd_RegisterErrorDisplayFunc(SndErrorDisplayFunc func) { gErrorDisplayFunc = func; }
 
 void snd_ShowError(SInt32 num, UInt32 a1, UInt32 a2, UInt32 a3, UInt32 a4) {
     if (!gErrorDisplayFunc) {
         if (!gPrefs_Silent) {
-            printf("989snd Error: cause %d -> %u, %u, %u, %u\n", num, a1, a2,
-                   a3, a4);
+            printf("989snd Error: cause %d -> %u, %u, %u, %u\n", num, a1, a2, a3, a4);
         }
 
         return;

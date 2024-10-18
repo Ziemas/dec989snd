@@ -1,8 +1,7 @@
 #include "common.h"
 #include "functions.h"
 
-void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time,
-                 SInt32 delta_from) {
+void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;
     SInt32 panchange;
     SInt32 shortest;
@@ -132,10 +131,8 @@ SInt32 snd_AutoPanHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
         wrap_dest = effect->destination;
     }
 
-    if ((effect->delta_value > 0 && newMpan > wrap_dest &&
-         handler->Current_Pan < wrap_dest) ||
-        (effect->delta_value < 0 && newMpan < wrap_dest &&
-         handler->Current_Pan > wrap_dest)) {
+    if ((effect->delta_value > 0 && newMpan > wrap_dest && handler->Current_Pan < wrap_dest) ||
+        (effect->delta_value < 0 && newMpan < wrap_dest && handler->Current_Pan > wrap_dest)) {
         newMpan = effect->destination;
     } else {
         if (newMpan < 0) {

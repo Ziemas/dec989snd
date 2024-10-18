@@ -5,8 +5,7 @@
 #include "libsd.h"
 #include "sdmacro.h"
 
-UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan,
-                         SInt16 pitch_mod, SInt16 bend) {
+UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend) {
     MIDIBlockHeaderPtr data_stream;
     MIDIHandlerPtr stream_handler;
 
@@ -50,8 +49,7 @@ UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan,
     return stream_handler->SH.OwnerID;
 }
 
-void snd_SetupMIDIStreamHandler(MIDIHandlerPtr hand,
-                                MIDIBlockHeaderPtr stream) {
+void snd_SetupMIDIStreamHandler(MIDIHandlerPtr hand, MIDIBlockHeaderPtr stream) {
     hand->BankPtr = stream->BankPtr;
     hand->PlayPos = hand->DataStart = stream->DataStart;
     hand->Tempo = stream->Tempo;
@@ -82,13 +80,9 @@ MIDIBlockHeaderPtr snd_GetRealMIDIDataStream(MIDISoundPtr sound) {
     return ((MultiMIDIBlockHeaderPtr)stream)->BlockPtr[sound->Index];
 }
 
-void snd_MuteMIDIChannel(MIDIHandlerPtr stream, SInt32 channel) {
-    stream->MuteState |= 1 << channel;
-}
+void snd_MuteMIDIChannel(MIDIHandlerPtr stream, SInt32 channel) { stream->MuteState |= 1 << channel; }
 
-void snd_UnmuteMIDIChannel(MIDIHandlerPtr stream, SInt32 channel) {
-    stream->MuteState &= ~(1 << channel);
-}
+void snd_UnmuteMIDIChannel(MIDIHandlerPtr stream, SInt32 channel) { stream->MuteState &= ~(1 << channel); }
 
 SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
     static SInt32 in_function = 0;
@@ -103,14 +97,11 @@ SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
     in_function = 1;
 
     if (stream->Flags & 1) {
-        stream->PPT =
-            1000 * gMicsPerTick / (stream->Tempo / (stream->PPQ / 10u));
+        stream->PPT = 1000 * gMicsPerTick / (stream->Tempo / (stream->PPQ / 10u));
         stream->RunningStatus = 0;
         stream->TickDelta = 100 * ReadVarLen(stream->PlayPos, &used_bytes);
         stream->TickCountdown =
-            (((stream->Tempo * (stream->TickDelta / 100)) / stream->PPQ) +
-             (gMicsPerTick - 1)) /
-            gMicsPerTick;
+            (((stream->Tempo * (stream->TickDelta / 100)) / stream->PPQ) + (gMicsPerTick - 1)) / gMicsPerTick;
         stream->PlayPos += used_bytes;
         stream->Flags &= ~1;
         stream->TickError = 0;
@@ -140,11 +131,9 @@ SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
                 break;
             case 0x51:
                 stream->PlayPos += 2;
-                stream->Tempo = (((stream->PlayPos[0] & 0xff) << 16) |
-                                 ((stream->PlayPos[1] & 0xff) << 8) |
+                stream->Tempo = (((stream->PlayPos[0] & 0xff) << 16) | ((stream->PlayPos[1] & 0xff) << 8) |
                                  stream->PlayPos[2] & 0xff);
-                stream->PPT =
-                    1000 * gMicsPerTick / (stream->Tempo / (stream->PPQ / 10u));
+                stream->PPT = 1000 * gMicsPerTick / (stream->Tempo / (stream->PPQ / 10u));
                 stream->PlayPos += 3;
                 break;
             default:
@@ -178,8 +167,7 @@ SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
                 if (!stream->PlayPos[1]) {
                     snd_MIDINoteOff(stream);
                 } else {
-                    if (!((stream->MuteState >> (stream->RunningStatus & 0xf)) &
-                          1)) {
+                    if (!((stream->MuteState >> (stream->RunningStatus & 0xf)) & 1)) {
                         snd_MIDINoteOn(stream);
                     }
                 }
@@ -205,17 +193,14 @@ SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
                     }
                     break;
                 case 7:
-                    stream->Vol[stream->RunningStatus & 0xf] =
-                        stream->PlayPos[1];
+                    stream->Vol[stream->RunningStatus & 0xf] = stream->PlayPos[1];
                     break;
                 case 0xa:
-                    stream->Pan[stream->RunningStatus & 0xf] =
-                        snd_MIDITo360Pan(stream->PlayPos[1]);
+                    stream->Pan[stream->RunningStatus & 0xf] = snd_MIDITo360Pan(stream->PlayPos[1]);
                     break;
                 case 0x40:
                     if (stream->PlayPos[1] >= 64) {
-                        stream->DamperState |= 1
-                                               << (stream->RunningStatus & 0xF);
+                        stream->DamperState |= 1 << (stream->RunningStatus & 0xF);
                     } else {
                         snd_ReleaseDamper(stream);
                     }
@@ -235,8 +220,7 @@ SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
         }
 
         if (!stream_done) {
-            stream->TickDelta = 100 * ReadVarLen(stream->PlayPos, &used_bytes) +
-                                stream->TickError;
+            stream->TickDelta = 100 * ReadVarLen(stream->PlayPos, &used_bytes) + stream->TickError;
 
             if (stream->TickDelta < 0 || stream->TickDelta < stream->PPT / 2) {
                 stream->TickError = stream->TickDelta;
@@ -245,12 +229,8 @@ SInt32 snd_ProcessMIDITick(MIDIHandlerPtr stream) {
 
             if (stream->TickDelta) {
                 stream->TickCountdown =
-                    (((stream->Tempo * (stream->TickDelta / 100)) /
-                      stream->PPQ) +
-                     (gMicsPerTick - 1)) /
-                    gMicsPerTick;
-                stream->TickError =
-                    stream->TickDelta - stream->PPT * stream->TickCountdown;
+                    (((stream->Tempo * (stream->TickDelta / 100)) / stream->PPQ) + (gMicsPerTick - 1)) / gMicsPerTick;
+                stream->TickError = stream->TickDelta - stream->PPT * stream->TickCountdown;
             }
 
             stream->PlayPos = &stream->PlayPos[used_bytes];
@@ -302,8 +282,7 @@ void snd_MIDINoteOn(MIDIHandlerPtr stream) {
     }
 
     for (x = 0; x < num_tones; x++) {
-        voice =
-            snd_AllocateVoice(stream->SH.Sound->VolGroup, tones[x]->Priority);
+        voice = snd_AllocateVoice(stream->SH.Sound->VolGroup, tones[x]->Priority);
         if (voice != -1) {
             core = voice / 24;
             c_v = voice % 24;
@@ -315,22 +294,18 @@ void snd_MIDINoteOn(MIDIHandlerPtr stream) {
             gChannelStatus[voice].StartFine = 0;
             gChannelStatus[voice].Priority = tones[x]->Priority;
             gChannelStatus[voice].VolGroup = stream->SH.Sound->VolGroup;
-            gChannelStatus[voice].Volume.left =
-                gChannelStatus[voice].Volume.right = 0;
+            gChannelStatus[voice].Volume.left = gChannelStatus[voice].Volume.right = 0;
             pan_calc = stream->Pan[midi_channel] + stream->SH.Current_Pan;
             if (pan_calc >= 360)
                 pan_calc -= 360;
-            snd_MakeVolumesB(
-                stream->SH.Current_Vol, vol * stream->Vol[midi_channel] / 127,
-                pan_calc, stream->BankPtr->FirstProg[program].Vol,
-                stream->BankPtr->FirstProg[program].Pan, tones[x]->Vol,
-                tones[x]->Pan, &gChannelStatus[voice].Volume);
+            snd_MakeVolumesB(stream->SH.Current_Vol, vol * stream->Vol[midi_channel] / 127, pan_calc,
+                             stream->BankPtr->FirstProg[program].Vol, stream->BankPtr->FirstProg[program].Pan,
+                             tones[x]->Vol, tones[x]->Pan, &gChannelStatus[voice].Volume);
             gChannelStatus[voice].OwnerData.MIDIData.MidiChannel = midi_channel;
             gChannelStatus[voice].Current_PB = stream->PitchBend[midi_channel];
             gChannelStatus[voice].Current_PM = stream->SH.Current_PM;
             gChannelStatus[voice].OwnerData.MIDIData.KeyOnVelocity = vol;
-            gChannelStatus[voice].OwnerData.MIDIData.KeyOnProg =
-                &stream->BankPtr->FirstProg[program];
+            gChannelStatus[voice].OwnerData.MIDIData.KeyOnProg = &stream->BankPtr->FirstProg[program];
             gChannelStatus[voice].OwnerData.MIDIData.ShouldBeOff = 0;
             snd_StartVAGVoice(voice, 0);
         }
@@ -353,9 +328,7 @@ void snd_MIDINoteOff(MIDIHandlerPtr stream) {
 
     walk = gPlayingListHead;
     while (walk) {
-        if (walk->Owner == stream &&
-            walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
-            walk->StartNote == note) {
+        if (walk->Owner == stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel && walk->StartNote == note) {
             if (((stream->DamperState >> midi_channel) & 1) == 0) {
                 snd_KeyOffVoice(walk->voice);
             } else {
@@ -380,8 +353,7 @@ void snd_ReleaseDamper(MIDIHandlerPtr stream) {
 
     walk = gPlayingListHead;
     while (walk) {
-        if (walk->Owner == stream &&
-            walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
+        if (walk->Owner == stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
             walk->OwnerData.MIDIData.ShouldBeOff == 1) {
 
             snd_KeyOffVoice(walk->voice);
@@ -427,20 +399,16 @@ void snd_PitchBend(MIDIHandlerPtr stream) {
     dis = CpuSuspendIntr(&intr_state);
 
     while (walk) {
-        if (walk->Owner == stream &&
-            walk->OwnerData.MIDIData.MidiChannel == midi_channel) {
+        if (walk->Owner == stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel) {
             walk->Current_PB = stream->PitchBend[midi_channel];
             core = walk->voice / 24;
             c_v = walk->voice % 24;
 
-            snd_PitchBendTone(walk->Tone, walk->Current_PB, walk->Current_PM,
-                              walk->StartNote, walk->StartFine, &new_note,
-                              &new_fine);
+            snd_PitchBendTone(walk->Tone, walk->Current_PB, walk->Current_PM, walk->StartNote, walk->StartFine,
+                              &new_note, &new_fine);
 
             sceSdSetParam(core | SD_VOICE(c_v) | SD_VP_PITCH,
-                          PS1Note2Pitch(walk->Tone->CenterNote,
-                                        walk->Tone->CenterFine, new_note,
-                                        new_fine));
+                          PS1Note2Pitch(walk->Tone->CenterNote, walk->Tone->CenterFine, new_note, new_fine));
         }
 
         walk = walk->playlist;
@@ -463,8 +431,7 @@ void snd_SetMIDISoundVolumePan(UInt32 handle, SInt32 vol, SInt32 pan) {
     snd_SetMIDIHandlerVolumePan(stream, vol, pan);
 }
 
-void snd_SetMIDIHandlerVolumePan(MIDIHandlerPtr stream, SInt32 vol,
-                                 SInt32 pan) {
+void snd_SetMIDIHandlerVolumePan(MIDIHandlerPtr stream, SInt32 vol, SInt32 pan) {
     SInt32 pan_calc;
     SpuVolume spu_vol;
     SInt32 core;
@@ -494,28 +461,21 @@ void snd_SetMIDIHandlerVolumePan(MIDIHandlerPtr stream, SInt32 vol,
     walk = gPlayingListHead;
     while (walk) {
         if (walk->Owner == stream) {
-            pan_calc = stream->Pan[walk->OwnerData.MIDIData.MidiChannel] +
-                       stream->SH.Current_Pan;
+            pan_calc = stream->Pan[walk->OwnerData.MIDIData.MidiChannel] + stream->SH.Current_Pan;
 
             if (pan_calc >= 360) {
                 pan_calc -= 360;
             }
 
-            snd_MakeVolumesB(
-                stream->SH.Current_Vol,
-                walk->OwnerData.MIDIData.KeyOnVelocity *
-                    stream->Vol[walk->OwnerData.MIDIData.MidiChannel] / 127,
-                pan_calc, walk->OwnerData.MIDIData.KeyOnProg->Vol,
-                walk->OwnerData.MIDIData.KeyOnProg->Pan, walk->Tone->Vol,
-                walk->Tone->Pan, &walk->Volume);
+            snd_MakeVolumesB(stream->SH.Current_Vol,
+                             walk->OwnerData.MIDIData.KeyOnVelocity *
+                                 stream->Vol[walk->OwnerData.MIDIData.MidiChannel] / 127,
+                             pan_calc, walk->OwnerData.MIDIData.KeyOnProg->Vol, walk->OwnerData.MIDIData.KeyOnProg->Pan,
+                             walk->Tone->Vol, walk->Tone->Pan, &walk->Volume);
 
             if (!(stream->SH.flags & 2)) {
-                spu_vol.left = (UInt16)snd_AdjustVolToGroup(walk->Volume.left,
-                                                            walk->VolGroup) >>
-                               1;
-                spu_vol.right = (UInt16)snd_AdjustVolToGroup(walk->Volume.right,
-                                                             walk->VolGroup) >>
-                                1;
+                spu_vol.left = (UInt16)snd_AdjustVolToGroup(walk->Volume.left, walk->VolGroup) >> 1;
+                spu_vol.right = (UInt16)snd_AdjustVolToGroup(walk->Volume.right, walk->VolGroup) >> 1;
 
                 core = walk->voice / 24;
                 c_v = walk->voice % 24;
@@ -560,17 +520,14 @@ void snd_SetMIDIHandlerPitchModifier(MIDIHandlerPtr stream, SInt16 mod) {
         if (walk->Owner == stream) {
             walk->Current_PM = mod;
             if (!(stream->SH.flags & 2)) {
-                snd_PitchBendTone(walk->Tone, walk->Current_PB,
-                                  walk->Current_PM, walk->StartNote,
-                                  walk->StartFine, &new_note, &new_fine);
+                snd_PitchBendTone(walk->Tone, walk->Current_PB, walk->Current_PM, walk->StartNote, walk->StartFine,
+                                  &new_note, &new_fine);
 
                 core = walk->voice / 24;
                 c_v = walk->voice % 24;
                 dis = CpuSuspendIntr(&intr_state);
                 sceSdSetParam((core | SD_VOICE(c_v)) | SD_VP_PITCH,
-                              PS1Note2Pitch(walk->Tone->CenterNote,
-                                            walk->Tone->CenterFine, new_note,
-                                            new_fine));
+                              PS1Note2Pitch(walk->Tone->CenterNote, walk->Tone->CenterFine, new_note, new_fine));
                 if (!dis) {
                     CpuResumeIntr(intr_state);
                 }

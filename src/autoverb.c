@@ -4,8 +4,7 @@
 
 /* bss 110 */ BasicEffect gVerbFX[2][2];
 
-void snd_AutoReverb(SInt32 core, SInt32 depth, SInt32 delta_time,
-                    SInt32 channel_flags) {
+void snd_AutoReverb(SInt32 core, SInt32 depth, SInt32 delta_time, SInt32 channel_flags) {
     if (core & 1) {
         snd_AutoReverb_L(0, depth, delta_time, channel_flags);
     }
@@ -15,8 +14,7 @@ void snd_AutoReverb(SInt32 core, SInt32 depth, SInt32 delta_time,
     }
 }
 
-void snd_AutoReverb_L(SInt32 core, SInt32 depth, SInt32 delta_time,
-                      SInt32 channel_flags) {
+void snd_AutoReverb_L(SInt32 core, SInt32 depth, SInt32 delta_time, SInt32 channel_flags) {
     SInt32 depthchange;
     SInt16 original_depth;
     SInt32 effect_index;
@@ -57,10 +55,8 @@ void snd_AutoReverb_L(SInt32 core, SInt32 depth, SInt32 delta_time,
     if (abs(depthchange) < delta_time) {
         gVerbFX[core][effect_index].delta_time = abs(delta_time / depthchange);
         gVerbFX[core][effect_index].ec.delta_type = 1;
-        gVerbFX[core][effect_index].ec.delta_counter =
-            gVerbFX[core][effect_index].delta_time;
-        gVerbFX[core][effect_index].delta_value =
-            (depth < original_depth) ? -1 : 1;
+        gVerbFX[core][effect_index].ec.delta_counter = gVerbFX[core][effect_index].delta_time;
+        gVerbFX[core][effect_index].delta_value = (depth < original_depth) ? -1 : 1;
     } else {
         gVerbFX[core][effect_index].ec.delta_type = 0;
         gVerbFX[core][effect_index].ec.delta_counter = 0;
@@ -81,10 +77,8 @@ void snd_AutoVerbHandler() {
         if (gVerbFX[core][0].delta_value) {
             newdepth = gReverbDepthL[core] + gVerbFX[core][0].delta_value;
 
-            if ((gVerbFX[core][0].delta_value > 0 &&
-                 gVerbFX[core][0].destination < newdepth) ||
-                (gVerbFX[core][0].delta_value < 0 &&
-                 newdepth < gVerbFX[core][0].destination)) {
+            if ((gVerbFX[core][0].delta_value > 0 && gVerbFX[core][0].destination < newdepth) ||
+                (gVerbFX[core][0].delta_value < 0 && newdepth < gVerbFX[core][0].destination)) {
 
                 newdepth = gVerbFX[core][0].destination;
             }
@@ -99,10 +93,8 @@ void snd_AutoVerbHandler() {
         if (gVerbFX[core][1].delta_value) {
             newdepth = gReverbDepthR[core] + gVerbFX[core][1].delta_value;
 
-            if ((gVerbFX[core][1].delta_value > 0 &&
-                 gVerbFX[core][1].destination < newdepth) ||
-                (gVerbFX[core][1].delta_value < 0 &&
-                 newdepth < gVerbFX[core][1].destination)) {
+            if ((gVerbFX[core][1].delta_value > 0 && gVerbFX[core][1].destination < newdepth) ||
+                (gVerbFX[core][1].delta_value < 0 && newdepth < gVerbFX[core][1].destination)) {
 
                 newdepth = gVerbFX[core][1].destination;
             }

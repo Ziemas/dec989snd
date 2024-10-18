@@ -114,8 +114,7 @@ SInt32 snd_SoundTickHandler() {
         gCdBusyTime++;
         if (gCdBusyTime > 2400) {
             if (!gPrefs_Silent) {
-                printf("989snd: Cd has been busy reading %s for 10 seconds.\n",
-                       gCdBusy == 1 ? "a vag" : "data");
+                printf("989snd: Cd has been busy reading %s for 10 seconds.\n", gCdBusy == 1 ? "a vag" : "data");
             }
             sceCdBreak();
             gCdBusyTime = 0;

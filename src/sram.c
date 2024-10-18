@@ -72,8 +72,7 @@ UInt32 snd_SRAMMallocRev(UInt32 size) {
         if (storage[i].in_use) {
             if (storage[i].size >= size) {
                 end = storage[i].loc + storage[i].size;
-                if (end - (end % 0x20000) > storage[i].loc &&
-                    end - (end % 0x20000) - storage[i].loc >= size) {
+                if (end - (end % 0x20000) > storage[i].loc && end - (end % 0x20000) - storage[i].loc >= size) {
                     if (candidate) {
                         if (candidate->size > storage[i].size) {
                             candidate = &storage[i];
@@ -167,8 +166,7 @@ UInt32 snd_SRAMMarkUsed(UInt32 loc, UInt32 size) {
 
     for (i = 0; i < 129; i++) {
         if (storage[i].in_use) {
-            if (loc >= storage[i].loc &&
-                loc < storage[i].loc + storage[i].size) {
+            if (loc >= storage[i].loc && loc < storage[i].loc + storage[i].size) {
                 snd_SRAMRemoveNode(&storage[i]);
 
                 if (loc == storage[i].loc) {
@@ -351,8 +349,7 @@ void snd_SRAMDumpFreeBlocks() {
 
     for (i = 0; i < 129; i++) {
         if (storage[i].in_use) {
-            printf("\nFree SPU Block at -> %u (0x%x) size -> %d\n\n",
-                   storage[i].loc, storage[i].loc, storage[i].size);
+            printf("\nFree SPU Block at -> %u (0x%x) size -> %d\n\n", storage[i].loc, storage[i].loc, storage[i].size);
         }
     }
 }

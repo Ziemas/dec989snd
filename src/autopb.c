@@ -1,8 +1,7 @@
 #include "common.h"
 #include "functions.h"
 
-void snd_AutoPitchBend(UInt32 handle, SInt32 pb, SInt32 delta_time,
-                       SInt32 delta_from) {
+void snd_AutoPitchBend(UInt32 handle, SInt32 pb, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;
     SInt32 pitchchange;
     SInt32 current_pitch;
@@ -78,8 +77,7 @@ void snd_AutoPitchBend(UInt32 handle, SInt32 pb, SInt32 delta_time,
     snd_UnlockMasterTick();
 }
 
-SInt32 snd_AutoPitchBendHandler(BasicEffectPtr effect,
-                                GSoundHandlerPtr handler) {
+SInt32 snd_AutoPitchBendHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
     SInt32 newMpitch;
 
     newMpitch = snd_GetSoundPitchBend(handler->OwnerID) + effect->delta_value;

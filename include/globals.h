@@ -41,6 +41,11 @@ extern SoundBankPtr gBankListHead;
 extern SFXBlock2Ptr gBlockListHead;
 extern SInt8 gFileLoadBuffer[2048];
 
+// pantable.c
+extern VolPair *gPanTable;
+extern VolPair gPanTable1[180];
+extern VolPair gPanTable2[180];
+
 // playsnd.c
 extern SInt32 gGlobalExcite;
 

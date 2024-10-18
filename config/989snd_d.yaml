@@ -61,7 +61,7 @@ segments:
         - [0x21b3c, c, stick]
         - [0x22304, c, stream]
         - [0x335b4, c, valloc]
-        - [0x37800, asm, vol]
+        - [0x37800, c, vol]
         - [0x3a240, asm, export_stub]
         - [0x3a460, asm, import_stub]
          # .rodata
@@ -94,7 +94,7 @@ segments:
         - [0x3cc44, .data, stick]
         - [0x3ccd4, .data, stream]
         - [0x3ce14, .data, valloc]
-        - [0x3ce84, data, vol]
+        - [0x3ce84, .data, vol]
         # .sbss / .bss
         - { start: 0x3cf94, type: sbss, vram: 0x3cef4 }
         - { start: 0x3cf94, type: bss, vram: 0x3cf34 }

@@ -112,7 +112,6 @@ void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt3
     snd_UnlockMasterTick();
 }
 
-// INCLUDE_ASM("asm/nonmatchings/autopan", snd_AutoPanHandler);
 SInt32 snd_AutoPanHandler(BasicEffectPtr effect, GSoundHandlerPtr handler) {
     SInt16 newMpan;
     SInt16 wrap_dest;

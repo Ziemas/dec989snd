@@ -308,7 +308,6 @@ SInt32 snd_AllocateVoice(SInt32 vol_group, SInt32 priority) {
     return -1;
 }
 
-// INCLUDE_ASM("asm/nonmatchings/valloc", snd_StartVAGVoice);
 void snd_StartVAGVoice(SInt32 voice, BOOL noise) {
     SInt32 note;
     SInt32 fine;

@@ -282,7 +282,6 @@ void snd_RemoveLFO(LFOTracker *lfo) {
     }
 }
 
-// INCLUDE_ASM("asm/nonmatchings/LFO", snd_InsertLFO);
 BOOL snd_InsertLFO(LFOTracker *lfo) {
     LFOTracker *walk;
 

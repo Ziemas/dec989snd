@@ -105,7 +105,6 @@ void snd_SetReverbType(SInt32 core, SInt32 type) {
     }
 }
 
-// INCLUDE_ASM("asm/nonmatchings/reverb", snd_SetReverbType_L);
 SInt32 snd_SetReverbType_L(SInt32 core, SInt32 type, SInt32 delay, SInt32 feedback) {
     sceSdEffectAttr ef;
     SInt32 ch;

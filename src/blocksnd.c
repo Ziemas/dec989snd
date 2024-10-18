@@ -1211,9 +1211,6 @@ SInt32 snd_DoGrain(BlockSoundHandlerPtr handler) {
     return stop_sound;
 }
 
-#ifndef NON_MATCHING
-INCLUDE_ASM("asm/nonmatchings/blocksnd", snd_SetSFXVolPan);
-#else
 void snd_SetSFXVolPan(UInt32 handle, SInt32 vol, SInt32 pan, SInt32 cause) {
     BlockSoundHandlerPtr hand;
     SInt32 uses_voice;
@@ -1298,7 +1295,7 @@ void snd_SetSFXVolPan(UInt32 handle, SInt32 vol, SInt32 pan, SInt32 cause) {
             spu_vol.right =
                 (UInt16)snd_AdjustVolToGroup(gChannelStatus[uses_voice].Volume.right, hand->SH.VolGroup) >> 1;
 
-            sceSdSetParam(uses_voice / 24 | SD_VOICE(uses_voice % 24) | SD_VP_VOLL, spu_vol.left);
+            sceSdSetParam((UInt32)(uses_voice / 24 | SD_VOICE(uses_voice % 24) | SD_VP_VOLL), spu_vol.left);
             sceSdSetParam(uses_voice / 24 | SD_VOICE(uses_voice % 24) | SD_VP_VOLR, spu_vol.right);
         }
 
@@ -1314,7 +1311,6 @@ void snd_SetSFXVolPan(UInt32 handle, SInt32 vol, SInt32 pan, SInt32 cause) {
         snd_UnlockVoiceAllocator();
     }
 }
-#endif
 
 void snd_SetSFXPitch(UInt32 handle, SInt32 pitch) {
     BlockSoundHandlerPtr hand;

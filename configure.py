@@ -352,9 +352,9 @@ def fix_compile_commands():
         #  - '-gstabs' flag (now replaced with regular '-g')
         #
         if file_path.suffix == ".c" or file_path.suffix == ".cpp":
-            entry["command"] = entry["command"].replace(" -G8", "")
+            entry["command"] = f"cc {CPPFLAGS} {COMPILER_FLAGS}"
+            entry["command"] = entry["command"].replace(" -quiet", "")
             entry["command"] = entry["command"].replace(" -G0", "")
-            entry["command"] = entry["command"].split(" && mips-linux-gnu-strip")[0].strip()
 
             #
             # Disable warnings so it stops crying even further

@@ -93,7 +93,7 @@ def write_rules(ninja):
     ninja.rule(
             "rom",
             description="rom $out",
-            command=f"{CROSS}objcopy $in $out -O binary",
+            command=f"{CROSS}objcopy $in $out -O binary && truncate $out -s 249588",
     )
 
 

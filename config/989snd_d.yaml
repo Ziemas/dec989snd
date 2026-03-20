@@ -1,9 +1,9 @@
 name: 989snd debug
-sha1: 74663d1f02c1ff7118744a66b064bcd307b2262b
+sha1: 9da817ab7aca6fdccbe5bef097f900d0578a533f
 options:
     # paths
     basename: 989SND_D.IRX
-    target_path: in/989SND_D.IRX
+    target_path: in/989SND_D.IRX.rom
     base_path: ..
     
     asm_path: asm
@@ -18,6 +18,7 @@ options:
 
     migrate_rodata_to_functions: True
     named_regs_for_c_funcs: True
+    make_full_disasm_for_code: True
     
     # compiler 
     compiler: GCC
@@ -25,84 +26,83 @@ options:
 
     string_encoding: ASCII
     
-    section_order: [".iopmod", ".text", ".rel.text", ".rodata", ".rel.rodata", ".data", ".rel.data", ".sbss", ".bss"]
+    section_order: [".text", ".rodata", ".data", ".sbss", ".bss"]
 
 segments:
-    - [0, databin, elf_header]
-    - [0x74, databin, iopmod]
-    - name: text
+    - name: main
       type: code
-      start: 0xa0
+      align: 4
+      start: 0x0
       vram: 0x0
       bss_size: 0x9df0
       subsegments:
-        # .text
-        - [0xa0, c, 989snd]
-        - [0x3efc, c, LFO]
-        - [0x4e68, c, ame]
-        - [0x6990, c, autopan]
-        - [0x7218, c, autopb]
-        - [0x7768, c, autoptch]
-        - [0x7cc0, c, autoverb]
-        - [0x87d8, c, autovol]
-        - [0x8ec4, c, blocksnd]
-        - [0xf150, c, extern]
-        - [0xf868, c, init]
-        - [0x10014, c, intr_code]
-        - [0x102cc, c, loader]
-        - [0x1560c, c, midi]
-        - [0x17fe0, c, moviesnd]
-        - [0x19d20, c, my_rand]
-        - [0x1a148, c, pantable]
-        - [0x1a210, c, playsnd]
-        - [0x1c988, c, reverb]
-        - [0x1d818, c, sndhand]
-        - [0x20148, c, sram]
-        - [0x21b3c, c, stick]
-        - [0x22304, c, stream]
-        - [0x335b4, c, valloc]
-        - [0x37800, c, vol]
-        - [0x3a240, asm, export_stub]
-        - [0x3a460, asm, import_stub]
-         # .rodata
-        - [0x3a80c, .rodata, 989snd]
-        - [0x3aaf4, .rodata, LFO]
-        - [0x3ab0c, .rodata, ame]
-        - [0x3ab68, .rodata, blocksnd]
-        - [0x3ab98, .rodata, loader]
-        - [0x3ac48, .rodata, playsnd]
-        - [0x3acf4, .rodata, sndhand]
-        - [0x3ad68, .rodata, sram]
-        - [0x3ad98, .rodata, stick]
-        - [0x3ae94, .rodata, stream]
-        # .data
-        - [0x3b018, .data, 989snd]
-        - [0x3b200, .data, LFO]
-        - [0x3c220, .data, blocksnd]
-        - [0x3c2f4, .data, extern]
-        - [0x3c2f8, .data, init]
-        - [0x3c320, .data, intr_code]
-        - [0x3c35c, .data, loader]
-        - [0x3c3b0, .data, midi]
-        - [0x3c3b4, .data, moviesnd]
-        - [0x3c3f0, .data, my_rand]
-        - [0x3c5ec, .data, pantable]
-        - [0x3cb90, .data, playsnd]
-        - [0x3cbd8, .data, reverb]
-        - [0x3cc34, .data, sndhand]
-        - [0x3cc3c, .data, sram]
-        - [0x3cc44, .data, stick]
-        - [0x3ccd4, .data, stream]
-        - [0x3ce14, .data, valloc]
-        - [0x3ce84, .data, vol]
-        # .sbss / .bss
-        - { start: 0x3cf94, type: sbss, vram: 0x3cef4 }
-        - { start: 0x3cf94, type: bss, vram: 0x3cf34 }
+        - [0x0, c, 989snd]
+        - [0x3e5c, c, LFO]
+        - [0x4dc8, c, ame]
+        - [0x68f0, c, autopan]
+        - [0x7178, c, autopb]
+        - [0x76c8, c, autoptch]
+        - [0x7c20, c, autoverb]
+        - [0x8738, c, autovol]
+        - [0x8e24, c, blocksnd]
+        - [0xf0b0, c, extern]
+        - [0xf7c8, c, init]
+        - [0xff74, c, intr_code]
+        - [0x1022c, c, loader]
+        - [0x1556c, c, midi]
+        - [0x17f40, c, moviesnd]
+        - [0x19c80, c, my_rand]
+        - [0x1a0a8, c, pantable]
+        - [0x1a170, c, playsnd]
+        - [0x1c8e8, c, reverb]
+        - [0x1d778, c, sndhand]
+        - [0x200a8, c, sram]
+        - [0x21a9c, c, stick]
+        - [0x22264, c, stream]
+        - [0x33514, c, valloc]
+        - [0x37760, c, vol]
+        - [0x3a1a0, asm, export_stub]
+        - [0x3a3c0, asm, import_stub]
+        - [0x3a76c, .rodata, 989snd]
+        - [0x3aa54, .rodata, LFO]
+        - [0x3aa6c, .rodata, ame]
+        - [0x3aac8, .rodata, blocksnd]
+        - [0x3aaf8, .rodata, loader]
+        - [0x3aba8, .rodata, playsnd]
+        - [0x3ac54, .rodata, sndhand]
+        - [0x3acc8, .rodata, sram]
+        - [0x3acf8, .rodata, stick]
+        - [0x3adf4, .rodata, stream]
+        - [0x3af78, .data, 989snd]
+        - [0x3b160, .data, LFO]
+        - [0x3c180, .data, blocksnd]
+        - [0x3c254, .data, extern]
+        - [0x3c258, .data, init]
+        - [0x3c280, .data, intr_code]
+        - [0x3c2bc, .data, loader]
+        - [0x3c310, .data, midi]
+        - [0x3c314, .data, moviesnd]
+        - [0x3c350, .data, my_rand]
+        - [0x3c54c, .data, pantable]
+        - [0x3caf0, .data, playsnd]
+        - [0x3cb38, .data, reverb]
+        - [0x3cb94, .data, sndhand]
+        - [0x3cb9c, .data, sram]
+        - [0x3cba4, .data, stick]
+        - [0x3cc34, .data, stream]
+        - [0x3cd74, .data, valloc]
+        - [0x3cde4, .data, vol]
+        - { type: sbss, vram: 0x3cef4, name: init }
+        - { type: sbss, vram: 0x3cef8, name: moviesnd }
+        - { type: sbss, vram: 0x3cf04, name: valloc }
+        - { type: bss, vram: 0x3cf34, name: 989snd }
+        - { type: bss, vram: 0x3d044, name: autoverb }
+        - { type: bss, vram: 0x3d0b4, name: loader }
+        - { type: bss, vram: 0x3d904, name: sndhand }
+        - { type: bss, vram: 0x45014, name: sram }
+        - { type: bss, vram: 0x45c34, name: stick }
+        - { type: bss, vram: 0x45cc4, name: stream }
+        - { type: bss, vram: 0x46204, name: valloc }
+        - { type: bss, vram: 0x46c84, name: vol }
         
-    - [0x3cf94, databin] # .mdebug
-    - [0x134c30, databin] # .shstrtab
-    - [0x134ecc, databin] # .rel.text
-    - [0x145da4, databin] # .rel.rodata
-    - [0x145f1c, databin] # .rel.data
-    - [0x146424, databin] # .symtab
-    - [0x149d64, databin] # .strtab
+    - [0x3CEF4]

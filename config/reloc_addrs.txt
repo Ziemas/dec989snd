@@ -1,0 +1,14 @@
+rom:0x3a1a0 symbol:none reloc:MIPS_NONE
+rom:0x3a3b4 symbol:none reloc:MIPS_NONE
+rom:0x3a3c4 symbol:none reloc:MIPS_NONE
+rom:0x3a3f8 symbol:none reloc:MIPS_NONE
+rom:0x3a424 symbol:none reloc:MIPS_NONE
+rom:0x3a484 symbol:none reloc:MIPS_NONE
+rom:0x3a4c8 symbol:none reloc:MIPS_NONE
+rom:0x3a504 symbol:none reloc:MIPS_NONE
+rom:0x3a528 symbol:none reloc:MIPS_NONE
+rom:0x3a56c symbol:none reloc:MIPS_NONE
+rom:0x3a5e0 symbol:none reloc:MIPS_NONE
+rom:0x3a62c symbol:none reloc:MIPS_NONE
+rom:0x3a678 symbol:none reloc:MIPS_NONE
+rom:0x3a714 symbol:none reloc:MIPS_NONE

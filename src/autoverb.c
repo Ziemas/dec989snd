@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "globals.h"
 
-/* bss 110 */ BasicEffect gVerbFX[2][2];
+BasicEffect gVerbFX[2][2];
 
 void snd_AutoReverb(SInt32 core, SInt32 depth, SInt32 delta_time, SInt32 channel_flags) {
     if (core & 1) {

@@ -5,12 +5,12 @@
 #include "stdio.h"
 #include "thread.h"
 
-/* data 1c1c */ GSoundHandlerPtr gActiveSoundListHead = NULL;
-/* data 1c20 */ GSoundHandlerPtr gActiveSoundListTail = NULL;
-/* bss 9d0 */ BlockSoundHandler gBlockSoundHandler[64];
-/* bss 52d0 */ BasicEffect gBasicEffect[64];
-/* bss 68e0 */ MIDIHandler gMIDIHandler[32];
-/* bss 59d0 */ AMEHandler gAMEHandler[4];
+GSoundHandlerPtr gActiveSoundListHead = NULL;
+GSoundHandlerPtr gActiveSoundListTail = NULL;
+BlockSoundHandler gBlockSoundHandler[64];
+BasicEffect gBasicEffect[64];
+MIDIHandler gMIDIHandler[32];
+AMEHandler gAMEHandler[4];
 
 void snd_InitHandlers(GSoundHandlerPtr handlers, SInt32 count, UInt32 type, SInt32 size) {
     int x;

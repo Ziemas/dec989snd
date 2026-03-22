@@ -5,21 +5,21 @@
 #include "libsd.h"
 #include "sdmacro.h"
 
-/* data 139c */ SInt32 gMovieDMAChannel = -1;
-/* data 13a0 */ void *gMovieSoundBuffer = NULL;
-/* data 13a4 */ UInt32 gMovieSoundSPUBuffer = 0;
-/* data 13a8 */ UInt32 gMovieSPUBufferSize = 0;
-/* data 13ac */ SInt32 gMovieSoundBufferSize = 0;
-/* data 13b0 */ SInt32 gMovieVol = 0;
-/* data 13b4 */ SInt32 gMoviePan = 0;
-/* data 13b8 */ SInt32 gMovieVolGroup = 0;
-/* data 13bc */ SInt32 gMovieSoundVoice[2] = {-1, -1};
-/* data 13c4 */ BOOL gMovieSoundRunning = false;
-/* data 13c8 */ SInt32 gMovieSoundType = 0;
-/* data 13cc */ SInt32 gMovieSoundCh = 2;
-/* data 13d0 */ UInt32 gMovieSoundSR = 48000;
-/* data 13d4 */ UInt32 gMovieSoundPausePos = 0;
-/* bss 8 */ SpuVolume gMovieSPUVol;
+SInt32 gMovieDMAChannel = -1;
+void *gMovieSoundBuffer = NULL;
+UInt32 gMovieSoundSPUBuffer = 0;
+UInt32 gMovieSPUBufferSize = 0;
+SInt32 gMovieSoundBufferSize = 0;
+SInt32 gMovieVol = 0;
+SInt32 gMoviePan = 0;
+SInt32 gMovieVolGroup = 0;
+SInt32 gMovieSoundVoice[2] = {-1, -1};
+BOOL gMovieSoundRunning = false;
+SInt32 gMovieSoundType = 0;
+SInt32 gMovieSoundCh = 2;
+UInt32 gMovieSoundSR = 48000;
+UInt32 gMovieSoundPausePos = 0;
+SpuVolume gMovieSPUVol;
 
 void *snd_InitMovieSoundEx(SInt32 buff_size, SInt32 spu_buff_size, SInt32 vol, SInt32 pan, SInt32 vol_group,
                            SInt32 type) {

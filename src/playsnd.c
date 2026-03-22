@@ -3,10 +3,10 @@
 #include "globals.h"
 #include "stdio.h"
 
-/* data 1b78 */ SInt32 gGlobalExcite = 0;
-/* data 1b7c */ SoundBankPtr gSoloBank[8] = {0, 0, 0, 0, 0, 0, 0, 0};
-/* data 1b9c */ SInt32 gSoloSound[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
-/* data 1bbc */ SInt32 gNumSoloSounds = 0;
+SInt32 gGlobalExcite = 0;
+SoundBankPtr gSoloBank[8] = {0, 0, 0, 0, 0, 0, 0, 0};
+SInt32 gSoloSound[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
+SInt32 gNumSoloSounds = 0;
 
 SInt32 snd_GetSoundUserData(SoundBankPtr bank, char *bank_name, int sound_index, char *sound_name, int *destination) {
     SFXBlock2Ptr block;

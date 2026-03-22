@@ -5,15 +5,15 @@
 #include "sdmacro.h"
 #include "thread.h"
 
-/* data 1bc0 */ SInt32 gReverbType[2] = {-1, -1};
-/* data 1bc8 */ UInt32 gRevRamStart[2] = {0, 0};
-/* data 1bd0 */ SInt32 gRevRamPreAllocType[2] = {-1, -1};
-/* data 1bd8 */ SInt16 gReverbDepthL[2] = {0, 0};
-/* data 1bdc */ SInt16 gReverbDepthR[2] = {0, 0};
-/* data 1be0 */ SInt32 gAwaitingReverbChange[2] = {0, 0};
-/* data 1be8 */ SInt32 gAwaitingReverbChangeTick[2] = {0, 0};
-/* data 1bf0 */ SInt32 gReverbMode = 0;
-/* data 1bf4 */ UInt32 gRevRamUse[] = {
+SInt32 gReverbType[2] = {-1, -1};
+UInt32 gRevRamStart[2] = {0, 0};
+SInt32 gRevRamPreAllocType[2] = {-1, -1};
+SInt16 gReverbDepthL[2] = {0, 0};
+SInt16 gReverbDepthR[2] = {0, 0};
+SInt32 gAwaitingReverbChange[2] = {0, 0};
+SInt32 gAwaitingReverbChangeTick[2] = {0, 0};
+SInt32 gReverbMode = 0;
+UInt32 gRevRamUse[] = {
     0x00000080, 0x000026C0, 0x00001F40, 0x00004840, 0x00006FE0,
     0x0000ADE0, 0x0000F6C0, 0x00018040, 0x00018040, 0x00003C00,
 };

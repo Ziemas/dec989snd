@@ -10,29 +10,29 @@
 #include "sysmem.h"
 #include "thread.h"
 
-/* data 1344 */ BOOL gLimit2Meg = 0;
-/* data 1348 */ SInt32 gFileHandle = -1;
-/* data 134c */ SInt32 gFileStartSector = 0;
-/* data 1350 */ SInt32 gFileStartOffset = 0;
-/* data 1354 */ SInt32 gFileNextReadSector = 0;
-/* data 1358 */ SInt32 gFileNextReadOffset = 0;
-/* data 135c */ SInt32 gFileMarkSector = 0;
-/* data 1360 */ SInt32 gFileMarkOffset = 0;
-/* data 1364 */ SInt32 gLastLoadError = 0;
-/* data 1368 */ UInt32 gEEDataLocStart = 0;
-/* data 136c */ UInt32 gEEDataLocNext = 0;
-/* data 1370 */ UInt32 gEEDataMark = 0;
-/* data 1374 */ void *gIOPDataLocStart = NULL;
-/* data 1378 */ ExternSndIOPAlloc gAllocProc = snd_IOPMemAlloc;
-/* data 137c */ ExternSndIOPFree gFreeProc = snd_IOPMemFree;
-/* data 1380 */ char *gEEStatusAddr = NULL;
-/* data 1384 */ SoundBankPtr gBankListHead = NULL;
-/* data 1388 */ SFXBlock2Ptr gBlockListHead = NULL;
-/* data 138c */ MIDIBlockHeaderPtr gMIDIListHead = NULL;
-/* data 1390 */ SInt32 gReadBufferHasSector = 0;
-/* bss 1d0 */ SInt8 gFileLoadBuffer[2048];
-/* bss 180 */ SndSystemStatus gStats;
-/* bss 1c0 */ char gEEAlignBuffer[16];
+BOOL gLimit2Meg = 0;
+SInt32 gFileHandle = -1;
+SInt32 gFileStartSector = 0;
+SInt32 gFileStartOffset = 0;
+SInt32 gFileNextReadSector = 0;
+SInt32 gFileNextReadOffset = 0;
+SInt32 gFileMarkSector = 0;
+SInt32 gFileMarkOffset = 0;
+SInt32 gLastLoadError = 0;
+UInt32 gEEDataLocStart = 0;
+UInt32 gEEDataLocNext = 0;
+UInt32 gEEDataMark = 0;
+void *gIOPDataLocStart = NULL;
+ExternSndIOPAlloc gAllocProc = snd_IOPMemAlloc;
+ExternSndIOPFree gFreeProc = snd_IOPMemFree;
+char *gEEStatusAddr = NULL;
+SoundBankPtr gBankListHead = NULL;
+SFXBlock2Ptr gBlockListHead = NULL;
+MIDIBlockHeaderPtr gMIDIListHead = NULL;
+SInt32 gReadBufferHasSector = 0;
+SInt8 gFileLoadBuffer[2048];
+SndSystemStatus gStats;
+char gEEAlignBuffer[16];
 
 void snd_InitLoader() {
     struct SemaParam sp;

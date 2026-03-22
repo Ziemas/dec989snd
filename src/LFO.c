@@ -1,7 +1,7 @@
 #include "common.h"
 #include "functions.h"
 
-/* data 1e8 */ SInt16 gLFO_sine[2048] = {
+SInt16 gLFO_sine[2048] = {
     32767,  32766,  32766,  32765,  32764,  32763,  32761,  32759,  32757,  32754,  32751,  32748,  32744,  32740,
     32736,  32732,  32727,  32722,  32717,  32711,  32705,  32699,  32692,  32685,  32678,  32670,  32662,  32654,
     32646,  32637,  32628,  32618,  32609,  32599,  32588,  32578,  32567,  32556,  32544,  32532,  32520,  32508,
@@ -149,8 +149,8 @@
     32609,  32618,  32628,  32637,  32646,  32654,  32662,  32670,  32678,  32685,  32692,  32699,  32705,  32711,
     32717,  32722,  32727,  32732,  32736,  32740,  32744,  32748,  32751,  32754,  32757,  32759,  32761,  32763,
     32764,  32765,  32766,  32766};
-/* data 11e8 */ LFOTracker *gActiveLFOs = NULL;
-/* data 11ec */ SInt32 gNumLFOsInUse = 0;
+LFOTracker *gActiveLFOs = NULL;
+SInt32 gNumLFOsInUse = 0;
 
 SInt32 snd_LFO_TYPE_OFF(LFOTracker *tracker, int step);
 SInt32 snd_LFO_TYPE_SINE(LFOTracker *tracker, int step);
@@ -159,7 +159,7 @@ SInt32 snd_LFO_TYPE_TRIANGLE(LFOTracker *tracker, int step);
 SInt32 snd_LFO_TYPE_SAW(LFOTracker *tracker, int step);
 SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step);
 
-/* data 11f0 */ LFOFunction gLFOFuncs[] = {
+LFOFunction gLFOFuncs[] = {
     snd_LFO_TYPE_OFF,      snd_LFO_TYPE_SINE, snd_LFO_TYPE_SQUARE,
     snd_LFO_TYPE_TRIANGLE, snd_LFO_TYPE_SAW,  snd_LFO_TYPE_RAND,
 };

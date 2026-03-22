@@ -2,9 +2,9 @@
 #include "functions.h"
 #include "stdio.h"
 
-/* data 1c24 */ sSRAMNodePtr gSRAMFreeListHead = NULL;
-/* data 1c28 */ SInt32 gSRAMFreeNodesInUse = 0;
-/* bss 80e0 */ sSRAMNode gSRAMFreeNodeStorage[129];
+sSRAMNodePtr gSRAMFreeListHead = NULL;
+SInt32 gSRAMFreeNodesInUse = 0;
+sSRAMNode gSRAMFreeNodeStorage[129];
 
 void snd_SRAMInitMalloc() {
     SInt32 i;

@@ -6,27 +6,27 @@
 #include "sdmacro.h"
 #include "thread.h"
 
-/* data 1dfc */ SInt32 gLockBlockerSema = -1;
-/* data 1e00 */ SInt32 gTickAttentionNeeded = 0;
-/* data 1e04 */ SInt32 gVoiceAllocationBlocked = 0;
-/* data 1e08 */ SInt32 gVoiceAllocatorInUse = 0;
-/* data 1e0c */ UInt32 gVAllocOwnerID = 0;
-/* data 1e10 */ SInt32 gChannelMode = 0;
-/* data 1e14 */ VoiceRange gVoiceRanges[16] = {
+SInt32 gLockBlockerSema = -1;
+SInt32 gTickAttentionNeeded = 0;
+SInt32 gVoiceAllocationBlocked = 0;
+SInt32 gVoiceAllocatorInUse = 0;
+UInt32 gVAllocOwnerID = 0;
+SInt32 gChannelMode = 0;
+VoiceRange gVoiceRanges[16] = {
     {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47},
     {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47},
 };
-/* data 1e54 */ VoiceAttributes *gPlayingListHead = NULL;
-/* data 1e58 */ SInt32 gNoiseOwnerPriority[2] = {-1, -1};
-/* data 1e60 */ SInt32 gNoiseOwnerVoice[2] = {-1, -1};
-/* data 1e68 */ SInt32 gThreadWaitingForVoiceAllocator = -1;
-/* bss 92d0 */ VoiceAttributes gChannelStatus[48];
-/* bss 20 */ UInt32 gAwaitingKeyOn[2];
-/* bss 28 */ UInt32 gAwaitingKeyOff[2];
-/* bss 30 */ UInt32 gKeyedOnVoices[2];
-/* bss 38 */ UInt32 gKeyedOffVoices[2];
-/* bss 18 */ UInt32 gReverbVoices[2];
-/* bss 10 */ UInt32 gExternVoices[2];
+VoiceAttributes *gPlayingListHead = NULL;
+SInt32 gNoiseOwnerPriority[2] = {-1, -1};
+SInt32 gNoiseOwnerVoice[2] = {-1, -1};
+SInt32 gThreadWaitingForVoiceAllocator = -1;
+VoiceAttributes gChannelStatus[48];
+UInt32 gAwaitingKeyOn[2];
+UInt32 gAwaitingKeyOff[2];
+UInt32 gKeyedOnVoices[2];
+UInt32 gKeyedOffVoices[2];
+UInt32 gReverbVoices[2];
+UInt32 gExternVoices[2];
 
 void snd_InitVoiceAllocator() {
     SInt32 count;

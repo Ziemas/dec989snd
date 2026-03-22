@@ -2,20 +2,20 @@
 #include "functions.h"
 #include "thread.h"
 
-/* data 1308 */ BOOL gKillTimer = 0;
-/* data 130c */ SInt32 gTransfering = 0;
-/* data 1310 */ SpuTransferCallbackProc gTransferDoneCallback = NULL;
-/* data 1314 */ SInt32 gSPURAMTransSema = -1;
-/* data 1318 */ SInt32 gDoneLoadSema = 0;
-/* data 131c */ SInt32 gOddCdError = 0;
-/* data 1320 */ SInt32 gOddCdErrorCode = 0;
-/* data 1324 */ SInt32 gCdBusy = 0;
-/* data 1328 */ SInt32 gCdBusyTime = 0;
-/* data 132c */ SInt32 gDMAInUse[2] = {0, 0};
-/* data 1334 */ SInt32 gLastDMA0Complete = 0;
-/* data 1338 */ SInt32 gLastDMA1Complete = 0;
-/* data 133c */ SInt32 gDoneDMASema = 0;
-/* data 1340 */ SInt32 gWaitingDMAComplete = 0;
+BOOL gKillTimer = 0;
+SInt32 gTransfering = 0;
+SpuTransferCallbackProc gTransferDoneCallback = NULL;
+SInt32 gSPURAMTransSema = -1;
+SInt32 gDoneLoadSema = 0;
+SInt32 gOddCdError = 0;
+SInt32 gOddCdErrorCode = 0;
+SInt32 gCdBusy = 0;
+SInt32 gCdBusyTime = 0;
+SInt32 gDMAInUse[2] = {0, 0};
+SInt32 gLastDMA0Complete = 0;
+SInt32 gLastDMA1Complete = 0;
+SInt32 gDoneDMASema = 0;
+SInt32 gWaitingDMAComplete = 0;
 
 SInt32 snd_TimerLLTick(timercommon *common) {
     iWakeupThread(*common->thid);

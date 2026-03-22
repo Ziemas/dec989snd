@@ -6,17 +6,17 @@
 #include "thread.h"
 #include "timerman.h"
 
-/* data 12e0 */ SInt32 gSTickSema = -1;
-/* data 12e4 */ SInt32 gTimerThreadID = 0;
-/* data 12e8 */ SInt32 gTimerID = 0;
-/* data 12ec */ SInt32 gTickTrigger = 0;
-/* data 12f0 */ SInt32 gTickMode = -1;
-/* data 12f4 */ UInt32 gMicsPerTick = 0;
-/* data 12f8 */ SInt32 gTickRate = 0;
-/* data 12fc */ SInt32 gPercent = 0;
-/* data 1300 */ BOOL gPrefs_ShowMissingSounds = 1;
-/* data 1304 */ BOOL gPrefs_Silent = 0;
-/* bss 0 */ timercommon gTimerInfo;
+SInt32 gSTickSema = -1;
+SInt32 gTimerThreadID = 0;
+SInt32 gTimerID = 0;
+SInt32 gTickTrigger = 0;
+SInt32 gTickMode = -1;
+UInt32 gMicsPerTick = 0;
+SInt32 gTickRate = 0;
+SInt32 gPercent = 0;
+BOOL gPrefs_ShowMissingSounds = 1;
+BOOL gPrefs_Silent = 0;
+timercommon gTimerInfo;
 
 SInt32 snd_SystemRunning() { return gTickMode != -1; }
 

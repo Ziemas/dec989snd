@@ -4,12 +4,12 @@
 #include "libsd.h"
 #include "stdio.h"
 
-/* data 1c2c */ static UInt32 sTick = 0;
-/* data 1c30 */ SInt32 gLockMasterTick = 0;
-/* data 1c34 */ UInt32 gMasterTickOwner[32] = {};
-/* data 1cb4 */ UInt32 gMasterTickOwnerLast = 0;
-/* bss 8d00 */ SInt16 gEnvelopeStatus[48];
-/* bss 8d60 */ SInt8 gAutoFreeState[48];
+static UInt32 sTick = 0;
+SInt32 gLockMasterTick = 0;
+UInt32 gMasterTickOwner[32] = {};
+UInt32 gMasterTickOwnerLast = 0;
+SInt16 gEnvelopeStatus[48];
+SInt8 gAutoFreeState[48];
 
 void snd_LockMasterTick(UInt32 ownerID) {
     if (gLockMasterTick >= 32) {

@@ -12,21 +12,21 @@
 #include "sysmem.h"
 #include "thread.h"
 
-/* data 0 */ UInt16 g989Version = 0x301;
-/* data 4 */ ModuleInfo Module = {"989snd_Library", 0x301};
-/* data c */ Extern989MonitorInfo *g989Monitor = NULL;
-/* data 10 */ SInt32 gThreadPriority_TICK = 0x9;
-/* data 14 */ SInt32 gThreadPriority_RPC = 0x3a;
-/* data 18 */ SInt32 gThreadPriority_STREAM = 0x3c;
-/* data 1c */ SInt32 gMainRPCThreadId = 0;
-/* data 20 */ SInt32 gEEDMADoneSema = 0;
-/* data 24 */ SInt32 gFileReadMutex = 0;
-/* data 28 */ BOOL gDoRPC = true;
-/* data 2c */ SInt8 *snd_MESSAGE_RECIEVE_BUFFER = NULL;
-/* data 30 */ UInt32 *snd_MESSAGE_RETURN_BUFFER = NULL;
-/* data 34 */ UInt32 *gWriteBackdataOffset = NULL;
-/* data 38 */ Extern989HandlerPtr gExternHandlersList = NULL;
-/* data 3c */ CommandHandler gCommandFunc[] = {
+UInt16 g989Version = 0x301;
+ModuleInfo Module = {"989snd_Library", 0x301};
+Extern989MonitorInfo *g989Monitor = NULL;
+SInt32 gThreadPriority_TICK = 0x9;
+SInt32 gThreadPriority_RPC = 0x3a;
+SInt32 gThreadPriority_STREAM = 0x3c;
+SInt32 gMainRPCThreadId = 0;
+SInt32 gEEDMADoneSema = 0;
+SInt32 gFileReadMutex = 0;
+BOOL gDoRPC = true;
+SInt8 *snd_MESSAGE_RECIEVE_BUFFER = NULL;
+UInt32 *snd_MESSAGE_RETURN_BUFFER = NULL;
+UInt32 *gWriteBackdataOffset = NULL;
+Extern989HandlerPtr gExternHandlersList = NULL;
+CommandHandler gCommandFunc[] = {
     snd_CMD_SL_INIT,
     snd_CMD_SL_CLOSE,
     snd_CMD_SL_LOADBANK,
@@ -134,9 +134,9 @@
     snd_CMD_SL_EXTERNCALLWITHDATA,
     snd_CMD_SL_STREAMSAFECDSEARCHFILE,
 };
-/* data 1e4 */ SndErrorDisplayFunc gErrorDisplayFunc = NULL;
-/* bss 0 */ SInt8 snd_LOADER_MESSAGE_RECIEVE_BUFFER[256];
-/* bss 100 */ UInt32 snd_LOADER_MESSAGE_RETURN_BUFFER[4];
+SndErrorDisplayFunc gErrorDisplayFunc = NULL;
+SInt8 snd_LOADER_MESSAGE_RECIEVE_BUFFER[256];
+UInt32 snd_LOADER_MESSAGE_RETURN_BUFFER[4];
 
 BOOL snd_RegisterExternProcHandler(Extern989HandlerPtr hand) {
     Extern989HandlerPtr work;

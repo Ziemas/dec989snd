@@ -6,16 +6,16 @@ options:
     target_path: in/989SND_D.IRX.rom
     base_path: ..
     
-    asm_path: asm
+    asm_path: asm/debug
     src_path: src
     build_path: build
     subalign: 4
 
     extensions_path: tools/splat_ext 
-    symbol_addrs_path: config/symbol_addrs.txt
-    reloc_addrs_path: config/reloc_addrs.txt
-    undefined_funcs_auto_path: config/undefined_funcs_auto.txt
-    undefined_syms_auto_path:  config/undefined_syms_auto.txt
+    symbol_addrs_path: config/debug/symbol_addrs.txt
+    reloc_addrs_path: config/debug/reloc_addrs.txt
+    undefined_funcs_auto_path: config/debug/undefined_funcs_auto.txt
+    undefined_syms_auto_path:  config/debug/undefined_syms_auto.txt
 
     migrate_rodata_to_functions: True
     named_regs_for_c_funcs: True

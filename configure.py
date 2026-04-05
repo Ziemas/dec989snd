@@ -159,7 +159,7 @@ def build_stuff(ninja, linker_entries: List[LinkerEntry]):
     elf_path = TARGET_ELF_PATH
     ld_path = TARGET_LD_PATH 
     map_path = TARGET_MAP_PATH 
-    target_ld_args = f"-T config/undefined_syms_auto.txt -T config/undefined_funcs_auto.txt -T config/undefined_syms.txt"
+    target_ld_args = f"-T config/debug/undefined_syms_auto.txt -T config/debug/undefined_funcs_auto.txt -T config/debug/undefined_syms.txt"
 
     ninja.build(
         elf_path,
@@ -177,7 +177,7 @@ def build_stuff(ninja, linker_entries: List[LinkerEntry]):
         elf_path,
     )
 
-    checksum_path = f"config/checksum.sha1"
+    checksum_path = f"config/debug/checksum.sha1"
 
     ninja.build(
         rom_path + ".ok",

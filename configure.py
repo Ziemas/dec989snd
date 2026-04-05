@@ -356,11 +356,7 @@ def fix_compile_commands():
             entry["command"] = entry["command"].replace(" -quiet", "")
             entry["command"] = entry["command"].replace(" -G0", "")
 
-            #
-            # Disable warnings so it stops crying even further
-            # FIXME: should probably get rid of this one day
-            #
-            entry["command"] += " -w"
+
             entry["command"] += " -m32"
 
         if file_path.suffix == ".cpp":

@@ -1,32 +1,6 @@
 #ifndef _COMMON_H_
 #define _COMMON_H_
 
-// File written by stdump development version on 2024-09-13
-// 
-// Input file:
-//   989SND_D.IRX
-// Toolchain version(s):
-//   unknown
-// Built-in types:
-//   char                     8-bit integer
-//   complex double           64-bit floating point
-//   complex float            32-bit floating point
-//   complex long double      64-bit floating point
-//   double                   64-bit floating point
-//   float                    32-bit floating point
-//   int                      32-bit signed integer
-//   long double              64-bit floating point
-//   long int                 32-bit signed integer
-//   long long int            64-bit signed integer
-//   long long unsigned int   64-bit unsigned integer
-//   long unsigned int        32-bit unsigned integer
-//   short int                16-bit signed integer
-//   short unsigned int       16-bit unsigned integer
-//   signed char              8-bit signed integer
-//   unsigned char            8-bit unsigned integer
-//   unsigned int             32-bit unsigned integer
-//   void                     void
-
 #include "include_asm.h"
 #include "types.h"
 
@@ -1105,33 +1079,6 @@ typedef struct { // 0x68
 	/* 0x14 */ int flag;
 	/* 0x18 */ char arg[80];
 } sceSifCmdResetData;
-
-typedef char *__gnuc_va_list;
-
-enum {
-	__no_type_class = -1,
-	__void_type_class = 0,
-	__integer_type_class = 1,
-	__char_type_class = 2,
-	__enumeral_type_class = 3,
-	__boolean_type_class = 4,
-	__pointer_type_class = 5,
-	__reference_type_class = 6,
-	__offset_type_class = 7,
-	__real_type_class = 8,
-	__complex_type_class = 9,
-	__function_type_class = 10,
-	__method_type_class = 11,
-	__record_type_class = 12,
-	__union_type_class = 13,
-	__array_type_class = 14,
-	__string_type_class = 15,
-	__set_type_class = 16,
-	__file_type_class = 17,
-	__lang_type_class = 18
-};
-
-typedef __gnuc_va_list va_list;
 
 struct sSRAMNode_tag { // 0x18
 	/* 0x00 */ UInt32 loc;

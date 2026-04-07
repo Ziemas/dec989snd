@@ -46,6 +46,7 @@ build_targets = [
         "symdir": "config/debug",
         "cflags": "-O0 -G0 -g3",
         "defs": "-DDEBUG",
+        "size": "249588",
         "override": {},
     },
     {
@@ -55,6 +56,7 @@ build_targets = [
         "symdir": "config/release",
         "cflags": "-O2 -G0 -g1",
         "defs": "-DRELEASE",
+        "size": "130220",
         "override": 
             {"src/LFO.c": "-O3 -G0 -g0"},
     },
@@ -108,7 +110,7 @@ def write_rules(ninja):
     ninja.rule(
             "rom",
             description="rom $out",
-            command=f"{CROSS}objcopy $in $out -O binary && truncate $out -s 249588",
+            command=f"{CROSS}objcopy $in $out -O binary && truncate $out -s $truncsize",
     )
 
 
@@ -194,6 +196,7 @@ def build_stuff(tgt: dict[str, Any], ninja, linker_entries: List[LinkerEntry]):
         rom_path,
         "rom",
         elf_path,
+        variables={"truncsize": tgt["size"]}
     )
 
     checksum_path = f"config/{tgt["objdir"]}/checksum.sha1"

@@ -149,15 +149,9 @@ SInt16 gLFO_sine[2048] = {
     32609,  32618,  32628,  32637,  32646,  32654,  32662,  32670,  32678,  32685,  32692,  32699,  32705,  32711,
     32717,  32722,  32727,  32732,  32736,  32740,  32744,  32748,  32751,  32754,  32757,  32759,  32761,  32763,
     32764,  32765,  32766,  32766};
+
 LFOTracker *gActiveLFOs = NULL;
 SInt32 gNumLFOsInUse = 0;
-
-SInt32 snd_LFO_TYPE_OFF(LFOTracker *tracker, int step);
-SInt32 snd_LFO_TYPE_SINE(LFOTracker *tracker, int step);
-SInt32 snd_LFO_TYPE_SQUARE(LFOTracker *tracker, int step);
-SInt32 snd_LFO_TYPE_TRIANGLE(LFOTracker *tracker, int step);
-SInt32 snd_LFO_TYPE_SAW(LFOTracker *tracker, int step);
-SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step);
 
 LFOFunction gLFOFuncs[] = {
     snd_LFO_TYPE_OFF,      snd_LFO_TYPE_SINE, snd_LFO_TYPE_SQUARE,
@@ -219,7 +213,7 @@ SInt32 snd_GetLFO(register LFOTracker *tracker, register SInt32 step_mult) {
     ret_val = 0;
     step = tracker->next_step >> 16;
 
-    tracker->next_step += step_mult * tracker->step_size;
+    tracker->next_step += tracker->step_size * step_mult;
 
     if (tracker->next_step > 0x07FFFFFF) {
         tracker->next_step -= 0x08000000;

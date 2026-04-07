@@ -140,7 +140,6 @@ SInt32 snd_LFO_TYPE_SQUARE(LFOTracker *tracker, int step);
 SInt32 snd_LFO_TYPE_TRIANGLE(LFOTracker *tracker, int step);
 SInt32 snd_LFO_TYPE_SAW(LFOTracker *tracker, int step);
 SInt32 snd_LFO_TYPE_RAND(LFOTracker *tracker, int step);
-SInt32 snd_GetLFO(LFOTracker *tracker, SInt32 step_mult);
 void snd_InitLFO(LFOTracker *tracker);
 void snd_RemoveLFOsForHandler(BlockSoundHandlerPtr handler);
 void snd_RemoveLFO(LFOTracker *lfo);
@@ -148,6 +147,7 @@ BOOL snd_InsertLFO(LFOTracker *lfo);
 UInt32 snd_DoOneLFO(LFOTracker *tracker);
 void snd_HandleLFOs();
 void snd_CalcLFODepth(LFOTracker *lfo);
+SInt32 snd_GetLFO(LFOTracker *tracker, SInt32 step_mult);
 
 // *****************************************************************************
 // FILE -- ame.c

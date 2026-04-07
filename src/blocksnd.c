@@ -120,7 +120,7 @@ UInt32 snd_PlaySFXWithStruct(SFXBlock2Ptr block, SInt32 sound, SInt16 sfx_vol, S
         vol = 0x400;
     }
 
-    play_vol = (sfx_vol * vol) >> 10;
+    play_vol = (vol * sfx_vol) >> 10;
     if (play_vol >= 128) {
         play_vol = 127;
     }
@@ -655,7 +655,7 @@ SInt32 snd_SFX_GRAIN_TYPE_RAND_PLAY(BlockSoundHandlerPtr handler, SFX2Ptr sfx, S
         }
 
         grain->OpcodeData.MicroOp.Arg[2] = work32;
-        handler->NextGrain += grain->OpcodeData.MicroOp.Arg[1] * work32;
+        handler->NextGrain += work32 * grain->OpcodeData.MicroOp.Arg[1];
         handler->sk_grains_to_play = grain->OpcodeData.MicroOp.Arg[1] + 1;
         handler->sk_grains_to_skip =
             (grain->OpcodeData.MicroOp.Arg[0] - (work32 + 1)) * grain->OpcodeData.MicroOp.Arg[1];
@@ -674,7 +674,7 @@ SInt32 snd_SFX_GRAIN_TYPE_RAND_PB(BlockSoundHandlerPtr handler, SFX2Ptr sfx, SFX
 
     work32 = (0xffff * (snd_RandomUInt16() % 0x7fff)) / 0x7fff;
     work32 = work32 - 0x8000;
-    work32 = grain->OpcodeData.MicroOp.Arg[0] * work32 / 100;
+    work32 = work32 * grain->OpcodeData.MicroOp.Arg[0] / 100;
     snd_SetSFXPitchbend(handler->SH.OwnerID, work32);
 
     return 0;
@@ -880,7 +880,7 @@ SInt32 snd_SFX_GRAIN_TYPE_PLAY_CYCLE(BlockSoundHandlerPtr handler, SFX2Ptr sfx, 
             grain->OpcodeData.MicroOp.Arg[2] = 0;
         }
 
-        handler->NextGrain += grain->OpcodeData.MicroOp.Arg[1] * work32;
+        handler->NextGrain += work32 * grain->OpcodeData.MicroOp.Arg[1];
         handler->sk_grains_to_play = grain->OpcodeData.MicroOp.Arg[1] + 1;
         handler->sk_grains_to_skip =
             (grain->OpcodeData.MicroOp.Arg[0] - (work32 + 1)) * grain->OpcodeData.MicroOp.Arg[1];
@@ -1465,7 +1465,7 @@ SInt32 snd_CollapsePan(SInt32 g_pan, SInt32 app_vol, SFX2 *sfx) {
             if (g_pan > 180) {
                 g_pan = 360 - (((360 - g_pan) * (app_vol - m_vol)) / (f_vol - m_vol));
             } else {
-                g_pan = ((app_vol - m_vol) * g_pan) / (f_vol - m_vol);
+                g_pan = (g_pan * (app_vol - m_vol)) / (f_vol - m_vol);
             }
         } else {
             g_pan = 0;

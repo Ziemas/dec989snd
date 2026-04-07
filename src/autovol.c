@@ -22,7 +22,7 @@ void snd_AutoVol(UInt32 handle, SInt32 vol, SInt32 delta_time, SInt32 delta_from
         vol = 0;
         stopit = 1;
     } else {
-        vol = (handler->Original_Vol * vol) >> 10;
+        vol = (vol * handler->Original_Vol) >> 10;
         if (vol >= 128) {
             vol = 127;
         }

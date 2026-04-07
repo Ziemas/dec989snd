@@ -40,18 +40,12 @@ void snd_InitVoiceAllocator() {
         gAutoFreeState[count] = 0;
     }
 
-    gAwaitingKeyOn[1] = 0;
-    gAwaitingKeyOn[0] = 0;
-    gAwaitingKeyOff[1] = 0;
-    gAwaitingKeyOff[0] = 0;
-    gKeyedOnVoices[1] = 0;
-    gKeyedOnVoices[0] = 0;
-    gKeyedOffVoices[1] = 0;
-    gKeyedOffVoices[0] = 0;
-    gReverbVoices[1] = 0;
-    gReverbVoices[0] = 0;
-    gExternVoices[1] = 0;
-    gExternVoices[0] = 0;
+    gAwaitingKeyOn[0] = gAwaitingKeyOn[1] = 0;
+    gAwaitingKeyOff[0] = gAwaitingKeyOff[1] = 0;
+    gKeyedOnVoices[0] = gKeyedOnVoices[1] = 0;
+    gKeyedOffVoices[0] = gKeyedOffVoices[1] = 0;
+    gReverbVoices[0] = gReverbVoices[1] = 0;
+    gExternVoices[0] = gExternVoices[1] = 0;
     gChannelMode = 0;
     gReverbMode = 0;
     gPlayingListHead = 0;

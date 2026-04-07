@@ -165,9 +165,11 @@ UInt32 snd_PlaySoundVolPanPMPB(SoundBankPtr bank, SInt32 sound, SInt32 vol, SInt
             return 0;
         }
 
+#ifdef DEBUG
         if (!snd_DEBUG_CheckSolo(bank, sound)) {
             return 0;
         }
+#endif
 
         sound_ptr = &bank->FirstSound[sound];
         if (!sound_ptr->Bank) {
@@ -727,6 +729,8 @@ SInt32 snd_CollectTones(SoundBankPtr bank, SInt32 prog, SInt32 key, TonePtr *ton
     return tone_count;
 }
 
+#ifdef DEBUG
+
 void snd_DEBUG_SoloSound(SoundBankPtr bank, SInt32 sound) {
     SInt32 x;
 
@@ -773,3 +777,5 @@ void snd_DEBUG_ClearSolo() {
         gSoloBank[x] = 0;
     }
 }
+
+#endif

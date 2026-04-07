@@ -8,7 +8,7 @@
 
 SInt32 gSTickSema = -1;
 SInt32 gTimerThreadID = 0;
-SInt32 gTimerID = 0;
+volatile SInt32 gTimerID = 0;
 SInt32 gTickTrigger = 0;
 SInt32 gTickMode = -1;
 UInt32 gMicsPerTick = 0;

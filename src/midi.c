@@ -22,7 +22,7 @@ UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitc
     if (vol == 0x7FFFFFFF) {
         vol = 0x400;
     }
-    stream_handler->SH.Current_Vol = (sound->Vol * vol) >> 10;
+    stream_handler->SH.Current_Vol = (vol * sound->Vol) >> 10;
 
     if (stream_handler->SH.Current_Vol >= 128) {
         stream_handler->SH.Current_Vol = 127;
@@ -445,7 +445,7 @@ void snd_SetMIDIHandlerVolumePan(MIDIHandlerPtr stream, SInt32 vol, SInt32 pan) 
     if (vol < 0) {
         stream->SH.Current_Vol = -1 * vol;
     } else if (vol != 0x7FFFFFFF) {
-        stream->SH.Current_Vol = (stream->SH.Sound->Vol * vol) >> 10;
+        stream->SH.Current_Vol = (vol * stream->SH.Sound->Vol) >> 10;
     }
 
     if (stream->SH.Current_Vol >= 128) {

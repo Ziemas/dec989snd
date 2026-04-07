@@ -1,9 +1,7 @@
-D_0001EFC4 = 0x1EFC4;
-D_0001EFE4 = 0x1EFE4;
-D_0001F952 = 0x1F952;
-D_0001F956 = 0x1F956;
-D_0001FCAC = 0x1FCAC;
-D_0001FCB4 = 0x1FCB4;
+gBlockGlobalReg = 0x1EFC4;
+gGrainHandler = 0x1EFE4;
+gTimerInfo = 0x1FCAC;
+gMovieSPUVol = 0x1FCB4;
 gExternVoices = 0x1FCBC;
 gReverbVoices = 0x1FCC4;
 gAwaitingKeyOn = 0x1FCCC;

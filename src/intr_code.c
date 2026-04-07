@@ -2,7 +2,7 @@
 #include "functions.h"
 #include "thread.h"
 
-BOOL gKillTimer = 0;
+volatile BOOL gKillTimer = 0;
 SInt32 gTransfering = 0;
 SpuTransferCallbackProc gTransferDoneCallback = NULL;
 SInt32 gSPURAMTransSema = -1;
@@ -11,11 +11,11 @@ SInt32 gOddCdError = 0;
 SInt32 gOddCdErrorCode = 0;
 SInt32 gCdBusy = 0;
 SInt32 gCdBusyTime = 0;
-SInt32 gDMAInUse[2] = {0, 0};
-SInt32 gLastDMA0Complete = 0;
-SInt32 gLastDMA1Complete = 0;
+volatile SInt32 gDMAInUse[2] = {0, 0};
+volatile SInt32 gLastDMA0Complete = 0;
+volatile SInt32 gLastDMA1Complete = 0;
 SInt32 gDoneDMASema = 0;
-SInt32 gWaitingDMAComplete = 0;
+volatile SInt32 gWaitingDMAComplete = 0;
 
 SInt32 snd_TimerLLTick(timercommon *common) {
     iWakeupThread(*common->thid);

@@ -26,7 +26,7 @@ SInt32 gMasterReadBufferFirstSector = 0;
 SInt32 gMasterReadBufferLastSector = 0;
 void *gMasterReadBuffer = NULL;
 void *gCurrentReadBuffer = NULL;
-UInt32 gSSNeedSectors = 0;
+volatile UInt32 gSSNeedSectors = 0;
 UInt32 gSSReadSectors = 0;
 UInt32 gSSReadLoc = 0;
 UInt32 gBreakDataRead = 0;
@@ -43,7 +43,7 @@ VAGBuffer *VAGStreamLoadListTail = NULL;
 VAGBuffer *VAGStreamDMAList = NULL;
 VAGBuffer *VAGStreamDMAListTail = NULL;
 VAGBuffer *gVAGReadBusy = NULL;
-SInt32 gDataReadBusy = 0;
+volatile SInt32 gDataReadBusy = 0;
 static VAGBuffer *gDMABusy[2] = {0, 0};
 static SInt32 gCDIdleWaiter = 0;
 static SInt32 gStartDataLoadSema = 0;
@@ -140,6 +140,7 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size, UInt32 read
         return 0;
     }
 
+#ifdef DEBUG
     thread.entry = snd_DeferredFileCloseWatcher;
     thread.initPriority = gThreadPriority_STREAM + 4;
     gDeferredFileCloseThread = CreateThread(&thread);
@@ -148,6 +149,7 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size, UInt32 read
         snd_FreeVAGStreamResources();
         return 0;
     }
+#endif
 
     sema.attr = 1;
     sema.initCount = 0;
@@ -157,7 +159,9 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size, UInt32 read
     gDoneDMASema = CreateSema(&sema);
     gDoneLoadSema = CreateSema(&sema);
     gSearchFileSema = CreateSema(&sema);
+#ifdef DEBUG
     gDeferredFileCloseSema = CreateSema(&sema);
+#endif
     gVAGStreamHandler = gAllocProc(sizeof(*gVAGStreamHandler) * num_channels, 4, 0);
     if (!gVAGStreamHandler) {
         snd_ShowError(42, num_channels, 88, 0, 0);
@@ -220,8 +224,8 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size, UInt32 read
         header->buff[1].IOPbuff = (buffer_size / 2 * num_channels + iop_buffer + buffer_size / 2 * x);
         header->buff[0].OrigIOPbuff = header->buff[0].IOPbuff;
         header->buff[1].OrigIOPbuff = header->buff[1].IOPbuff;
-        header->buff[0].SPUbuff = (SInt8 *)(spu_buffer + buffer_size / 2 * x);
-        header->buff[1].SPUbuff = (SInt8 *)(buffer_size / 2 * num_channels + spu_buffer + buffer_size / 2 * x);
+        header->buff[0].SPUbuff = (SInt8 *)(spu_buffer + ((buffer_size / 2) * x));
+        header->buff[1].SPUbuff = (SInt8 *)(spu_buffer + ((buffer_size / 2) * num_channels) + ((buffer_size / 2) * x));
         header->buff[0].owner = header;
         header->buff[1].owner = header;
         *list = header;
@@ -250,7 +254,9 @@ BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size, UInt32 read
     StartThread(gDataLoadThread, 0);
     StartThread(gDMADoneThread, 0);
     StartThread(gLoadDoneThread, 0);
+#ifdef DEBUG
     StartThread(gDeferredFileCloseThread, 0);
+#endif
 
     for (x = 0; x < 16; x++) {
         gStreamChannelRange[x].min = 0;
@@ -335,6 +341,7 @@ UInt32 snd_PlayVAGStreamByNameEx(char *name1, char *name2, UInt32 offset1, UInt3
     SInt32 fh1;
     SInt32 fh2;
 
+#ifdef DEBUG
     fh1 = -1;
     fh2 = -1;
 
@@ -356,6 +363,10 @@ UInt32 snd_PlayVAGStreamByNameEx(char *name1, char *name2, UInt32 offset1, UInt3
     flags |= 0x1000;
 
     return snd_PlayVAGStreamByLocEx(fh1, fh2, offset1, offset2, vol, pan, vol_group, queue, sub_group, flags);
+#else
+    snd_ShowError(0x6c, 0, 0, 0, 0);
+    return 0;
+#endif
 }
 
 UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32 offset2, SInt32 vol, SInt32 pan,
@@ -372,10 +383,12 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
     thestream = NULL;
     thestreamR = NULL;
 
+#ifdef DEBUG
     if (flags & 0x1000) {
         loc1 += 1;
         loc2 += 1;
     }
+#endif
 
     if (!VAGStreamList) {
         snd_ShowError(47, 0, 0, 0, 0);
@@ -388,6 +401,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
         if (!handler) {
             snd_UnlockMasterTick();
             if ((flags & 0x10) != 0) {
+#ifdef DEBUG
                 if ((flags & 0x1000) != 0) {
                     if (loc1) {
                         snd_AddDeferredCloseFile(loc1 - 1, 1);
@@ -396,15 +410,17 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
                         snd_AddDeferredCloseFile(loc2 - 1, 2);
                     }
                 }
+#endif
 
                 return 0;
             }
 
+#ifdef DEBUG
             if ((flags & 0x1000) != 0) {
                 loc1--;
                 loc2--;
             }
-
+#endif
             return snd_PlayVAGStreamByLocEx(loc1, loc2, offset1, offset2, vol, pan, vol_group, 0, sub_group, flags);
         }
 
@@ -432,6 +448,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
 
                 snd_UnlockMasterTick();
 
+#ifdef DEBUG
                 if ((flags & 0x1000) != 0) {
                     if (loc1) {
                         snd_AddDeferredCloseFile(loc1 - 1, 3);
@@ -440,6 +457,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
                         snd_AddDeferredCloseFile(loc2 - 1, 4);
                     }
                 }
+#endif
                 return 0;
             }
 
@@ -473,6 +491,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
             slot1 = snd_GetFreeQueSlot();
             if (!slot1) {
                 snd_UnlockMasterTick();
+#ifdef DEBUG
                 if (flags & 0x1000) {
                     if (loc1) {
                         snd_AddDeferredCloseFile(loc1 - 1, 5);
@@ -481,6 +500,8 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
                         snd_AddDeferredCloseFile(loc2 - 1, 6);
                     }
                 }
+#endif
+
                 return 0;
             }
 
@@ -514,6 +535,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
 
     if (!snd_AllocateStreamResources(&thestream, &thestreamR, loc2 != 0, 1, vol_group)) {
         snd_UnlockMasterTick();
+#ifdef DEBUG
         if (flags & 0x1000) {
             if (loc1) {
                 snd_AddDeferredCloseFile(loc1 - 1, 7);
@@ -522,7 +544,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
                 snd_AddDeferredCloseFile(loc2 - 1, 8);
             }
         }
-
+#endif
         return 0;
     }
 
@@ -530,6 +552,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
     if (!handler) {
         snd_ShowError(48, 0, 0, 0, 0);
         snd_UnlockMasterTick();
+#ifdef DEBUG
         if (flags & 0x1000) {
             if (loc1) {
                 snd_AddDeferredCloseFile(loc1 - 1, 9);
@@ -538,6 +561,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
                 snd_AddDeferredCloseFile(loc2 - 1, 10);
             }
         }
+#endif
         return 0;
     }
 
@@ -811,6 +835,7 @@ void snd_SetupVAGStream(VAGStreamHandlerPtr handler, VAGStreamHeader *stream, SI
         stream->master_pan = 0;
     }
 
+#ifdef DEBUG
     if ((flags & 0x1000) != 0) {
         stream->file_handle = loc - 1;
         stream->next_read_offset = 0;
@@ -818,6 +843,7 @@ void snd_SetupVAGStream(VAGStreamHandlerPtr handler, VAGStreamHeader *stream, SI
         stream->file_start_offset = 0;
         stream->stdio_file_offset = offset;
     }
+#endif
 
     if (!part_of_queue) {
         snd_AddStreamToHandler(handler, stream);
@@ -868,9 +894,11 @@ void snd_StopAllStreams() {
         printf("snd_StopAllStreams: ERROR! tried 5 times to stopp all streams!\n");
     }
 
+#ifdef DEBUG
     while (!snd_AllStdioFilesClosed()) {
         DelayThread(33000);
     }
+#endif
 
     if (!gVAGReadBusy && !gDataReadBusy && !VAGStreamLoadList) {
         if (gCDIdleWaiter) {
@@ -1108,10 +1136,12 @@ void snd_KillVAGStreamEx(UInt32 handle, SInt32 from_where) {
     }
 
     while (stream) {
+#ifdef DEBUG
         if ((stream->flags & 0x1000) != 0 && stream->file_handle != -1) {
             snd_AddDeferredCloseFile(stream->file_handle, 11);
             stream->file_handle = -1;
         }
+#endif
 
         stream->flags = 1;
         snd_RemoveVAGStreamDMABuffer(stream->buff);
@@ -1136,10 +1166,12 @@ void snd_KillVAGStreamEx(UInt32 handle, SInt32 from_where) {
 
     if (hand->qued_stream) {
         for (stream = hand->qued_stream; stream; stream = stream->sync_list) {
+#ifdef DEBUG
             if ((stream->flags & 0x1000) != 0 && stream->file_handle != -1) {
                 snd_AddDeferredCloseFile(stream->file_handle, 12);
                 stream->file_handle = -1;
             }
+#endif
             stream->flags = 1;
             snd_RemoveVAGStreamDMABuffer(stream->buff);
             snd_RemoveVAGStreamDMABuffer(&stream->buff[1]);
@@ -1260,10 +1292,12 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
                 voice[voice_count] = walk->voice;
                 voice_count++;
 
+#ifdef DEBUG
                 if ((walk->flags & 0x1000) != 0 && walk->file_handle != -1) {
                     snd_AddDeferredCloseFile(walk->file_handle, 13);
                     walk->file_handle = -1;
                 }
+#endif
                 walk->flags = 1;
 
                 if (part_of_interleave) {
@@ -1316,6 +1350,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
                 }
 
                 for (walk = stream; walk; walk = walk->sync_list) {
+#ifdef DEBUG
                     if ((walk->flags & 0x1000) != 0 && walk->file_handle != -1) {
                         if (!dis) {
                             CpuResumeIntr(intr_state);
@@ -1325,7 +1360,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
                         walk->file_handle = -1;
                         dis = CpuSuspendIntr(&intr_state);
                     }
-
+#endif
                     walk->flags = 1;
                     if (walk->voice != -1) {
                         snd_KeyOffVoice(walk->voice);
@@ -1503,9 +1538,11 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
         }
     }
 
-    if ((stream->flags & 2) != 0 && (stream->flags & 4) != 0 && (stream->flags & 0x10) == 0) {
-        stream->flags &= ~2u;
-        stream->flags |= 8u;
+    if ((stream->flags & 2) != 0 && (stream->flags & 4) != 0) {
+        if ((stream->flags & 0x10) == 0) {
+            stream->flags &= ~2u;
+            stream->flags |= 8u;
+        }
     }
 
     if (local_dma_needed) {
@@ -2059,8 +2096,10 @@ void snd_KickVAGRead(SInt32 offset) {
         snd_GetStreamDataFromEEMemory(offset, readbytes, readsectors);
     } else if ((gVAGReadBusy->owner->flags & 0x1C000) != 0) {
         snd_GetStreamDataFromMemoryStream(offset, readbytes, readsectors, gVAGReadBusy->owner->flags);
+#ifdef DEBUG
     } else if ((gVAGReadBusy->owner->flags & 0x1000) != 0) {
         snd_GetStreamDataFromStdio(offset, readbytes, readsectors);
+#endif
     } else {
         snd_GetStreamDataFromCD(offset, readbytes, readsectors);
     }
@@ -2285,6 +2324,7 @@ SInt32 snd_GetStreamDataFromMemoryStream(SInt32 offset, SInt32 readbytes, UInt32
     return ret_code;
 }
 
+#ifdef DEBUG
 SInt32 snd_GetStreamDataFromStdio(SInt32 offset, SInt32 readbytes, UInt32 readsectors) {
     SInt32 ret_code;
     SInt32 stdio_error;
@@ -2324,6 +2364,7 @@ SInt32 snd_GetStreamDataFromStdio(SInt32 offset, SInt32 readbytes, UInt32 readse
 
     return ret_code;
 }
+#endif
 
 SInt32 snd_GetStreamDataFromCD(SInt32 offset, SInt32 readbytes, UInt32 readsectors) {
     SInt32 ret_code;
@@ -2599,8 +2640,10 @@ void snd_VAGStreamLoadDoneThread() {
                                 }
 
                                 walk = new_master;
+#ifdef DEBUG
                                 walk->file_handle = stream->file_handle;
                                 walk->stdio_file_offset = stream->stdio_file_offset;
+#endif
                                 list_hold = new_master;
                                 for (i = 0; i < vpk->num_channels; i++) {
                                     walk->handler = stream->handler;
@@ -2621,7 +2664,9 @@ void snd_VAGStreamLoadDoneThread() {
                                         list_hold->sync_list = walk;
                                         list_hold = walk;
                                         walk->voice = snd_AllocateVoice(stream->handler->SH.VolGroup, 127);
+#ifdef DEBUG
                                         walk->file_handle = -1;
+#endif
                                     }
 
                                     if (walk->voice == -1) {
@@ -3573,9 +3618,11 @@ VAGStreamQueEntry *snd_GetFreeQueSlot() {
 
 void snd_FreeQueChain(VAGStreamQueEntry *que, BOOL is_stdio) {
     while (que) {
+#ifdef DEBUG
         if (is_stdio) {
             snd_AddDeferredCloseFile(que->loc - 1, 15);
         }
+#endif
 
         que->flags = 0;
         que = que->next;
@@ -3613,8 +3660,6 @@ void snd_FreeVAGStreamResources() {
     VAGStreamHeader *walk;
     SInt32 dis;
     SInt32 intr_state;
-    struct ThreadInfo info;
-    SInt32 err;
 
     walk = VAGStreamList;
     snd_CleanUpThread(&gDataLoadThread);
@@ -3628,14 +3673,18 @@ void snd_FreeVAGStreamResources() {
     snd_CleanUpSema(&gSearchFileSema);
 
 #ifdef DEBUG
-    err = ReferThreadStatus(gDeferredFileCloseThread, &info);
-    while (info.status != 4 || info.waitType != 3 || info.waitId != gDeferredFileCloseSema) {
-        DelayThread(3000);
+    {
+        struct ThreadInfo info;
+        SInt32 err;
         err = ReferThreadStatus(gDeferredFileCloseThread, &info);
+        while (info.status != 4 || info.waitType != 3 || info.waitId != gDeferredFileCloseSema) {
+            DelayThread(3000);
+            err = ReferThreadStatus(gDeferredFileCloseThread, &info);
+        }
+        snd_CleanUpThread(&gDeferredFileCloseThread);
+        snd_CleanUpSema(&gDeferredFileCloseSema);
+        snd_CloseAllDeferredFiles();
     }
-    snd_CleanUpThread(&gDeferredFileCloseThread);
-    snd_CleanUpSema(&gDeferredFileCloseSema);
-    snd_CloseAllDeferredFiles();
 #endif
 
     gLastDMA0Complete = 0;
@@ -4114,6 +4163,7 @@ UInt16 snd_ModifyRawPitch(SInt32 pm, UInt32 pitch) {
     return pitch;
 }
 
+#ifdef DEBUG
 void snd_DeferredFileCloseWatcher() {
     while (1) {
         WaitSema(gDeferredFileCloseSema);
@@ -4164,3 +4214,4 @@ void snd_AddDeferredCloseFile(SInt32 handle, int from) {
 
     snd_ShowError(111, 0, 0, 0, 0);
 }
+#endif

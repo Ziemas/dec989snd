@@ -39,7 +39,7 @@ void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt3
     }
 
     if (delta_from == 4) {
-        delta_time = abs(panchange) * delta_time / 180;
+        delta_time = delta_time * abs(panchange) / 180;
     }
 
     if (!delta_time) {

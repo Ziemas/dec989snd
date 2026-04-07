@@ -501,6 +501,7 @@ void snd_CMD_SL_PLAYVAGSTREAMBYNAME(SInt8 *msg_data) {
     char *name1 = NULL, *name2 = NULL;
     PVSBN_struct *data = (PVSBN_structPtr)msg_data;
 
+#ifdef DEBUG
     if (data->name1[0]) {
         name1 = data->name1;
     }
@@ -511,6 +512,10 @@ void snd_CMD_SL_PLAYVAGSTREAMBYNAME(SInt8 *msg_data) {
 
     *gWriteBackdataOffset = snd_PlayVAGStreamByNameEx(name1, name2, data->offset1, data->offset2, data->vol, data->pan,
                                                       data->vol_group, data->queue, data->sub_group, data->flags);
+#else
+    snd_ShowError(0x6c, 0, 0, 0, 0);
+    *gWriteBackdataOffset = 0;
+#endif
 }
 
 void snd_CMD_SL_PLAYVAGSTREAMBYLOC(SInt8 *msg_data) {

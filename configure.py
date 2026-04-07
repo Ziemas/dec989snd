@@ -32,19 +32,11 @@ COMMON_INCLUDES = "-Iinclude -Iinclude/common -Iinclude/sdk"
 COMPILER_LAUNCHER = "wibo"
 MASPSXFLAGS = "--aspsx-version=2.78"
 MASPSX = f"python {TOOLS_DIR}/maspsx/maspsx.py {MASPSXFLAGS}"
-ASFLAGS = "-Iinclude -G0 -g0 -O1"
+ASFLAGS = "-Iinclude -G0 -g0 -O0"
 COMPILE_CMD = f"{COMPILER_LAUNCHER} {COMPILER_DIR}/cc1.exe {COMMON_INCLUDES}"
 CPPFLAGS = "-ffreestanding -Iinclude "
 
 CROSS = "mipsel-none-elf-"
-
-#TARGET_YAML_FILE = "config/989snd.yaml"
-#TARGET_BASENAME = "989SND.IRX"
-#TARGET_LD_PATH = f"{TARGET_BASENAME}.ld"
-#TARGET_ROM_PATH = f"build/{TARGET_BASENAME}.rom"
-#TARGET_MAP_PATH = f"build/{TARGET_BASENAME}.map"
-#TARGET_ELF_PATH = f"build/{TARGET_BASENAME}.elf"
-#TARGET_INFILE = f"in/{TARGET_BASENAME}"
 
 build_targets = [
     {
@@ -53,15 +45,18 @@ build_targets = [
         "objdir": "debug",
         "symdir": "config/debug",
         "cflags": "-O0 -G0 -g3",
-        "defs": "-DDEBUG"
+        "defs": "-DDEBUG",
+        "override": {},
     },
     {
         "config": "config/989snd.yaml",
         "basename": "989SND.IRX",
         "objdir": "release",
         "symdir": "config/release",
-        "cflags": "-O2 -G0 -g0",
-        "defs": "-DRELEASE"
+        "cflags": "-O2 -G0 -g1",
+        "defs": "-DRELEASE",
+        "override": 
+            {"src/LFO.c": "-O3 -G0 -g0"},
     },
 ]
 
@@ -143,7 +138,6 @@ def build_stuff(tgt: dict[str, Any], ninja, linker_entries: List[LinkerEntry]):
                 implicit_outputs=implicit_outputs,
             )
 
-
     object_paths = set()
     for entry in linker_entries:
         seg = entry.segment
@@ -167,7 +161,12 @@ def build_stuff(tgt: dict[str, Any], ninja, linker_entries: List[LinkerEntry]):
         elif isinstance(seg, splat.segtypes.common.c.CommonSegC):
             src = entry.src_paths[0]
             paths = entry.src_paths
-            build(entry.object_path, paths, "cc", variables = {"cflags": tgt["cflags"], "defs": tgt["defs"]})
+
+            cflags = tgt["cflags"]
+            if str(src) in tgt["override"]:
+                cflags = tgt["override"][str(src)]
+
+            build(entry.object_path, paths, "cc", variables = {"cflags": cflags, "defs": tgt["defs"]})
 
         elif isinstance(seg, splat.segtypes.common.databin.CommonSegDatabin) or isinstance(seg, splat.segtypes.common.rodatabin.CommonSegRodatabin):
             build(entry.object_path, entry.src_paths, "as")

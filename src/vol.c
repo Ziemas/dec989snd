@@ -104,8 +104,8 @@ void snd_MakeVolumes(SInt32 snd_vol, SInt32 snd_pan, SInt32 prog_vol, SInt32 pro
 
     snd_pan = snd_pan < 270 ? snd_pan + 90 : snd_pan - 270;
     if (snd_pan < 180) {
-        voll = gPanTable[snd_pan].left * work_vol / 0x3FFF;
-        volr = gPanTable[snd_pan].right * work_vol / 0x3FFF;
+        voll = work_vol * gPanTable[snd_pan].left / 0x3FFF;
+        volr = work_vol * gPanTable[snd_pan].right / 0x3FFF;
         if (spu_vol->left < 0 && spu_vol->right < 0) {
             voll *= -1;
             volr *= -1;
@@ -122,8 +122,8 @@ void snd_MakeVolumes(SInt32 snd_vol, SInt32 snd_pan, SInt32 prog_vol, SInt32 pro
         }
     } else {
         snd_pan -= 180;
-        volr = gPanTable[snd_pan].left * work_vol / 0x3FFF;
-        voll = gPanTable[snd_pan].right * work_vol / 0x3FFF;
+        volr = work_vol * gPanTable[snd_pan].left / 0x3FFF;
+        voll = work_vol * gPanTable[snd_pan].right / 0x3FFF;
         if (gStereoOrMono != 2) {
             if (spu_vol->left > -1 && spu_vol->right > -1) {
                 if (volr < voll) {
@@ -184,8 +184,8 @@ void snd_MakeVolumesB(SInt32 bank_vol, SInt32 snd_vol, SInt32 snd_pan, SInt32 pr
 
     snd_pan = snd_pan < 270 ? snd_pan + 90 : snd_pan - 270;
     if (snd_pan < 180) {
-        voll = gPanTable[snd_pan].left * work_vol / 0x3FFF;
-        volr = gPanTable[snd_pan].right * work_vol / 0x3FFF;
+        voll = work_vol * gPanTable[snd_pan].left / 0x3FFF;
+        volr = work_vol * gPanTable[snd_pan].right / 0x3FFF;
         if (spu_vol->left < 0 && spu_vol->right < 0) {
             voll *= -1;
             volr *= -1;
@@ -202,8 +202,8 @@ void snd_MakeVolumesB(SInt32 bank_vol, SInt32 snd_vol, SInt32 snd_pan, SInt32 pr
         }
     } else {
         snd_pan -= 180;
-        volr = gPanTable[snd_pan].left * work_vol / 0x3FFF;
-        voll = gPanTable[snd_pan].right * work_vol / 0x3FFF;
+        volr = work_vol * gPanTable[snd_pan].left / 0x3FFF;
+        voll = work_vol * gPanTable[snd_pan].right / 0x3FFF;
         if (gStereoOrMono != 2) {
             if (spu_vol->left > -1 && spu_vol->right > -1) {
                 if (volr < voll) {
@@ -253,8 +253,8 @@ void snd_CalcStereoBalance3d(SInt32 snd_vol, SInt32 snd_pan, SpuVolume *spu_vol)
 
     snd_pan = snd_pan < 270 ? snd_pan + 90 : snd_pan - 270;
     if (snd_pan < 180) {
-        voll = gPanTable2[snd_pan].left * work_vol / 0x3FFF;
-        volr = gPanTable2[snd_pan].right * work_vol / 0x3FFF;
+        voll = work_vol * gPanTable2[snd_pan].left / 0x3FFF;
+        volr = work_vol * gPanTable2[snd_pan].right / 0x3FFF;
         if (spu_vol->left < 0 && spu_vol->right < 0) {
             voll *= -1;
             volr *= -1;
@@ -271,8 +271,8 @@ void snd_CalcStereoBalance3d(SInt32 snd_vol, SInt32 snd_pan, SpuVolume *spu_vol)
         }
     } else {
         snd_pan -= 180;
-        volr = gPanTable2[snd_pan].left * work_vol / 0x3FFF;
-        voll = gPanTable2[snd_pan].right * work_vol / 0x3FFF;
+        volr = work_vol * gPanTable2[snd_pan].left / 0x3FFF;
+        voll = work_vol * gPanTable2[snd_pan].right / 0x3FFF;
         if (gStereoOrMono != 2) {
             if (spu_vol->left > -1 && spu_vol->right > -1) {
                 if (volr < voll) {
@@ -339,7 +339,7 @@ void snd_AdjustAllChannelsMasterVolume(UInt32 flags) {
     for (count = 0; count < 48; ++count) {
         if ((gChannelStatus[count].Owner->flags & 2) == 0 &&
             (gChannelStatus[count].Status == 1 || gChannelStatus[count].Status == 4) &&
-            ((1 << gChannelStatus[count].VolGroup) & flags) != 0) {
+            (flags & (1 << gChannelStatus[count].VolGroup)) != 0) {
             core = count / 24;
             c_v = count % 24;
             sceSdSetParam(
@@ -395,7 +395,7 @@ void snd_CheckDuckers() {
     for (i = 0; i < 4; ++i) {
         affected_groups = 0;
         if (gDuckers[i].source_group != -1) {
-            if (((1 << gDuckers[i].source_group) & playing_groups) != 0) {
+            if ((playing_groups & (1 << gDuckers[i].source_group)) != 0) {
                 if (gDuckers[i].current_duck_mult != gDuckers[i].full_duck_mult) {
                     gDuckers[i].current_duck_mult -= gDuckers[i].attack_time;
                     if (gDuckers[i].current_duck_mult < gDuckers[i].full_duck_mult) {
@@ -415,7 +415,7 @@ void snd_CheckDuckers() {
 
             if (affected_groups) {
                 for (c = 0; c < 15; ++c) {
-                    if (((1 << c) & affected_groups) != 0 && gDuckers[i].current_duck_mult < m_vol_track[c])
+                    if ((affected_groups & (1 << c)) != 0 && gDuckers[i].current_duck_mult < m_vol_track[c])
                         m_vol_track[c] = gDuckers[i].current_duck_mult;
                 }
 

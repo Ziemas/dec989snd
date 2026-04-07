@@ -23,7 +23,6 @@ load_mnemonics = {
     "lw",
     "lwl",
     "lwr",
-    "lwc2",
 }
 store_mnemonics = {
     "sb",
@@ -70,14 +69,14 @@ def strip_comments(line) -> str:
     return line.strip()
 
 
-def line_loads_from_reg(line, r_src) -> bool:
+def line_loads_from_reg(line, r_source) -> bool:
     """
     NOTE: Returns True even if line might use $at expansion
     """
     line = strip_comments(line)
 
     # escape dollar
-    r_src = r_src.replace("$", r"\$")
+    r_source = r_source.replace("$", r"\$")
 
     if match := re.match(r"^([A-z][A-z0-9]*)\s+(.*)$", line):
         op, rest = match.group(1, 2)
@@ -86,77 +85,98 @@ def line_loads_from_reg(line, r_src) -> bool:
 
     if op in load_mnemonics:
         # lwl	$9,7($2)
-        if re.match(rf"^.*\(\s*{r_src}\s*\)$", rest):
+        if re.match(rf"^.*\(\s*{r_source}\s*\)$", rest):
             return True
 
     elif op in store_mnemonics:
-        if re.match(rf"^.*\(\s*{r_src}\s*\)$", rest):
+        if re.match(rf"^.*\(\s*{r_source}\s*\)$", rest):
             return True
         # "line_loads_from_reg" is a bit of a lie
-        if re.match(rf"^{r_src},.*$", rest):
+        if re.match(rf"^{r_source},.*$", rest):
+            return True
+
+    elif op == "lwc2":
+        # lwc2 $5, 4( $4
+        if re.match(rf"^.*\(\s*{r_source}\s*\)$", rest):
             return True
 
     elif op == "jal":
-        if re.match(rf"^.*,\s*{r_src}$", rest):
+        if re.match(rf"^.*,\s*{r_source}$", rest):
             return True
 
     elif op == "j":
-        if re.match(rf"^{r_src}$", rest):
+        if re.match(rf"^{r_source}$", rest):
             return True
 
     elif op in ("ctc2", "mtc0", "mtc2"):
-        if re.match(rf"^{r_src},.*$", rest):
+        if re.match(rf"^{r_source},.*$", rest):
+            return True
+
+    elif op in ("mtlo", "mthi"):
+        if re.match(rf"^{r_source}$", rest):
             return True
 
     elif op in branch_mnemonics:
-        if re.match(rf"^{r_src},.*$", rest):
+        if re.match(rf"^{r_source},.*$", rest):
             return True
-        if re.match(rf"^.*,\s*{r_src},.*$", rest):
+        if re.match(rf"^.*,\s*{r_source},.*$", rest):
             return True
 
     elif op in single_reg_loads:
-        if re.match(rf"^.*,\s*{r_src}$", rest):
+        if re.match(rf"^.*,\s*{r_source}$", rest):
             return True
         if op.startswith("mult"):
-            if re.match(rf"^{r_src},.*$", rest):
+            if re.match(rf"^{r_source},.*$", rest):
                 return True
         if op.startswith("div") or op.startswith("rem"):
             # e.g. div	$3,$3,$7
-            if re.match(rf"^.*,{r_src}.*$", rest):
+            if re.match(rf"^.*,{r_source}.*$", rest):
                 return True
 
     elif op in double_reg_loads:
-        if re.match(rf"^.*,\s*{r_src},.*$", rest):
+        if re.match(rf"^.*,\s*{r_source},.*$", rest):
             return True
-        if re.match(rf"^.*,.*,\s*{r_src}$", rest):
+        if re.match(rf"^.*,.*,\s*{r_source}$", rest):
             return True
 
+    return False
+
+
+def is_number(value: str) -> bool:
+    if re.match(r"^-?\d+$", value) or re.match(r"^-?0x[A-Fa-f0-9]+$", value):
+        return True
     return False
 
 
 def uses_at(line: str) -> bool:
     line = strip_comments(line)
 
+    # sw	$2,%lo(s_attr)($3)
+    if match := re.match(r"^s[wbh]\s+(\$[a-z0-9]+),\s*%lo\(([^(]+)\)\(([^)]+)\)", line):
+        return False
+
     # sw	$2,D_801813A4
     # sw	$3,g_CurrentRoom+40
-    if match := re.match(r"^s[wbh]\s+(\$[a-z0-9]+),\s*([A-z0-9_+]+)$", line):
-        return True
-
-    if match := re.match(r"l[a-z]+\s+(\$[a-z0-9]+),\s*([^(]+)\(([^)]+)\)", line):
+    # sw	$2,D_us_8017863C.4
+    if match := re.match(r"^s[wbh]\s+(\$[a-z0-9]+),\s*(-?[A-z0-9_.+]+)$", line):
         operand = match.group(2)
+        if not is_number(operand):
+            return True
 
     # sb	$2,g_InputSaveName($3)
+    # sw	$2,-26($16)
     elif match := re.match(r"^s[wbh]\s+(\$[a-z0-9]+),\s*([^(]+)\(([^)]+)\)", line):
+        operand = match.group(2)
+
+    # lw	$2,-1000($16)
+    elif match := re.match(r"l[a-z]+\s+(\$[a-z0-9]+),\s*([^(]+)\(([^)]+)\)", line):
         operand = match.group(2)
 
     else:
         return False
 
-    if match := re.match(r"^-?\d+$", operand) or (
-        match := re.match(r"^-?0x[A-Fa-f0-9]+$", operand)
-    ):
-        # sw	$2,-26($16)
-        num = int(match.group(0), 0)
+    if is_number(operand):
+        num = int(operand, 0)
         if -32769 < num < 32768:
             return False
 
@@ -226,6 +246,7 @@ def expand_load_immediate(line: str) -> List[str]:
 
 
 def expand_move(line: str):
+    line = strip_comments(line)
     op, *rest = line.split()
     if op == "move":
         args = " ".join(rest)
@@ -439,6 +460,14 @@ class MaspsxProcessor:
                 in_sdata = True
                 continue
 
+            if line.startswith(".file"):
+                in_sdata = False
+                continue
+
+            if line.startswith(".extern"):
+                in_sdata = False
+                continue
+
             if line.startswith(".comm") or line.startswith(".lcomm"):
                 # e.g.	.comm	MENU_RadarScale_800AB480,4
                 in_sdata = False
@@ -535,8 +564,8 @@ class MaspsxProcessor:
                 if self.use_comm_section and (
                     symbol in self.comm_symbols or self.use_comm_for_lcomm
                 ):
-                    # default to 1-byte alignment for COMMON
-                    res.append(f"\t.comm {symbol},{size},1")
+                    # implicit alignment for COMMON
+                    res.append(f"\t.comm {symbol},{size}")
                     continue
 
                 if section == "sbss":
@@ -645,7 +674,7 @@ class MaspsxProcessor:
 
         return res
 
-    def _handle_mflo_mfhi(self) -> List[str]:
+    def _handle_mflo_mfhi(self, r_source=None) -> List[str]:
         # we cannot use a div/mult within 2 instructions of mflo/mfhi
         res: List[str] = []
 
@@ -658,9 +687,10 @@ class MaspsxProcessor:
         next_next_instruction = self.get_next_instruction(
             skip=1, ignore_nop=True, ignore_set=True, ignore_label=True
         )
+
         if any(
             next_instruction.startswith(x)
-            for x in ["mult\t", "multu\t", "div\t", "divu\t"]
+            for x in ["mult\t", "multu\t", "div\t", "divu\t", "rem\t", "remu\t"]
         ):
             # #nop
             # #nop
@@ -684,16 +714,18 @@ class MaspsxProcessor:
 
         elif any(
             next_next_instruction.startswith(x)
-            for x in ["mult\t", "multu\t", "div\t", "divu\t"]
+            for x in ["mult\t", "multu\t", "div\t", "divu\t", "rem\t", "remu\t"]
         ):
+
             # #nop
             # #nop
-            # addu or lh ...
+            # bne or addu or lh ...
             # mult ...
             skip = 0
             no_reorder = False
             while True:
                 inst = self.get_next_instruction(skip=skip)
+
                 if inst.startswith(".set") and inst.endswith("noreorder"):
                     no_reorder = True
                     skip += 1
@@ -707,6 +739,11 @@ class MaspsxProcessor:
                         skip = 0
                         break
 
+                    if op in ("mflo", "mfhi"):
+                        # allow for mflo/mfhi handling later on
+                        skip = 0
+                        break
+
                     if op == "li":
                         expanded = expand_load_immediate(inst)
 
@@ -717,31 +754,64 @@ class MaspsxProcessor:
 
                         if len(expanded) == 2:
                             res.append(
-                                "#nop  # DEBUG: mflo/mfhi with mult/div and li expands to 2 ops"
+                                "#nop  # DEBUG: mflo/mfhi with mult/div/rem and li expands to 2 ops"
                             )
                         else:
                             res.append(
-                                "nop  # DEBUG: mflo/mfhi with mult/div and li expands to 1 op"
+                                "nop  # DEBUG: mflo/mfhi with mult/div/rem and li expands to 1 op"
                             )
+
                     else:
+
                         if no_reorder:
                             res.append(
-                                "nop  # DEBUG: mflo/mfhi with mult/div and 1 instruction (noreorder)"
+                                "nop  # DEBUG: mflo/mfhi with mult/div/rem and 1 instruction (noreorder)"
                             )
                             res.append(".set\tnoreorder")
                             res.append(expand_move(inst))
                         else:
-                            res.append(expand_move(inst))
-                            res.append(
-                                "nop  # DEBUG: mflo/mfhi with mult/div and 1 instruction"
-                            )
+                            if r_source and line_loads_from_reg(inst, r_source):
+                                # NOTE: only relevant when div has been expanded (i.e. -0 flag)
+                                res.extend(
+                                    [
+                                        f"nop  # DEBUG: mflo/mfhi with mult/div/rem and 1 instruction which loads from {r_source}",
+                                        expand_move(inst),
+                                    ]
+                                )
+                            else:
+                                if op in branch_mnemonics:
+                                    res.extend(
+                                        [
+                                            inst,
+                                            "nop # DEBUG: mflo/mfhi with mult/div/rem and 1 instruction (branch)",
+                                        ]
+                                    )
+                                else:
+                                    maybe_label = self.get_next_instruction(skip=skip)
+                                    if is_label(maybe_label):
+                                        res.extend(
+                                            [
+                                                expand_move(inst),
+                                                maybe_label,
+                                                "nop  # DEBUG: mflo/mfhi with mult/div/rem and 1 instruction (label)",
+                                            ]
+                                        )
+                                        skip += 1
+                                    else:
+                                        res.extend(
+                                            [
+                                                expand_move(inst),
+                                                "nop  # DEBUG: mflo/mfhi with mult/div/rem and 1 instruction",
+                                            ]
+                                        )
 
                 elif inst == next_next_instruction:
+                    # reached mult/div/rem
                     if div_needs_expanding(inst):
                         res.append("# DEBUG: div needs expanding")
                         skip -= 1
                     else:
-                        res.append(expand_move(inst))
+                        res.append(inst)
                     break
                 elif not inst.startswith("#"):
                     res.append(expand_move(inst))
@@ -1057,7 +1127,7 @@ class MaspsxProcessor:
                     ]
                 )
 
-            extra_nops = self._handle_mflo_mfhi()
+            extra_nops = self._handle_mflo_mfhi(r_source=r_dest)
             if len(extra_nops) > 0:
                 res += extra_nops
             else:
@@ -1101,7 +1171,7 @@ class MaspsxProcessor:
                     ]
                 )
 
-            extra_nops = self._handle_mflo_mfhi()
+            extra_nops = self._handle_mflo_mfhi(r_source=r_dest)
             if len(extra_nops) > 0:
                 res += extra_nops
             else:

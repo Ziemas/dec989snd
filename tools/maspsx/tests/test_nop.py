@@ -471,6 +471,37 @@ class TestNop(unittest.TestCase):
         clean_lines = strip_comments(res)
         self.assertEqual(expected_lines, clean_lines)
 
+    def test_at_large_sb_no_nop(self):
+        lines = [
+            "lhu	$2,16($sp)",
+            "#nop",
+            "sb	$2,-2147292186",
+        ]
+        expected_lines = [
+            "lhu	$2,16($sp)",
+            "sb	$2,-2147292186",
+        ]
+        mp = MaspsxProcessor(lines)
+        res = mp.process_lines()
+        clean_lines = strip_comments(res)
+        self.assertEqual(expected_lines, clean_lines)
+
+    def test_at_small_sb_nop(self):
+        lines = [
+            "lhu	$2,16($sp)",
+            "#nop",
+            "sb	$2,10000",
+        ]
+        expected_lines = [
+            "lhu	$2,16($sp)",
+            "nop",
+            "sb	$2,10000",
+        ]
+        mp = MaspsxProcessor(lines)
+        res = mp.process_lines()
+        clean_lines = strip_comments(res)
+        self.assertEqual(expected_lines, clean_lines)
+
     def test_ctc2_nop(self):
         lines = [
             "lhu	$9,192($17)",
@@ -526,10 +557,10 @@ class TestNopMacro(unittest.TestCase):
         clean_lines = strip_comments(res)
         self.assertEqual(expected_lines, clean_lines)
 
-    def test_nop_macro_nop_afterwards(self):
+    def test_nop_macro_no_nop_afterwards_2(self):
         """
-        Ensure we do insert a nop between the *final* macro instruction at the
-        next instruction, when one is required
+        Ensure we do not insert a nop between the *final* macro instruction at the
+        next instruction, if one is not required
         """
         lines = [
             " #APP",
@@ -541,7 +572,6 @@ class TestNopMacro(unittest.TestCase):
         ]
         expected_lines = [
             "lwc2 $4, 0( $4 );lwc2 $5, 4( $4 )",
-            "nop",
             ".loc 1 1122",
             "LM439:",
             "addu $4,$5,8",
@@ -584,3 +614,42 @@ class TestNopMacro(unittest.TestCase):
         res = mp.process_lines()
         clean_lines = strip_comments(res)
         self.assertEqual(expected_lines, clean_lines[:4])
+
+    def test_lw_sw_lo_macro(self):
+        """
+        Need a nop between the lw/sw as the sw does not expand to use $at
+        BUG: https://github.com/mkst/maspsx/issues/109
+        """
+        lines = [
+            "lw	$2,0($5)",
+            "#nop",
+            "sw	$2,%lo(s_attr)($3)",
+        ]
+        expected_lines = [
+            "lw	$2,0($5)",
+            "nop",
+            "sw	$2,%lo(s_attr)($3)",
+        ]
+        mp = MaspsxProcessor(lines)
+        res = mp.process_lines()
+        clean_lines = strip_comments(res)
+        self.assertEqual(expected_lines, clean_lines)
+
+    def test_lw_sw_no_lo_macro(self):
+        """
+        This doesn't a nop between the lw/sw as the sw does expand to use $at
+        BUG: https://github.com/mkst/maspsx/issues/109
+        """
+        lines = [
+            "lw	$2,0($5)",
+            "#nop",
+            "sw	$2,s_attr($3)",
+        ]
+        expected_lines = [
+            "lw	$2,0($5)",
+            "sw	$2,s_attr($3)",
+        ]
+        mp = MaspsxProcessor(lines)
+        res = mp.process_lines()
+        clean_lines = strip_comments(res)
+        self.assertEqual(expected_lines, clean_lines)

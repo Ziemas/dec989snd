@@ -1,8 +1,10 @@
 import argparse
+import shutil
 import subprocess
 import sys
 
 from typing import List
+from pathlib import Path
 
 from maspsx import MaspsxProcessor
 
@@ -11,7 +13,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--aspsx-version", type=str)
     parser.add_argument("--run-assembler", action="store_true")
-    parser.add_argument("--gnu-as-path", default="mips-linux-gnu-as")
+    parser.add_argument("--gnu-as-path", default="mipsel-linux-gnu-as")
     parser.add_argument("--dont-force-G0", action="store_true")
     parser.add_argument("--expand-div", action="store_true")
     parser.add_argument("--macro-inc", action="store_true")
@@ -96,18 +98,18 @@ def main() -> None:
 
     if args.aspsx_version:
         aspsx_version = tuple(int(x) for x in args.aspsx_version.split("."))
-        if aspsx_version == (2, 8):
+        if (1, 10) < aspsx_version < (2, 10):
             div_uses_tge = True
-        if aspsx_version <= (2, 21):
+        if aspsx_version < (2, 30):
             nop_at_expansion = True
             nop_mflo_mfhi = False
             addiu_at = True
-        if aspsx_version > (2, 34):
+        if aspsx_version >= (2, 50):
             expand_li = False
-        if aspsx_version >= (2, 77):
+        if aspsx_version >= (2, 70):
             sltu_at = False
             gp_allow_offset = True
-        if aspsx_version >= (2, 81):
+        if aspsx_version >= (2, 80):
             gp_allow_la = True
 
     if args.dont_expand_li and expand_li:
@@ -143,9 +145,13 @@ def main() -> None:
         sys.stderr.write(out_text)
 
     if args.run_assembler:
+        gnu_as_path = Path(args.gnu_as_path)
+        if not gnu_as_path.is_file() and not shutil.which(args.gnu_as_path):
+            sys.stderr.write(f"MASPSX: {args.gnu_as_path} not found")
+            sys.exit(1)
+
         cmd = [
             args.gnu_as_path,
-            "-EL",  # TODO: switch from 'mips-linux-gnu-as' to 'mipsel-linux-gnu-as'
             *filtered_as_args,
             "-",  # read from stdin
         ]

@@ -1054,7 +1054,11 @@ void snd_DumpVersionAndInfo() {
     printf("==========================================================\n");
     printf(" 989snd (c)2000-2003 Sony Computer Entertainment America\n");
     printf(" by Buzz Burrowes                               v%d.%d.%d\n", 3, 1, 2);
+#ifdef DEBUG
     printf("                        (built %s at %s)\n", "Nov 19 2003", "14:31:04");
+#else
+    printf("                        (built %s at %s)\n", "Nov 19 2003", "14:29:52");
+#endif
     printf(" (build with sce library rev %d.%d.%d)\n", 2, 7, 0);
     printf("==========================================================\n");
     printf("    Thread Priorities:\n");

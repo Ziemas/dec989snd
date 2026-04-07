@@ -56,11 +56,15 @@ SInt32 gDMAThread = 0;
 SInt32 gDataLoadThread = 0;
 SInt32 gDMADoneThread = 0;
 SInt32 gLoadDoneThread = 0;
+
+#ifdef DEBUG
 SInt32 gDeferredFileCloseThread = 0;
 SInt32 gDeferredFileCloseSema = 0;
 SInt32 gDeferredCloseHandles[16] = {
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 };
+#endif
+
 SInt32 gNumStreamsPlaying = 0;
 SInt32 gShuttingDownStreaming = 0;
 VAGStreamQueEntry gVAGStreamQue[64];

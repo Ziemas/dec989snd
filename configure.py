@@ -29,22 +29,41 @@ TOOLS_DIR = ROOT / "tools"
 COMPILER_DIR = f"{TOOLS_DIR}/gcc-2.95.2"
 COMMON_INCLUDES = "-Iinclude -Iinclude/common -Iinclude/sdk"
 
+COMPILER_LAUNCHER = "wibo"
 MASPSXFLAGS = "--aspsx-version=2.78"
 MASPSX = f"python {TOOLS_DIR}/maspsx/maspsx.py {MASPSXFLAGS}"
-COMPILER_FLAGS = f"-O0 -G0 -g3 -quiet"
-ASFLAGS = "-Iinclude -G0 -g3 -O1"
-COMPILE_CMD = f"{COMPILER_DIR}/cc1.exe {COMMON_INCLUDES} {COMPILER_FLAGS}"
+ASFLAGS = "-Iinclude -G0 -g0 -O1"
+COMPILE_CMD = f"{COMPILER_LAUNCHER} {COMPILER_DIR}/cc1.exe {COMMON_INCLUDES}"
 CPPFLAGS = "-ffreestanding -Iinclude "
 
 CROSS = "mipsel-none-elf-"
 
-TARGET_YAML_FILE = "config/989snd_d.yaml"
-TARGET_BASENAME = "989SND_D.IRX"
-TARGET_LD_PATH = f"{TARGET_BASENAME}.ld"
-TARGET_ROM_PATH = f"build/{TARGET_BASENAME}.rom"
-TARGET_MAP_PATH = f"build/{TARGET_BASENAME}.map"
-TARGET_ELF_PATH = f"build/{TARGET_BASENAME}.elf"
-TARGET_INFILE = f"in/{TARGET_BASENAME}"
+#TARGET_YAML_FILE = "config/989snd.yaml"
+#TARGET_BASENAME = "989SND.IRX"
+#TARGET_LD_PATH = f"{TARGET_BASENAME}.ld"
+#TARGET_ROM_PATH = f"build/{TARGET_BASENAME}.rom"
+#TARGET_MAP_PATH = f"build/{TARGET_BASENAME}.map"
+#TARGET_ELF_PATH = f"build/{TARGET_BASENAME}.elf"
+#TARGET_INFILE = f"in/{TARGET_BASENAME}"
+
+build_targets = [
+    {
+        "config": "config/989snd_d.yaml",
+        "basename": "989SND_D.IRX",
+        "objdir": "debug",
+        "symdir": "config/debug",
+        "cflags": "-O0 -G0 -g3",
+        "defs": "-DDEBUG"
+    },
+    {
+        "config": "config/989snd.yaml",
+        "basename": "989SND.IRX",
+        "objdir": "release",
+        "symdir": "config/release",
+        "cflags": "-O2 -G0 -g0",
+        "defs": "-DRELEASE"
+    },
+]
 
 def exec_shell(command: List[str], stdout=subprocess.PIPE) -> str:
     ret = subprocess.run(command, stdout=stdout, stderr=subprocess.PIPE, text=True)
@@ -58,8 +77,9 @@ def clean():
     if os.path.exists("build.ninja"):
         os.remove("build.ninja")
 
-    if os.path.exists(f"{TARGET_BASENAME}.ld") :
-        os.remove(f"{TARGET_BASENAME}.ld")
+    for tgt in build_targets:
+        if os.path.exists(f"{tgt["basename"]}.ld") :
+                os.remove(f"{tgt["basename"]}.ld")
 
     shutil.rmtree("asm", ignore_errors=True)
     shutil.rmtree("assets", ignore_errors=True)
@@ -75,7 +95,7 @@ def write_rules(ninja):
     ninja.rule(
             "cc",
             description="cc $in",
-            command = f"cpp {CPPFLAGS} $in | {COMPILE_CMD} | {MASPSX} | {CROSS}as -no-pad-sections -EL -march=3000 -Iinclude -o $out"
+            command = f"cpp {CPPFLAGS} $defs $in | {COMPILE_CMD} $cflags -quiet | {MASPSX} | {CROSS}as -no-pad-sections -EL -march=3000 -Iinclude -o $out"
     )
 
     ninja.rule(
@@ -97,7 +117,7 @@ def write_rules(ninja):
     )
 
 
-def build_stuff(ninja, linker_entries: List[LinkerEntry]):
+def build_stuff(tgt: dict[str, Any], ninja, linker_entries: List[LinkerEntry]):
     built_objects: Set[Path] = set()
 
     def build(
@@ -147,7 +167,7 @@ def build_stuff(ninja, linker_entries: List[LinkerEntry]):
         elif isinstance(seg, splat.segtypes.common.c.CommonSegC):
             src = entry.src_paths[0]
             paths = entry.src_paths
-            build(entry.object_path, paths, "cc")
+            build(entry.object_path, paths, "cc", variables = {"cflags": tgt["cflags"], "defs": tgt["defs"]})
 
         elif isinstance(seg, splat.segtypes.common.databin.CommonSegDatabin) or isinstance(seg, splat.segtypes.common.rodatabin.CommonSegRodatabin):
             build(entry.object_path, entry.src_paths, "as")
@@ -156,10 +176,10 @@ def build_stuff(ninja, linker_entries: List[LinkerEntry]):
             print(f"ERROR: Unsupported build segment type {seg.type}")
             sys.exit(1)
 
-    elf_path = TARGET_ELF_PATH
-    ld_path = TARGET_LD_PATH 
-    map_path = TARGET_MAP_PATH 
-    target_ld_args = f"-T config/debug/undefined_syms_auto.txt -T config/debug/undefined_funcs_auto.txt -T config/debug/undefined_syms.txt"
+    elf_path = f"build/{tgt["basename"]}.elf"
+    ld_path = f"{tgt["basename"]}.ld"
+    map_path = f"build/{tgt["basename"]}.map"
+    target_ld_args = f"-T config/{tgt["objdir"]}/undefined_syms_auto.txt -T config/{tgt["objdir"]}/undefined_funcs_auto.txt -T config/{tgt["objdir"]}/undefined_syms.txt"
 
     ninja.build(
         elf_path,
@@ -169,7 +189,7 @@ def build_stuff(ninja, linker_entries: List[LinkerEntry]):
         variables={"mapfile": map_path, "syms": target_ld_args},
     )
 
-    rom_path = TARGET_ROM_PATH 
+    rom_path = f"build/{tgt["basename"]}.rom"
 
     ninja.build(
         rom_path,
@@ -177,7 +197,7 @@ def build_stuff(ninja, linker_entries: List[LinkerEntry]):
         elf_path,
     )
 
-    checksum_path = f"config/debug/checksum.sha1"
+    checksum_path = f"config/{tgt["objdir"]}/checksum.sha1"
 
     ninja.build(
         rom_path + ".ok",
@@ -186,7 +206,7 @@ def build_stuff(ninja, linker_entries: List[LinkerEntry]):
         implicit=[rom_path],
     )
 
-def build_objdiff_units(config: dict[str, Any]) -> list[dict[str, Any]]:
+def build_objdiff_units(tgt: dict[str, Any], config: dict[str, Any]) -> list[dict[str, Any]]:
     """
     Generate `objdiff.json` configuration from splat YAML config.
 
@@ -233,7 +253,7 @@ def build_objdiff_units(config: dict[str, Any]) -> list[dict[str, Any]]:
     for tu_type, tu_name in tu_to_diff:
         tu_obj_suffix = f".{tu_type}.o" # .c.o or .cpp.o
 
-        target_path = Path("obj", tu_name).with_suffix(tu_obj_suffix)
+        target_path = Path("obj", tgt["objdir"], tu_name).with_suffix(tu_obj_suffix)
 
         # since we only compile fully decompiled TUs, the
         # "c" type implies that the TU is complete
@@ -243,7 +263,7 @@ def build_objdiff_units(config: dict[str, Any]) -> list[dict[str, Any]]:
 
         if is_decompiled:
             # compose the build path as "build/src/path/of/tu.{c,cpp}.o"
-            base_path = Path("build", "src", tu_name).with_suffix(tu_obj_suffix)
+            base_path = Path("build", tgt["objdir"], "src", tu_name).with_suffix(tu_obj_suffix)
             decomp_tu_count += 1
         else:
             # use dummy object for incomplete (not yet decompiled) TUs:
@@ -252,7 +272,7 @@ def build_objdiff_units(config: dict[str, Any]) -> list[dict[str, Any]]:
 
         units.append(
             {
-                "name": f"{tu_name}",
+                "name": f"{tgt["objdir"]}/{tu_name}",
                 "target_path": str(target_path),
                 "base_path": str(base_path),
                 "scratch": {
@@ -352,7 +372,7 @@ def fix_compile_commands():
         #  - '-gstabs' flag (now replaced with regular '-g')
         #
         if file_path.suffix == ".c" or file_path.suffix == ".cpp":
-            entry["command"] = f"cc {CPPFLAGS} {COMPILER_FLAGS}"
+            entry["command"] = f"cc {CPPFLAGS}"
             entry["command"] = entry["command"].replace(" -quiet", "")
             entry["command"] = entry["command"].replace(" -G0", "")
 
@@ -407,20 +427,26 @@ if __name__ == "__main__":
     if args.cleansrc:
         shutil.rmtree("src", ignore_errors=True)
 
-    prepare_rom_from_elfs([Path(TARGET_INFILE)])
-
     ninja = ninja_syntax.Writer(open(str(ROOT / "build.ninja"), "w"), width=9999)
     write_rules(ninja)
 
     units: list[dict[str, Any]] = []
 
-    yaml_file = Path(f"{TARGET_YAML_FILE}")
-    split.main([Path(yaml_file)], modes=["all"], verbose=False)
-    linker_entries = split.linker_writer.entries
+    for tgt in build_targets:
+        prepare_rom_from_elfs([Path(f"in/{tgt["basename"]}")])
 
-    build_stuff(ninja, linker_entries)
+        yaml_file = Path(f"{tgt["config"]}")
+        split.main([Path(yaml_file)], modes=["all"], verbose=False)
+        linker_entries = split.linker_writer.entries
 
-    units.extend(build_objdiff_units(split.config))
+        build_stuff(tgt, ninja, linker_entries)
+
+        units.extend(build_objdiff_units(tgt, split.config))
+
+        # Hack to avoid splat & spimdisasm from
+        # leaking symbols from the previous split.
+        splat.util.symbols.spim_context = spimdisasm.common.Context()
+        splat.util.symbols.reset_symbols()
 
     ninja.close()
     exec_shell(["ninja", "-t", "compdb"], open("compile_commands.json", "w"))

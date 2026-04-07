@@ -8,7 +8,7 @@ options:
     
     asm_path: asm/release
     src_path: src
-    build_path: build
+    build_path: build/release
     subalign: 4
 
     extensions_path: tools/splat_ext 

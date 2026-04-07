@@ -99,7 +99,7 @@ snd_CMD_SL_SETREVERBEX = 0x1544; // type:func size:0x38
 snd_CMD_SL_PREALLOCREVERBWORKAREA = 0x157c; // type:func size:0x2c
 snd_CMD_SL_GETLASTLOADERROR = 0x15a8; // type:func size:0x28
 snd_CMD_SL_SETPANMODE = 0x15d0; // type:func size:0x24
-snd_CMD_SL_PLAYSOUNDBYNAME = 0x15f4; // type:func size:0xc
+snd_CMD_SL_PLAYSOUNDBYNAME = 0x15f4; // type:func size:0x10
 snd_CMD_SL_PLAYSOUNDBYNAME_A = 0x1604; // type:func size:0x8
 snd_CMD_SL_GETSOUNDUD = 0x160c; // type:func size:0x10c
 snd_CMD_SL_GETSOUNDREG = 0x1718; // type:func size:0x34
@@ -123,13 +123,17 @@ snd_ShowError = 0x20fc; // type:func size:0x88
 snd_EEDMADone = 0x2184; // type:func size:0x24
 snd_Install989Monitor = 0x21a8; // type:func size:0xc
 
+snd_LOADER_MESSAGE_RECIEVE_BUFFER = 0x1fcec; // size:0x100
+snd_LOADER_MESSAGE_RETURN_BUFFER = 0x1fdec; // size:0x10
+
+snd989_entry = 0x1cfd4;
 
 // LFO.c
 snd_LFO_TYPE_OFF = 0x21b4; // type:func size:0x8
 snd_LFO_TYPE_SINE = 0x21bc; // type:func size:0x1c
 snd_LFO_TYPE_SQUARE = 0x21d8; // type:func size:0x20
-snd_LFO_TYPE_TRIANGLE = 0x21f8; // type:func size:0x58
-snd_LFO_TYPE_SAW = 0x2274; // type:func size:0x38
+snd_LFO_TYPE_TRIANGLE = 0x21f8; // type:func size:0x7c
+snd_LFO_TYPE_SAW = 0x2274; // type:func size:0x58
 snd_LFO_TYPE_RAND = 0x22cc; // type:func size:0x98
 snd_InitLFO = 0x2364; // type:func size:0x98
 snd_RemoveLFOsForHandler = 0x23fc; // type:func size:0x40
@@ -169,6 +173,8 @@ snd_AutoReverb = 0x441c; // type:func size:0x70
 snd_AutoReverb_L = 0x448c; // type:func size:0x1bc
 snd_KillAutoVerbForCore = 0x4648; // type:func size:0x24
 snd_AutoVerbHandler = 0x466c; // type:func size:0x158
+
+gVerbFX = 0x1fdfc;
 
 // autovol.c
 snd_AutoVol = 0x47c4; // type:func size:0x2dc
@@ -328,6 +334,10 @@ snd_GetFreeSPUDMA = 0xb1c8; // type:func size:0xbc
 snd_FreeSPUDMA = 0xb284; // type:func size:0x48
 snd_WaitDMADone = 0xb2cc; // type:func size:0x80
 
+gStats = 0x1fe6c; // size:0x40
+gEEAlignBuffer = 0x1feac; // size:0x10
+gFileLoadBuffer = 0x1febc; // size:0x800
+
 // midi.c
 snd_PlayMIDISound = 0xb34c; // type:func size:0x148
 snd_SetupMIDIStreamHandler = 0xb494; // type:func size:0x5c
@@ -443,6 +453,11 @@ snd_GetFreeBasicEffect = 0x10b78; // type:func size:0x48
 snd_AddEffectToHandler = 0x10bc0; // type:func size:0x48
 snd_RemoveEffectFromHandler = 0x10c08; // type:func size:0xb0
 
+gBlockSoundHandler = 0x206bc;
+gBasicEffect = 0x24fbc; // size:0x700
+gAMEHandler = 0x256bc;
+gMIDIHandler = 0x265cc;
+
 // sram.c
 snd_SRAMInitMalloc = 0x10cb8; // type:func size:0x50
 snd_SRAMMalloc = 0x10d08; // type:func size:0xd8
@@ -463,6 +478,8 @@ snd_UnlockMasterTick = 0x115ac; // type:func size:0x88
 snd_SoundTickHandler = 0x11634; // type:func size:0x384
 snd_GetTick = 0x119b8; // type:func size:0x10
 snd_SetTick = 0x119c8; // type:func size:0xc
+
+gAutoFreeState = 0x28a4c; // size:0x30
 
 // stream.c
 snd_InitVAGStreamingEx = 0x119d4; // type:func size:0x6bc
@@ -538,6 +555,10 @@ snd_StreamIsFreeForVolGroup = 0x19c08; // type:func size:0xb4
 snd_SetVagStreamPitchModifier = 0x19cbc; // type:func size:0x19c
 snd_ModifyRawPitch = 0x19e58; // type:func size:0x108
 
+gSRAMFreeNodeStorage = 0x27dcc; // size:0xc18
+gVAGStreamQue = 0x28abc; // size:0x500
+vsm = 0x28a7c; // size:0x40
+
 // valloc.c
 snd_InitVoiceAllocator = 0x19f60; // type:func size:0x16c
 snd_CleanupVoiceAllocator = 0x1a0cc; // type:func size:0x34
@@ -575,6 +596,17 @@ snd_MarkVoiceFree = 0x1bd00; // type:func size:0xd0
 snd_HardFreeVoice = 0x1bdd0; // type:func size:0x20
 snd_KeyOnVoiceRaw = 0x1bdf0; // type:func size:0x68
 snd_KeyOffVoiceRaw = 0x1be58; // type:func size:0x44
+
+gExternVoices = 0x1fcbc; // size:0x8
+gReverbVoices = 0x1fcc4; // size:0x8
+gAwaitingKeyOn = 0x1fccc; // size:0x8
+gAwaitingKeyOff = 0x1fcd4; // size:0x8
+gKeyedOnVoices = 0x1fcdc; // size:0x8
+gKeyedOffVoices = 0x1fce4; // size:0x8
+
+gChannelStatus = 0x28fbc; // size:0xa48
+
+
 
 // vol.c
 snd_InitDuckers = 0x1be9c; // type:func size:0x50
@@ -661,3 +693,5 @@ sceCdStop = 0x1d570; // type:func size:0x8
 sceCdStatus = 0x1d578; // type:func size:0x8
 sceCdCallback = 0x1d580; // type:func size:0x8
 sceCdBreak = 0x1d588; // type:func size:0x8
+
+gDuckers = 0x29a3c; // size:0x18

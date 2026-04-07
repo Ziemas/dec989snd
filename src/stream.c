@@ -3626,6 +3626,8 @@ void snd_FreeVAGStreamResources() {
     snd_CleanUpSema(&gDoneDMASema);
     snd_CleanUpSema(&gDoneLoadSema);
     snd_CleanUpSema(&gSearchFileSema);
+
+#ifdef DEBUG
     err = ReferThreadStatus(gDeferredFileCloseThread, &info);
     while (info.status != 4 || info.waitType != 3 || info.waitId != gDeferredFileCloseSema) {
         DelayThread(3000);
@@ -3634,6 +3636,8 @@ void snd_FreeVAGStreamResources() {
     snd_CleanUpThread(&gDeferredFileCloseThread);
     snd_CleanUpSema(&gDeferredFileCloseSema);
     snd_CloseAllDeferredFiles();
+#endif
+
     gLastDMA0Complete = 0;
     gLastDMA1Complete = 0;
     if (walk) {

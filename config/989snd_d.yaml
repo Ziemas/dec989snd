@@ -8,7 +8,7 @@ options:
     
     asm_path: asm/debug
     src_path: src
-    build_path: build
+    build_path: build/debug
     subalign: 4
 
     extensions_path: tools/splat_ext 

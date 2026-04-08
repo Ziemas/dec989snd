@@ -1,4 +1,5 @@
-#include "intr_code.h"
+// BUG: mismatching definitions (volatile)
+// #include "intr_code.h"
 
 #include "loader.h"
 

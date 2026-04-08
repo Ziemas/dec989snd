@@ -1,5 +1,8 @@
-#include "common.h"
-#include "functions.h"
+#include "autopan.h"
+
+#include "stick.h"
+#include "sndhand.h"
+#include "playsnd.h"
 
 void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;

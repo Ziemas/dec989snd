@@ -1,6 +1,7 @@
-#include "common.h"
-#include "functions.h"
+#include "autoverb.h"
+
 #include "globals.h"
+#include "reverb.h"
 
 BasicEffect gVerbFX[2][2];
 

@@ -1,6 +1,16 @@
-#include "common.h"
-#include "functions.h"
+#include "989snd.h"
+
+#include "ame.h"
+#include "blocksnd.h"
+#include "extern.h"
 #include "globals.h"
+#include "init.h"
+#include "loader.h"
+#include "playsnd.h"
+#include "stick.h"
+#include "valloc.h"
+#include "vol.h"
+
 #include "intrman.h"
 #include "libcdvd.h"
 #include "loadcore.h"

@@ -1,6 +1,11 @@
-#include "common.h"
-#include "functions.h"
+#include "valloc.h"
+
+#include "989snd.h"
 #include "globals.h"
+#include "reverb.h"
+#include "stick.h"
+#include "vol.h"
+
 #include "intrman.h"
 #include "libsd.h"
 #include "sdmacro.h"

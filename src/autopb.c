@@ -1,5 +1,8 @@
-#include "common.h"
-#include "functions.h"
+#include "autopb.h"
+
+#include "playsnd.h"
+#include "sndhand.h"
+#include "stick.h"
 
 void snd_AutoPitchBend(UInt32 handle, SInt32 pb, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;

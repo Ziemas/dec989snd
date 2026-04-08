@@ -1,5 +1,10 @@
-#include "common.h"
-#include "functions.h"
+#include "reverb.h"
+
+#include "989snd.h"
+#include "autoverb.h"
+#include "loader.h"
+#include "sram.h"
+
 #include "intrman.h"
 #include "libsd.h"
 #include "sdmacro.h"

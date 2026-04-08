@@ -1,6 +1,12 @@
-#include "common.h"
-#include "functions.h"
+#include "moviesnd.h"
+
+#include "989snd.h"
 #include "globals.h"
+#include "loader.h"
+#include "sram.h"
+#include "valloc.h"
+#include "vol.h"
+
 #include "intrman.h"
 #include "libsd.h"
 #include "sdmacro.h"

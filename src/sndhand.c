@@ -1,6 +1,13 @@
-#include "common.h"
-#include "functions.h"
+#include "sndhand.h"
+
+#include "989snd.h"
+#include "blocksnd.h"
 #include "globals.h"
+#include "midi.h"
+#include "stick.h"
+#include "stream.h"
+#include "valloc.h"
+
 #include "intrman.h"
 #include "stdio.h"
 #include "thread.h"

@@ -1,6 +1,14 @@
-#include "common.h"
-#include "functions.h"
+#include "midi.h"
+
+#include "989snd.h"
+#include "ame.h"
 #include "globals.h"
+#include "loader.h"
+#include "playsnd.h"
+#include "sndhand.h"
+#include "valloc.h"
+#include "vol.h"
+
 #include "intrman.h"
 #include "libsd.h"
 #include "sdmacro.h"

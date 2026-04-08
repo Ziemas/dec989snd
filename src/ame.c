@@ -1,5 +1,11 @@
-#include "common.h"
-#include "functions.h"
+#include "ame.h"
+
+#include "989snd.h"
+#include "sndhand.h"
+#include "midi.h"
+#include "valloc.h"
+#include "stick.h"
+
 #include "globals.h"
 
 UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend) {

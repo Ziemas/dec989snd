@@ -1,6 +1,15 @@
-#include "common.h"
-#include "functions.h"
+#include "blocksnd.h"
+
+#include "989snd.h"
+#include "LFO.h"
 #include "globals.h"
+#include "my_rand.h"
+#include "playsnd.h"
+#include "sndhand.h"
+#include "stick.h"
+#include "valloc.h"
+#include "vol.h"
+
 #include "intrman.h"
 #include "libsd.h"
 #include "sdmacro.h"

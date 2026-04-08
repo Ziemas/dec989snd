@@ -1,5 +1,7 @@
-#include "common.h"
-#include "functions.h"
+#include "intr_code.h"
+
+#include "loader.h"
+
 #include "thread.h"
 
 volatile BOOL gKillTimer = 0;

@@ -1,5 +1,7 @@
-#include "common.h"
-#include "functions.h"
+#include "sram.h"
+
+#include "989snd.h"
+
 #include "stdio.h"
 
 sSRAMNodePtr gSRAMFreeListHead = NULL;

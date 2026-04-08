@@ -1,6 +1,14 @@
-#include "common.h"
-#include "functions.h"
+#include "stick.h"
+
+#include "989snd.h"
+#include "LFO.h"
 #include "globals.h"
+#include "reverb.h"
+#include "sndhand.h"
+#include "valloc.h"
+#include "vol.h"
+
+#include "libcdvd.h"
 #include "libsd.h"
 #include "stdio.h"
 

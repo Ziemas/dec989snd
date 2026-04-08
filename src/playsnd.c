@@ -1,6 +1,15 @@
-#include "common.h"
-#include "functions.h"
+#include "playsnd.h"
+
+#include "989snd.h"
+#include "ame.h"
+#include "autopan.h"
+#include "blocksnd.h"
 #include "globals.h"
+#include "midi.h"
+#include "sndhand.h"
+#include "stick.h"
+#include "stream.h"
+
 #include "stdio.h"
 
 SInt32 gGlobalExcite = 0;

@@ -1,6 +1,11 @@
-#include "common.h"
-#include "functions.h"
-#include "globals.h"
+#include "extern.h"
+
+#include "ame.h"
+#include "midi.h"
+#include "playsnd.h"
+#include "sram.h"
+#include "vol.h"
+
 #include "intrman.h"
 #include "loadcore.h"
 

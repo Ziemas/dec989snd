@@ -1,5 +1,8 @@
-#include "common.h"
-#include "functions.h"
+#include "LFO.h"
+
+#include "blocksnd.h"
+#include "my_rand.h"
+#include "stick.h"
 
 SInt16 gLFO_sine[2048] = {
     32767,  32766,  32766,  32765,  32764,  32763,  32761,  32759,  32757,  32754,  32751,  32748,  32744,  32740,
@@ -162,7 +165,9 @@ SInt32 snd_LFO_TYPE_OFF(LFOTracker *tracker, int step) { return 0; }
 
 SInt32 snd_LFO_TYPE_SINE(LFOTracker *tracker, int step) { return gLFO_sine[step]; }
 
-SInt32 snd_LFO_TYPE_SQUARE(LFOTracker *tracker, int step) { return (step < tracker->state_hold1) ? 32767 : -32767; }
+SInt32 snd_LFO_TYPE_SQUARE(LFOTracker *tracker, int step) {
+    return (step < tracker->state_hold1) ? 32767 : -32767;
+}
 
 SInt32 snd_LFO_TYPE_TRIANGLE(LFOTracker *tracker, int step) {
     SInt32 ret_val;

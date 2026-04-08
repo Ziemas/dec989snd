@@ -34,7 +34,7 @@ MASPSXFLAGS = "--aspsx-version=2.78"
 MASPSX = f"python {TOOLS_DIR}/maspsx/maspsx.py {MASPSXFLAGS}"
 ASFLAGS = "-Iinclude -G0 -g0 -O0"
 COMPILE_CMD = f"{COMPILER_LAUNCHER} {COMPILER_DIR}/cc1.exe {COMMON_INCLUDES}"
-CPPFLAGS = "-ffreestanding -Iinclude "
+CPPFLAGS = f"-ffreestanding {COMMON_INCLUDES}"
 
 CROSS = "mipsel-none-elf-"
 
@@ -58,7 +58,7 @@ build_targets = [
         "defs": "-DRELEASE",
         "size": "130220",
         "override": 
-            {"src/LFO.c": "-O3 -G0 -g0"},
+            {"src/LFO.c": "-O3 -G0 -g1"},
     },
 ]
 

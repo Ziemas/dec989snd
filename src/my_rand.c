@@ -1,5 +1,4 @@
-#include "common.h"
-#include "functions.h"
+#include "my_rand.h"
 
 static SInt16 r250_index = 0;
 static UInt16 r250_buffer[250] = {

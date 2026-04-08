@@ -1,6 +1,15 @@
-#include "common.h"
-#include "functions.h"
+#include "stream.h"
+
+#include "989snd.h"
 #include "globals.h"
+#include "intr_code.h"
+#include "loader.h"
+#include "sndhand.h"
+#include "sram.h"
+#include "stick.h"
+#include "valloc.h"
+#include "vol.h"
+
 #include "intrman.h"
 #include "libcdvd.h"
 #include "libsd.h"

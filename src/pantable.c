@@ -1,4 +1,4 @@
-#include "common.h"
+#include "pantable.h"
 
 extern VolPair gPanTable1[180];
 VolPair *gPanTable = gPanTable1;

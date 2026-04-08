@@ -1,5 +1,8 @@
-#include "common.h"
-#include "functions.h"
+#include "autovol.h"
+
+#include "playsnd.h"
+#include "sndhand.h"
+#include "stick.h"
 
 void snd_AutoVol(UInt32 handle, SInt32 vol, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;

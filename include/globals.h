@@ -30,7 +30,7 @@ extern SInt32 gDMAInUse[2];
 extern SInt32 gLastDMA0Complete;
 extern SInt32 gLastDMA1Complete;
 extern SInt32 gDoneDMASema;
-extern SInt32 gWaitingDMAComplete;
+extern volatile SInt32 gWaitingDMAComplete;
 
 // loader.c
 extern BOOL gLimit2Meg;

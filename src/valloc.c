@@ -6,10 +6,10 @@
 #include "stick.h"
 #include "vol.h"
 
-#include "intrman.h"
-#include "libsd.h"
-#include "sdmacro.h"
-#include "thread.h"
+#include <intrman.h>
+#include <libsd.h>
+#include <sdmacro.h>
+#include <thread.h>
 
 SInt32 gLockBlockerSema = -1;
 SInt32 gTickAttentionNeeded = 0;

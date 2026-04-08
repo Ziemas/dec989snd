@@ -7,9 +7,9 @@
 #include "valloc.h"
 #include "vol.h"
 
-#include "intrman.h"
-#include "libsd.h"
-#include "sdmacro.h"
+#include <intrman.h>
+#include <libsd.h>
+#include <sdmacro.h>
 
 SInt32 gMovieDMAChannel = -1;
 void *gMovieSoundBuffer = NULL;

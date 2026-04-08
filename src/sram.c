@@ -2,7 +2,7 @@
 
 #include "989snd.h"
 
-#include "stdio.h"
+#include <stdio.h>
 
 sSRAMNodePtr gSRAMFreeListHead = NULL;
 SInt32 gSRAMFreeNodesInUse = 0;

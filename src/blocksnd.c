@@ -10,10 +10,10 @@
 #include "valloc.h"
 #include "vol.h"
 
-#include "intrman.h"
-#include "libsd.h"
-#include "sdmacro.h"
-#include "stdio.h"
+#include <intrman.h>
+#include <libsd.h>
+#include <sdmacro.h>
+#include <stdio.h>
 
 SInt8 gBlockGlobalReg[32] = {0};
 GrainHandler gGrainHandler[] = {

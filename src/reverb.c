@@ -5,10 +5,10 @@
 #include "loader.h"
 #include "sram.h"
 
-#include "intrman.h"
-#include "libsd.h"
-#include "sdmacro.h"
-#include "thread.h"
+#include <intrman.h>
+#include <libsd.h>
+#include <sdmacro.h>
+#include <thread.h>
 
 SInt32 gReverbType[2] = {-1, -1};
 UInt32 gRevRamStart[2] = {0, 0};

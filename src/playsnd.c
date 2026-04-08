@@ -10,7 +10,7 @@
 #include "stick.h"
 #include "stream.h"
 
-#include "stdio.h"
+#include <stdio.h>
 
 SInt32 gGlobalExcite = 0;
 #ifdef DEBUG

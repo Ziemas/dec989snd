@@ -11,16 +11,16 @@
 #include "valloc.h"
 #include "vol.h"
 
-#include "intrman.h"
-#include "libcdvd.h"
-#include "loadcore.h"
-#include "sif.h"
-#include "sifrpc.h"
-#include "stdio.h"
-#include "stdlib.h"
-#include "string.h"
-#include "sysmem.h"
-#include "thread.h"
+#include <intrman.h>
+#include <libcdvd.h>
+#include <loadcore.h>
+#include <sif.h>
+#include <sifrpc.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sysmem.h>
+#include <thread.h>
 
 UInt16 g989Version = 0x301;
 ModuleInfo Module = {"989snd_Library", 0x301};

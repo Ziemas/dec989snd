@@ -8,9 +8,9 @@
 #include "stream.h"
 #include "valloc.h"
 
-#include "intrman.h"
-#include "stdio.h"
-#include "thread.h"
+#include <intrman.h>
+#include <stdio.h>
+#include <thread.h>
 
 GSoundHandlerPtr gActiveSoundListHead = NULL;
 GSoundHandlerPtr gActiveSoundListTail = NULL;

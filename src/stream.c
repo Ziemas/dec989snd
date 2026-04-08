@@ -10,15 +10,15 @@
 #include "valloc.h"
 #include "vol.h"
 
-#include "intrman.h"
-#include "libcdvd.h"
-#include "libsd.h"
-#include "sdmacro.h"
-#include "sif.h"
-#include "sifrpc.h"
-#include "stdio.h"
-#include "thread.h"
+#include <intrman.h>
+#include <libcdvd.h>
+#include <libsd.h>
+#include <sdmacro.h>
+#include <sif.h>
+#include <sifrpc.h>
+#include <stdio.h>
 #include <string.h>
+#include <thread.h>
 
 StreamChannelRange gStreamChannelRange[16] = {
     {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47}, {0, 47},

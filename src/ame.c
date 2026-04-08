@@ -1,12 +1,11 @@
 #include "ame.h"
 
 #include "989snd.h"
-#include "sndhand.h"
-#include "midi.h"
-#include "valloc.h"
-#include "stick.h"
-
 #include "globals.h"
+#include "midi.h"
+#include "sndhand.h"
+#include "stick.h"
+#include "valloc.h"
 
 UInt32 snd_PlayAMESound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend) {
     AMEHandlerPtr stream_handler;

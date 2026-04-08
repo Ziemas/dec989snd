@@ -12,10 +12,10 @@
 #include "valloc.h"
 #include "vol.h"
 
-#include "libsd.h"
-#include "sdmacro.h"
-#include "thread.h"
-#include "timerman.h"
+#include <libsd.h>
+#include <sdmacro.h>
+#include <thread.h>
+#include <timerman.h>
 
 SInt32 gSTickSema = -1;
 SInt32 gTimerThreadID = 0;

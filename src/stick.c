@@ -8,9 +8,9 @@
 #include "valloc.h"
 #include "vol.h"
 
-#include "libcdvd.h"
-#include "libsd.h"
-#include "stdio.h"
+#include <libcdvd.h>
+#include <libsd.h>
+#include <stdio.h>
 
 static UInt32 sTick = 0;
 SInt32 gLockMasterTick = 0;

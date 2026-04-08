@@ -9,9 +9,9 @@
 #include "valloc.h"
 #include "vol.h"
 
-#include "intrman.h"
-#include "libsd.h"
-#include "sdmacro.h"
+#include <intrman.h>
+#include <libsd.h>
+#include <sdmacro.h>
 
 UInt32 snd_PlayMIDISound(MIDISoundPtr sound, SInt32 vol, SInt32 pan, SInt16 pitch_mod, SInt16 bend) {
     MIDIBlockHeaderPtr data_stream;

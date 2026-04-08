@@ -8,16 +8,16 @@
 #include "sram.h"
 #include "stream.h"
 
-#include "intrman.h"
-#include "kerror.h"
-#include "libcdvd.h"
-#include "libsd.h"
-#include "memory.h"
-#include "sif.h"
-#include "sifrpc.h"
-#include "stdio.h"
-#include "sysmem.h"
-#include "thread.h"
+#include <intrman.h>
+#include <kerror.h>
+#include <libcdvd.h>
+#include <libsd.h>
+#include <memory.h>
+#include <sif.h>
+#include <sifrpc.h>
+#include <stdio.h>
+#include <sysmem.h>
+#include <thread.h>
 
 BOOL gLimit2Meg = 0;
 SInt32 gFileHandle = -1;

@@ -2,7 +2,7 @@
 
 #include "loader.h"
 
-#include "thread.h"
+#include <thread.h>
 
 volatile BOOL gKillTimer = 0;
 SInt32 gTransfering = 0;

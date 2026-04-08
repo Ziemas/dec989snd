@@ -1,5 +1,6 @@
 #include "989snd.h"
 
+#include "989rpc.h"
 #include "ame.h"
 #include "blocksnd.h"
 #include "extern.h"

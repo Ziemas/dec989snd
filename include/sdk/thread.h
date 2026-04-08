@@ -1,7 +1,7 @@
 #ifndef _THREAD_H_
 #define _THREAD_H_
 
-#include "types.h"
+#include <sys/types.h>
 
 #if defined(_LANGUAGE_C_PLUS_PLUS)||defined(__cplusplus)||defined(c_plusplus)
 extern "C" {

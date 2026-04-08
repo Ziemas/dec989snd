@@ -2,7 +2,7 @@
 #define _LIBCDVD_H
 
 #ifndef _eetypes_h_
-#include "types.h"
+#include <sys/types.h>
 #endif
 
 /*

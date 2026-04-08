@@ -2,7 +2,8 @@
 #define _COMMON_H_
 
 #include "include_asm.h"
-#include "types.h"
+#include <sys/types.h>
+
 
 typedef enum { false, true } bool;
 

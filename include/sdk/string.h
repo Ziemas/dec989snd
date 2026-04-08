@@ -2,9 +2,9 @@
 #define	_STRING_H
 
 #ifndef _TYPES_H
-#include "types.h"
+#include <sys/types.h>
 #endif
-#include "memory.h"
+#include <memory.h>
 
 #if defined(_LANGUAGE_C_PLUS_PLUS)||defined(__cplusplus)||defined(c_plusplus)
 extern "C" {

@@ -1,4 +1,4 @@
-#include "types.h"
+#include <sys/types.h>
 
 #ifndef	_STDIO_H
 #define	_STDIO_H

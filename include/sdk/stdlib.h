@@ -2,7 +2,7 @@
 #define	_STDLIB_H
 
 #ifndef _TYPES_H
-#include "types.h"
+#include <sys/types.h>
 #endif
 
 #if defined(_LANGUAGE_C_PLUS_PLUS)||defined(__cplusplus)||defined(c_plusplus)

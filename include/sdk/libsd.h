@@ -1,8 +1,8 @@
 #ifndef _LIBSD_H_
 #define _LIBSD_H_
 
-#include "types.h"
-#include "sdmacro.h"
+#include <sys/types.h>
+#include <sdmacro.h>
 
 extern int     sceSdInit( int flag );
 extern void    sceSdSetParam( u_short entry, u_short value );

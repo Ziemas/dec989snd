@@ -972,18 +972,6 @@ typedef struct { // 0x68
     /* 0x18 */ char arg[80];
 } sceSifCmdResetData;
 
-struct sSRAMNode_tag { // 0x18
-    /* 0x00 */ UInt32 loc;
-    /* 0x04 */ UInt32 size;
-    /* 0x08 */ UInt32 in_use;
-    /* 0x0c */ struct sSRAMNode_tag *root;
-    /* 0x10 */ struct sSRAMNode_tag *smaller;
-    /* 0x14 */ struct sSRAMNode_tag *bigger;
-};
-
-typedef struct sSRAMNode_tag sSRAMNode;
-typedef struct sSRAMNode_tag *sSRAMNodePtr;
-
 typedef struct { // 0x4
     /* 0x0 */ SInt16 min;
     /* 0x2 */ SInt16 max;

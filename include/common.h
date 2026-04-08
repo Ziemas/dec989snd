@@ -939,39 +939,6 @@ typedef struct { // 0x8
     /* 0x4 */ int compare;
 } timercommon;
 
-typedef struct { // 0x10
-    /* 0x0:0 */ unsigned int psize : 8;
-    /* 0x1:0 */ unsigned int dsize : 24;
-    /* 0x4 */ unsigned int daddr;
-    /* 0x8 */ unsigned int fcode;
-    /* 0xc */ unsigned int opt;
-} sceSifCmdHdr;
-
-typedef void (*sceSifCmdHandler)(/* parameters unknown */);
-
-typedef struct { // 0x8
-    /* 0x0 */ sceSifCmdHandler func;
-    /* 0x4 */ void *data;
-} sceSifCmdData;
-
-typedef struct { // 0x14
-    /* 0x00 */ sceSifCmdHdr chdr;
-    /* 0x10 */ void *newaddr;
-} sceSifCmdCSData;
-
-typedef struct { // 0x18
-    /* 0x00 */ sceSifCmdHdr chdr;
-    /* 0x10 */ int rno;
-    /* 0x14 */ unsigned int value;
-} sceSifCmdSRData;
-
-typedef struct { // 0x68
-    /* 0x00 */ sceSifCmdHdr chdr;
-    /* 0x10 */ int size;
-    /* 0x14 */ int flag;
-    /* 0x18 */ char arg[80];
-} sceSifCmdResetData;
-
 typedef struct { // 0x4
     /* 0x0 */ SInt16 min;
     /* 0x2 */ SInt16 max;

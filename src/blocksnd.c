@@ -1166,7 +1166,7 @@ SInt32 snd_SFX_GRAIN_TYPE_STOPCHILDSOUND(BlockSoundHandlerPtr handler, SFX2Ptr s
     }
 
     sts = &block->FirstSound[index];
-    while (snd_KillChildrenWithSound(handler, sts))
+    while (snd_KillChildrenWithSound((GSoundHandlerPtr)handler, sts))
         ;
 
     snd_UnlockMasterTick();
@@ -1287,7 +1287,7 @@ void snd_SetSFXVolPan(UInt32 handle, SInt32 vol, SInt32 pan, SInt32 cause) {
     own_the_allocator = snd_LockVoiceAllocatorEx(1, 27);
     dis = CpuSuspendIntr(&intr_state);
 
-    while ((uses_voice = snd_GetNextHandlerVoice(hand, uses_voice + 1)) != -1) {
+    while ((uses_voice = snd_GetNextHandlerVoice((GSoundHandlerPtr)hand, uses_voice + 1)) != -1) {
         g_pan = 0;
         if (((SFX2Ptr)hand->SH.Sound)->Flags & 4) {
             g_pan = snd_CollapsePan(gChannelStatus[uses_voice].OwnerData.BlockData.g_pan, hand->App_Vol, sfx);
@@ -1397,7 +1397,7 @@ void snd_UpdateSFXPitch(BlockSoundHandlerPtr hand) {
     }
 
     own_the_allocator = snd_LockVoiceAllocatorEx(1, 28);
-    while ((uses_voice = snd_GetNextHandlerVoice(hand, uses_voice + 1)) != -1) {
+    while ((uses_voice = snd_GetNextHandlerVoice((GSoundHandlerPtr)hand, uses_voice + 1)) != -1) {
         gChannelStatus[uses_voice].Current_PB = hand->Current_PB;
         gChannelStatus[uses_voice].Current_PM = hand->SH.Current_PM;
 

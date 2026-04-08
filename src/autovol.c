@@ -50,7 +50,7 @@ void snd_AutoVol(UInt32 handle, SInt32 vol, SInt32 delta_time, SInt32 delta_from
         return;
     }
 
-    effect = snd_FindEffect(handler, 2);
+    effect = (BasicEffectPtr)snd_FindEffect(handler, 2);
     if (effect) {
         effect->ec.Flags |= 0x80000000;
         if (delta_from == 3) {

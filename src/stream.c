@@ -447,7 +447,7 @@ UInt32 snd_PlayVAGStreamByLocEx(SInt32 loc1, SInt32 loc2, SInt32 offset1, SInt32
             vol = (handler->SH.Current_Vol * 1024) / 127;
         }
 
-        thestream = handler->SH.Sound;
+        thestream = (VAGStreamHeaderPtr)handler->SH.Sound;
         if (thestream->sync_list && loc2) {
             slot1 = snd_GetFreeQueSlot();
             slot2 = snd_GetFreeQueSlot();
@@ -1135,7 +1135,7 @@ void snd_KillVAGStreamEx(UInt32 handle, SInt32 from_where) {
     }
 
     master_stream = stream = (VAGStreamHeader *)hand->SH.Sound;
-    snd_FreeQueChain(&hand->que_list->flags, (stream->flags >> 12) & 1);
+    snd_FreeQueChain(hand->que_list, (stream->flags >> 12) & 1);
     if (hand->doubling_voice != -1) {
         core = hand->doubling_voice / 24;
         voice = hand->doubling_voice % 24;
@@ -1327,7 +1327,7 @@ void snd_ProcessVAGStreamTick(VAGStreamHandlerPtr hand) {
             }
 
             if (hand->qued_stream) {
-                hand->SH.Sound = (MIDISoundPtr)hand->qued_stream;
+                hand->SH.Sound = (SoundPtr)hand->qued_stream;
                 walk = hand->qued_stream;
                 voice_count = 0;
                 while (walk) {
@@ -1458,10 +1458,11 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
             addr = addr2;
         }
 
-        if (stream->buff[0].SPUbuff - 1 < addr && addr < stream->buff[1].SPUbuff) {
+        if ((UInt32)stream->buff[0].SPUbuff - 1 < addr && addr < (UInt32)stream->buff[1].SPUbuff) {
             in_buffer = 0;
         } else {
-            if (stream->buff[1].SPUbuff - 1 < addr && addr < &stream->buff[1].SPUbuff[stream->buff_size >> 1]) {
+            if ((UInt32)stream->buff[1].SPUbuff - 1 < addr &&
+                addr < (UInt32)&stream->buff[1].SPUbuff[stream->buff_size >> 1]) {
                 in_buffer = 1;
             } else {
                 stream->ErrorAccumulator++;
@@ -1471,7 +1472,7 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
                 }
 
                 if (!stream->bytes_played || !stream->LastPosition) {
-                    addr = stream->buff[0].SPUbuff;
+                    addr = (UInt32)stream->buff[0].SPUbuff;
                     in_buffer = 0;
                 } else {
                     snd_ShowError(53, stream->handler->SH.OwnerID, (SInt32)addr, 0, 0);
@@ -1501,7 +1502,7 @@ SInt32 snd_CheckVAGStreamProgress(VAGStreamHeader *stream, SInt32 *dma_needed) {
                 if (!stream->LastBufferChangeTick || snd_GetTick() > stream->LastBufferChangeTick + 10) {
 
                     if (((stream->buff[0].flags & 0x100) == 0 || (stream->buff[0].flags & 0x200) != 0) &&
-                        !snd_AddVAGStreamDMABuffer(&stream->buff[stream->PlayingBuffer].flags)) {
+                        !snd_AddVAGStreamDMABuffer(&stream->buff[stream->PlayingBuffer])) {
                         done = -2;
                     } else {
                         local_dma_needed = 1;
@@ -1572,8 +1573,8 @@ void snd_FixVAGStreamSamplesPlayed(VAGStreamHeader *stream, UInt32 addr) {
         addr = (UInt32)&stream->buff[1].SPUbuff[stream->buff_size >> 1];
     }
 
-    last_buffer = (stream->last_loc > (&stream->buff[0].SPUbuff[0] - 1) &&
-                   stream->last_loc < &stream->buff[0].SPUbuff[stream->buff_size >> 1])
+    last_buffer = (stream->last_loc > (UInt32)(&stream->buff[0].SPUbuff[0] - 1) &&
+                   stream->last_loc < (UInt32)&stream->buff[0].SPUbuff[stream->buff_size >> 1])
                       ? 0
                       : 1;
 
@@ -3809,7 +3810,7 @@ void snd_AddStreamToHandler(VAGStreamHandlerPtr handler, VAGStreamHeader *stream
     VAGStreamHeader *walk;
 
     if (!handler->SH.Sound) {
-        handler->SH.Sound = (MIDISoundPtr)stream;
+        handler->SH.Sound = (SoundPtr)stream;
     } else {
         walk = (VAGStreamHeader *)handler->SH.Sound;
         while (walk->sync_list && walk != stream) {

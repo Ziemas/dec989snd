@@ -29,7 +29,7 @@ void snd_AutoPitchBend(UInt32 handle, SInt32 pb, SInt32 delta_time, SInt32 delta
         return;
     }
 
-    effect = snd_FindEffect(handler, 16);
+    effect = (BasicEffectPtr)snd_FindEffect(handler, 16);
     if (effect) {
         effect->ec.Flags |= 0x80000000;
         if (delta_from == 3) {

@@ -1,8 +1,8 @@
 #include "autopan.h"
 
-#include "stick.h"
-#include "sndhand.h"
 #include "playsnd.h"
+#include "sndhand.h"
+#include "stick.h"
 
 void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt32 delta_from) {
     SInt32 wouldhavechanged;
@@ -58,7 +58,7 @@ void snd_AutoPan(UInt32 handle, SInt32 pan, SInt32 dir, SInt32 delta_time, SInt3
         return;
     }
 
-    effect = snd_FindEffect(handler, 4);
+    effect = (BasicEffectPtr)snd_FindEffect(handler, 4);
     if (effect) {
         effect->ec.Flags |= 0x80000000;
         if (delta_from == 3) {

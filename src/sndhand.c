@@ -4,6 +4,7 @@
 #include "blocksnd.h"
 #include "globals.h"
 #include "midi.h"
+#include "playsnd.h"
 #include "stick.h"
 #include "stream.h"
 #include "valloc.h"
@@ -89,7 +90,7 @@ BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent, BlockSoundHandle
 
     inst = 0;
     weakest = 0;
-    walk = gActiveSoundListHead;
+    walk = (BlockSoundHandlerPtr)gActiveSoundListHead;
 
     if (!sfx->InstanceLimit) {
         return false;
@@ -101,7 +102,7 @@ BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent, BlockSoundHandle
 
     while (walk) {
         type = (walk->SH.OwnerID >> 24) & 0x1f;
-        if (type == 5 && ((parent && walk->orig_sound == sfx) || walk->SH.Sound == sfx)) {
+        if (type == 5 && ((parent && walk->orig_sound == sfx) || (void *)walk->SH.Sound == (void *)sfx)) {
             inst++;
 
             if (!weakest || ((sfx->Flags & 0x10) != 0 && walk->App_Vol < weakest->App_Vol) ||
@@ -110,7 +111,7 @@ BOOL snd_CheckInstanceLimit(SFX2 *sfx, SInt32 vol, BOOL parent, BlockSoundHandle
             }
         }
 
-        walk = walk->SH.next;
+        walk = (BlockSoundHandlerPtr)walk->SH.next;
     }
 
     if (sfx->InstanceLimit - 1 < inst) {
@@ -137,12 +138,16 @@ BlockSoundHandlerPtr snd_GetFreeBlockSoundHandler(SFX2 *sfx, SInt32 vol, BOOL pa
         }
     }
 
-    return snd_FindFreeHandler(&gBlockSoundHandler[0].SH, 64, 5, sizeof(BlockSoundHandler));
+    return (BlockSoundHandlerPtr)snd_FindFreeHandler(&gBlockSoundHandler[0].SH, 64, 5, sizeof(BlockSoundHandler));
 }
 
-MIDIHandlerPtr snd_GetFreeMIDIHandler() { return snd_FindFreeHandler(&gMIDIHandler[0].SH, 32, 1, sizeof(MIDIHandler)); }
+MIDIHandlerPtr snd_GetFreeMIDIHandler() {
+    return (MIDIHandlerPtr)snd_FindFreeHandler(&gMIDIHandler[0].SH, 32, 1, sizeof(MIDIHandler));
+}
 
-AMEHandlerPtr snd_GetFreeAMEHandler() { return snd_FindFreeHandler(&gAMEHandler[0].SH, 4, 2, sizeof(AMEHandler)); }
+AMEHandlerPtr snd_GetFreeAMEHandler() {
+    return (AMEHandlerPtr)snd_FindFreeHandler(&gAMEHandler[0].SH, 4, 2, sizeof(AMEHandler));
+}
 
 void snd_ActivateHandler(GSoundHandlerPtr snd) {
     SInt32 intr_state;

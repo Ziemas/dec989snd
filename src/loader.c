@@ -363,7 +363,7 @@ SoundBankPtr snd_ParseIOPBank(SInt8 *iop_loc, UInt32 spu_mem_loc, UInt32 spu_mem
             } else {
                 block = (SFXBlock2Ptr)bank_head;
                 block->FirstSound = (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
-                block->FirstGrain = (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
+                block->FirstGrain = (SFXGrain2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
                 block->Flags |= 1;
             }
             snd_EndBankTransfer(bank_head);
@@ -495,7 +495,7 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
                 }
             }
 
-            snd_EndBankTransfer((SFXBlock2Ptr)bank_head);
+            snd_EndBankTransfer(bank_head);
             gFreeProc(bank_body);
         } else {
             if (bank_head->DataID == 0x32764253) {
@@ -506,7 +506,7 @@ SoundBankPtr snd_ReadBank(UInt32 spu_mem_loc, UInt32 spu_mem_size) {
             } else {
                 block_head = (SFXBlock2Ptr)bank_head;
                 block_head->FirstSound = (SFX2Ptr)((UInt32)block_head->FirstSound + (UInt32)block_head);
-                block_head->FirstGrain = (SFX2Ptr)((UInt32)block_head->FirstGrain + (UInt32)block_head);
+                block_head->FirstGrain = (SFXGrain2Ptr)((UInt32)block_head->FirstGrain + (UInt32)block_head);
                 block_head->Flags |= 1;
             }
             snd_EndBankTransfer(bank_head);
@@ -708,7 +708,7 @@ void snd_UnloadBank(SoundBankPtr bank) {
     }
 
     if (bank->DataID == 0x6B6C4253) {
-        snd_UnloadBlock(bank);
+        snd_UnloadBlock((SFXBlock2Ptr)bank);
         return;
     }
 
@@ -873,7 +873,7 @@ MultiMIDIBlockHeaderPtr snd_MMDLoadByLoc(SInt32 sect_loc, SInt32 file_offset) {
 }
 
 void snd_UnloadMMD(MultiMIDIBlockHeaderPtr mmd) {
-    snd_UnregisterMIDI(mmd);
+    snd_UnregisterMIDI((MIDIBlockHeaderPtr)mmd);
     gFreeProc(mmd);
 }
 
@@ -883,13 +883,13 @@ void snd_UnloadAllMMD() {
     walk = gMIDIListHead;
     while (walk) {
         if (walk->DataID == 0x44494D4D) {
-            snd_UnloadMMD(walk);
+            snd_UnloadMMD((MultiMIDIBlockHeaderPtr)walk);
         }
         walk = walk->NextMIDIBlock;
     }
 
     while (gMIDIListHead) {
-        snd_UnloadMMD(gMIDIListHead);
+        snd_UnloadMMD((MultiMIDIBlockHeaderPtr)gMIDIListHead);
     }
 }
 
@@ -967,7 +967,7 @@ SInt32 snd_BankTransfer(SoundBankPtr bank, SInt8 *data, UInt32 data_size, SInt32
             }
         } else {
             dis = CpuSuspendIntr(&oldstat);
-            if (!snd_SRAMMarkUsed(sram_loc, sram_size)) {
+            if (!snd_SRAMMarkUsed((UInt32)sram_loc, sram_size)) {
                 if (!dis) {
                     CpuResumeIntr(oldstat);
                 }
@@ -989,7 +989,7 @@ SInt32 snd_BankTransfer(SoundBankPtr bank, SInt8 *data, UInt32 data_size, SInt32
                 bank->Flags |= 1;
             } else {
                 block->FirstSound = (SFX2Ptr)((UInt32)block->FirstSound + (UInt32)block);
-                block->FirstGrain = (SFX2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
+                block->FirstGrain = (SFXGrain2Ptr)((UInt32)block->FirstGrain + (UInt32)block);
                 block->Flags |= 1;
             }
         }
@@ -1009,7 +1009,7 @@ SInt32 snd_BankTransfer(SoundBankPtr bank, SInt8 *data, UInt32 data_size, SInt32
     gTransfering = ch + 1;
     snd_ClearTransSema();
     sceSdSetTransIntrHandler(ch, snd_TransCallback, NULL);
-    size = sceSdVoiceTrans(ch, 0, data, sram_loc + offset, data_size);
+    size = sceSdVoiceTrans(ch, 0, data, (UInt32)sram_loc + offset, data_size);
     if (size < data_size) {
         snd_FreeSPUDMA(gTransfering - 1);
         gTransfering = 0;
@@ -1134,7 +1134,7 @@ void snd_RemoveBank(SoundBankPtr bank) {
 
         dis = CpuSuspendIntr(&oldstat);
         if (bank->VagDataSize) {
-            snd_SRAMFree(bank->VagsInSR, bank->VagDataSize);
+            snd_SRAMFree((UInt32)bank->VagsInSR, bank->VagDataSize);
         }
         if (!dis) {
             CpuResumeIntr(oldstat);
@@ -1161,7 +1161,7 @@ void snd_RemoveBlock(SFXBlock2Ptr block) {
     }
 
     if (walker == block) {
-        snd_StopAllSoundsInBank(block, 1);
+        snd_StopAllSoundsInBank((SoundBankPtr)block, 1);
         if (prev) {
             prev->NextBlock = walker->NextBlock;
         } else {
@@ -1170,7 +1170,7 @@ void snd_RemoveBlock(SFXBlock2Ptr block) {
 
         dis = CpuSuspendIntr(&oldstat);
         if (block->SRAMAllocSize) {
-            snd_SRAMFree(block->VagsInSR, block->SRAMAllocSize);
+            snd_SRAMFree((UInt32)block->VagsInSR, block->SRAMAllocSize);
         }
         if (!dis) {
             CpuResumeIntr(oldstat);
@@ -1230,7 +1230,7 @@ SoundBankPtr snd_FindBankByID(UInt32 id) {
     }
 
     if (!bank) {
-        return snd_FindBlockByID(id);
+        return (SoundBankPtr)snd_FindBlockByID(id);
     }
 
     return bank;
@@ -1283,7 +1283,7 @@ SoundBankPtr snd_FindBankByNum(SInt8 num) {
     }
 
     if (!bank) {
-        return snd_FindBlockByNum(num);
+        return (SoundBankPtr)snd_FindBlockByNum(num);
     }
 
     return bank;
@@ -1326,12 +1326,12 @@ SInt32 snd_RegisterMIDI(MIDIBlockHeaderPtr midi) {
         if (mmid->Version < 2) {
             return 0;
         }
-        snd_InsertMIDIBlockInList(mmid);
+        snd_InsertMIDIBlockInList((MIDIBlockHeaderPtr)mmid);
         for (x = 0; x < mmid->NumMIDIBlocks; x++) {
             mmid->BlockPtr[x] = (SInt8 *)((UInt32)mmid->BlockPtr[x] + (UInt32)mmid);
-            hold = mmid->BlockPtr[x];
+            hold = (MIDIBlockHeaderPtr)mmid->BlockPtr[x];
             snd_RegisterMIDI(hold);
-            hold->MultiMIDIParent = mmid;
+            hold->MultiMIDIParent = (SInt8 *)mmid;
         }
         break;
     }

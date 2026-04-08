@@ -34,7 +34,7 @@ void snd_AutoPitch(UInt32 handle, SInt32 pitch, SInt32 delta_time, SInt32 delta_
         return;
     }
 
-    effect = snd_FindEffect(handler, 8);
+    effect = (BasicEffectPtr)snd_FindEffect(handler, 8);
     if (effect) {
         effect->ec.Flags |= 0x80000000;
         if (delta_from == 3) {

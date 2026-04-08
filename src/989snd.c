@@ -915,22 +915,22 @@ static void *snd_EELoaderMessageParser(UInt32 command, void *data, SInt32 size) 
 
     switch (command) {
     case SL_LOADBANK:
-        ret_val = (SInt32)snd_BankLoadEx((char *)&data[4], *(SInt32 *)&data[0], 0, 0);
+        ret_val = (SInt32)snd_BankLoadEx((char *)(data + 4), *(SInt32 *)data, 0, 0);
         break;
     case SL_LOADBANKBYLOC:
-        ret_val = (SInt32)snd_BankLoadByLocEx(*(SInt32 *)&data[0], *(SInt32 *)&data[4], 0, 0);
+        ret_val = (SInt32)snd_BankLoadByLocEx(*(SInt32 *)data, *(SInt32 *)(data + 4), 0, 0);
         break;
     case SL_LOADMMD:
-        ret_val = (SInt32)snd_MMDLoad((char *)&data[4], *(SInt32 *)data);
+        ret_val = (SInt32)snd_MMDLoad((char *)(data + 4), *(SInt32 *)data);
         break;
     case SL_LOADMMDBYLOC:
-        ret_val = (SInt32)snd_MMDLoadByLoc(*(SInt32 *)&data[0], *(SInt32 *)&data[4]);
+        ret_val = (SInt32)snd_MMDLoadByLoc(*(SInt32 *)data, *(SInt32 *)(data + 4));
         break;
     case SL_BANKLOADFROMEE:
-        ret_val = (SInt32)snd_BankLoadFromEEEx(*(SInt32 *)&data[0], 0, 0);
+        ret_val = (SInt32)snd_BankLoadFromEEEx(*(SInt32 *)data, 0, 0);
         break;
     case SL_BANKLOADFROMIOP:
-        ret_val = (SInt32)snd_BankLoadFromIOPEx(*(void **)&data[0], 0, 0);
+        ret_val = (SInt32)snd_BankLoadFromIOPEx(*(void **)data, 0, 0);
         break;
     }
 

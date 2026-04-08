@@ -25,7 +25,7 @@ SInt32 snd_GetSoundUserData(SoundBankPtr bank, char *bank_name, int sound_index,
     block = (SFXBlock2Ptr)bank;
 
     if (!block && bank_name) {
-        block = snd_FindBankByName(bank_name);
+        block = (SFXBlock2Ptr)snd_FindBankByName(bank_name);
         if (!block) {
             if (!gPrefs_Silent && gPrefs_ShowMissingSounds) {
                 printf("989snd: Couldn't find named bank -> %s\n", bank_name);
@@ -78,7 +78,7 @@ UInt32 snd_PlaySoundByNameVolPanPMPB(SoundBankPtr block, char *block_name, char 
         return 0;
     }
 
-    index = snd_FindSoundByName(block, sound, &block);
+    index = snd_FindSoundByName((SFXBlock2Ptr)block, sound, (SFXBlock2Ptr *)&block);
     if (index < 0) {
         if (!gPrefs_Silent && gPrefs_ShowMissingSounds) {
             printf("989snd: Didn't find sound named -> %s\n", sound);
@@ -117,7 +117,7 @@ UInt32 snd_PlaySoundEx(SndPlayParamsPtr params) {
     if ((params->mask & 2) != 0) {
         index = params->snd_spec.index;
     } else {
-        index = snd_FindSoundByName(bank, params->snd_spec.name, &bank);
+        index = snd_FindSoundByName((SFXBlock2Ptr)bank, params->snd_spec.name, (SFXBlock2Ptr *)&bank);
         if (index < 0) {
             if (!gPrefs_Silent && gPrefs_ShowMissingSounds) {
                 printf("989snd: Didn't find sound named -> %s\n", params->snd_spec.name);
@@ -127,7 +127,7 @@ UInt32 snd_PlaySoundEx(SndPlayParamsPtr params) {
     }
 
     if (bank->DataID == 0x6B6C4253) {
-        return snd_PlaySFXWithStruct(bank, index, -1, -1, params);
+        return snd_PlaySFXWithStruct((SFXBlock2Ptr)bank, index, -1, -1, params);
     } else {
         if (!(params->mask & 4)) {
             vol = 0x400;
@@ -162,7 +162,7 @@ UInt32 snd_PlaySoundVolPanPMPB(SoundBankPtr bank, SInt32 sound, SInt32 vol, SInt
     UInt32 ret;
 
     if (bank == (SoundBankPtr)-1) {
-        bank = gBlockListHead;
+        bank = (SoundBankPtr)gBlockListHead;
     }
 
     if (!bank) {
@@ -193,9 +193,9 @@ UInt32 snd_PlaySoundVolPanPMPB(SoundBankPtr bank, SInt32 sound, SInt32 vol, SInt
         case 3:
             return 0;
         case 4:
-            return snd_PlayMIDISound(sound_ptr, vol, pan, pitch_mod, bend);
+            return snd_PlayMIDISound((MIDISoundPtr)sound_ptr, vol, pan, pitch_mod, bend);
         case 5:
-            ret = snd_PlayAMESound(sound_ptr, vol, pan, pitch_mod, bend);
+            ret = snd_PlayAMESound((MIDISoundPtr)sound_ptr, vol, pan, pitch_mod, bend);
             return ret;
         default:
             return 0;
@@ -532,7 +532,7 @@ SInt32 snd_GetSoundPitchModifier(UInt32 handle) {
 
     switch (type) {
     case 5:
-        if ((hand = snd_CheckHandlerStillActive(handle))) {
+        if ((hand = (VAGSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
             ret_val = ((BlockSoundHandlerPtr)hand)->App_PM;
         }
         break;
@@ -540,7 +540,7 @@ SInt32 snd_GetSoundPitchModifier(UInt32 handle) {
     case 1:
     case 2:
     case 4:
-        if ((hand = snd_CheckHandlerStillActive(handle))) {
+        if ((hand = (VAGSoundHandlerPtr)snd_CheckHandlerStillActive(handle))) {
             ret_val = hand->SH.Current_PM;
         }
         break;
@@ -611,7 +611,7 @@ void snd_StopAllSoundsInBank(SoundBankPtr bank, SInt32 silence) {
     if (bank->DataID == DATAID_SBLK) {
         block = (SFXBlock2Ptr)bank;
         for (x = 0; x < block->NumSounds; x++) {
-            snd_StopAllHandlersForSound(&block->FirstSound[x], silence, 0);
+            snd_StopAllHandlersForSound((SoundPtr)&block->FirstSound[x], silence, 0);
         }
     } else {
         for (x = 0; x < bank->NumSounds; x++) {
@@ -645,7 +645,7 @@ SoundBankPtr snd_FindBankByName(char *name) {
     while (walk) {
         if (walk->Flags & 0x100) {
             if (walk->BlockNames->BlockName[0] == comp[0] && walk->BlockNames->BlockName[1] == comp[1]) {
-                return walk;
+                return (SoundBankPtr)walk;
             }
         }
 

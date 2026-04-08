@@ -85,7 +85,7 @@ MIDIBlockHeaderPtr snd_GetRealMIDIDataStream(MIDISoundPtr sound) {
         return NULL;
     }
 
-    return ((MultiMIDIBlockHeaderPtr)stream)->BlockPtr[sound->Index];
+    return (MIDIBlockHeaderPtr)((MultiMIDIBlockHeaderPtr)stream)->BlockPtr[sound->Index];
 }
 
 void snd_MuteMIDIChannel(MIDIHandlerPtr stream, SInt32 channel) { stream->MuteState |= 1 << channel; }
@@ -336,7 +336,8 @@ void snd_MIDINoteOff(MIDIHandlerPtr stream) {
 
     walk = gPlayingListHead;
     while (walk) {
-        if (walk->Owner == stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel && walk->StartNote == note) {
+        if (walk->Owner == (void *)stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
+            walk->StartNote == note) {
             if (((stream->DamperState >> midi_channel) & 1) == 0) {
                 snd_KeyOffVoice(walk->voice);
             } else {
@@ -361,7 +362,7 @@ void snd_ReleaseDamper(MIDIHandlerPtr stream) {
 
     walk = gPlayingListHead;
     while (walk) {
-        if (walk->Owner == stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
+        if (walk->Owner == (void *)stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel &&
             walk->OwnerData.MIDIData.ShouldBeOff == 1) {
 
             snd_KeyOffVoice(walk->voice);
@@ -407,7 +408,7 @@ void snd_PitchBend(MIDIHandlerPtr stream) {
     dis = CpuSuspendIntr(&intr_state);
 
     while (walk) {
-        if (walk->Owner == stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel) {
+        if (walk->Owner == (void *)stream && walk->OwnerData.MIDIData.MidiChannel == midi_channel) {
             walk->Current_PB = stream->PitchBend[midi_channel];
             core = walk->voice / 24;
             c_v = walk->voice % 24;
@@ -468,7 +469,7 @@ void snd_SetMIDIHandlerVolumePan(MIDIHandlerPtr stream, SInt32 vol, SInt32 pan) 
 
     walk = gPlayingListHead;
     while (walk) {
-        if (walk->Owner == stream) {
+        if (walk->Owner == (void *)stream) {
             pan_calc = stream->Pan[walk->OwnerData.MIDIData.MidiChannel] + stream->SH.Current_Pan;
 
             if (pan_calc >= 360) {
@@ -525,7 +526,7 @@ void snd_SetMIDIHandlerPitchModifier(MIDIHandlerPtr stream, SInt16 mod) {
     stream->SH.Current_PM = mod;
     walk = gPlayingListHead;
     while (walk) {
-        if (walk->Owner == stream) {
+        if (walk->Owner == (void *)stream) {
             walk->Current_PM = mod;
             if (!(stream->SH.flags & 2)) {
                 snd_PitchBendTone(walk->Tone, walk->Current_PB, walk->Current_PM, walk->StartNote, walk->StartFine,

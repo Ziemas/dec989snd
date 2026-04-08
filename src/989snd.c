@@ -3,7 +3,6 @@
 #include "ame.h"
 #include "blocksnd.h"
 #include "extern.h"
-#include "globals.h"
 #include "init.h"
 #include "loader.h"
 #include "playsnd.h"

@@ -1,8 +1,8 @@
 #include "ame.h"
 
 #include "989snd.h"
-#include "globals.h"
 #include "midi.h"
+#include "playsnd.h"
 #include "sndhand.h"
 #include "stick.h"
 #include "valloc.h"

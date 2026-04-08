@@ -3,6 +3,14 @@
 
 #include "common.h"
 
+extern BOOL gLimit2Meg;
+extern char *gEEStatusAddr;
+extern ExternSndIOPAlloc gAllocProc;
+extern ExternSndIOPFree gFreeProc;
+extern SoundBankPtr gBankListHead;
+extern SFXBlock2Ptr gBlockListHead;
+extern SInt8 gFileLoadBuffer[2048];
+
 void snd_InitLoader();
 void snd_ShutdownLoader();
 void snd_RegisterIOPMemAllocator(ExternSndIOPAlloc AllocProc, ExternSndIOPFree FreeProc);

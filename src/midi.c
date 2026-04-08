@@ -2,7 +2,7 @@
 
 #include "989snd.h"
 #include "ame.h"
-#include "globals.h"
+#include "init.h"
 #include "loader.h"
 #include "playsnd.h"
 #include "sndhand.h"

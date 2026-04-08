@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+extern SInt32 gGlobalExcite;
+
 SInt32 snd_GetSoundUserData(SoundBankPtr bank, char *bank_name, int sound_index, char *sound_name, int *destination);
 UInt32 snd_PlaySoundByNameVolPanPMPB(SoundBankPtr block, char *block_name, char *sound, SInt32 vol, SInt32 pan,
                                      SInt16 pitch_mod, SInt16 bend);

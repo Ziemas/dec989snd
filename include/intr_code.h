@@ -3,6 +3,20 @@
 
 #include "common.h"
 
+extern SInt32 gCdBusy;
+extern SInt32 gCdBusyTime;
+extern volatile BOOL gKillTimer;
+extern SInt32 gTransfering;
+extern SpuTransferCallbackProc gTransferDoneCallback;
+extern SInt32 gSPURAMTransSema;
+extern SInt32 gDoneLoadSema;
+extern SInt32 gOddCdError;
+extern SInt32 gDMAInUse[2];
+extern SInt32 gLastDMA0Complete;
+extern SInt32 gLastDMA1Complete;
+extern SInt32 gDoneDMASema;
+extern volatile SInt32 gWaitingDMAComplete;
+
 SInt32 snd_TimerLLTick(timercommon *common);
 int snd_TransCallback(SInt32 ch, void *data);
 void snd_DoneVAGReadCB(SInt32 code);

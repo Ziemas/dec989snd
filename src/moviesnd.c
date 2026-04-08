@@ -1,7 +1,6 @@
 #include "moviesnd.h"
 
 #include "989snd.h"
-#include "globals.h"
 #include "loader.h"
 #include "sram.h"
 #include "valloc.h"

@@ -3,6 +3,10 @@
 
 #include "common.h"
 
+extern SInt16 gReverbDepthL[2];
+extern SInt16 gReverbDepthR[2];
+extern SInt32 gReverbMode;
+
 void snd_SetReverbMode(SInt32 reverb_mode);
 void snd_PreAllocReverbWorkArea(UInt32 core, SInt32 type);
 void snd_PreAllocReverbWorkArea_L(SInt32 core, SInt32 type);

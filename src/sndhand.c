@@ -2,7 +2,6 @@
 
 #include "989snd.h"
 #include "blocksnd.h"
-#include "globals.h"
 #include "midi.h"
 #include "playsnd.h"
 #include "stick.h"

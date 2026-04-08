@@ -1,8 +1,8 @@
 #include "vol.h"
 
 #include "989snd.h"
-#include "globals.h"
 #include "moviesnd.h"
+#include "pantable.h"
 #include "valloc.h"
 
 #include <intrman.h>

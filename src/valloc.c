@@ -1,7 +1,6 @@
 #include "valloc.h"
 
 #include "989snd.h"
-#include "globals.h"
 #include "reverb.h"
 #include "stick.h"
 #include "vol.h"

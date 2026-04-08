@@ -3,6 +3,13 @@
 
 #include "common.h"
 
+extern Extern989MonitorInfo *g989Monitor;
+extern SInt32 gThreadPriority_TICK;
+extern SInt32 gThreadPriority_RPC;
+extern SInt32 gThreadPriority_STREAM;
+extern SInt32 gEEDMADoneSema;
+extern SInt32 gFileReadMutex;
+
 BOOL snd_RegisterExternProcHandler(Extern989HandlerPtr hand);
 BOOL snd_UnregisterExternProcHandler(Extern989HandlerPtr hand);
 Extern989HandlerPtr snd_FindExternProcHandler(UInt32 id);

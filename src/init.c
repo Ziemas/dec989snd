@@ -1,6 +1,6 @@
 #include "init.h"
 
-#include "globals.h"
+#include "989snd.h"
 #include "intr_code.h"
 #include "loader.h"
 #include "moviesnd.h"

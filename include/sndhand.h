@@ -3,6 +3,8 @@
 
 #include "common.h"
 
+extern GSoundHandlerPtr gActiveSoundListHead;
+
 void snd_InitHandlers(GSoundHandlerPtr handlers, SInt32 count, UInt32 type, SInt32 size);
 void snd_InitSoundHandlers();
 GSoundHandlerPtr snd_FindFreeHandler(GSoundHandlerPtr handlers, SInt32 count, UInt32 type, SInt32 size);

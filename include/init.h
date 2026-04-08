@@ -3,6 +3,11 @@
 
 #include "common.h"
 
+extern SInt32 gSTickSema;
+extern UInt32 gMicsPerTick;
+extern BOOL gPrefs_ShowMissingSounds;
+extern BOOL gPrefs_Silent;
+
 SInt32 snd_SystemRunning();
 SInt32 snd_StartSoundSystemEx(UInt32 flags);
 SInt32 snd_InstallSoundTick();

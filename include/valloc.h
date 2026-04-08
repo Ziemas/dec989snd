@@ -3,6 +3,17 @@
 
 #include "common.h"
 
+extern SInt32 gTickAttentionNeeded;
+extern UInt32 gVAllocOwnerID;
+extern SInt32 gVoiceAllocatorInUse;
+extern VoiceAttributes *gPlayingListHead;
+extern VoiceAttributes gChannelStatus[48];
+extern UInt32 gAwaitingKeyOn[2];
+extern UInt32 gAwaitingKeyOff[2];
+extern UInt32 gKeyedOnVoices[2];
+extern UInt32 gKeyedOffVoices[2];
+extern UInt32 gReverbVoices[2];
+
 void snd_InitVoiceAllocator();
 void snd_CleanupVoiceAllocator();
 void snd_SetMixerMode(SInt32 channel_mode, SInt32 reverb_mode);

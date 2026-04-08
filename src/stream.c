@@ -1,7 +1,7 @@
 #include "stream.h"
 
 #include "989snd.h"
-#include "globals.h"
+#include "init.h"
 #include "intr_code.h"
 #include "loader.h"
 #include "sndhand.h"

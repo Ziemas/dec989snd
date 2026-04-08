@@ -2,7 +2,8 @@
 
 #include "989snd.h"
 #include "LFO.h"
-#include "globals.h"
+#include "init.h"
+#include "intr_code.h"
 #include "reverb.h"
 #include "sndhand.h"
 #include "valloc.h"

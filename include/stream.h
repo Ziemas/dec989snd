@@ -5,6 +5,11 @@
 
 #include <libcdvd.h>
 
+extern SInt32 gNumVAGStreams;
+extern VAGStreamHandler *gVAGStreamHandler;
+extern VAGBuffer *VAGStreamDMAList;
+extern SInt32 gStartDMASema;
+
 BOOL snd_InitVAGStreamingEx(SInt32 num_channels, SInt32 buffer_size, UInt32 read_mode, BOOL enable_streamsafe_from_ee);
 void snd_SetVAGStreamChannelRange(SInt32 vol_group, SInt32 ch_min, SInt32 ch_max);
 SInt32 snd_AllocateStreamResources(VAGStreamHeader **stream1, VAGStreamHeader **stream2, SInt32 stereo,
